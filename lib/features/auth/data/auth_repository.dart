@@ -1,0 +1,78 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../core/network/api_client.dart';
+import '../../../core/storage/auth_token_storage.dart';
+
+final class AuthRepository {
+  AuthRepository({
+    required ApiClient apiClient,
+    required AuthTokenStorage tokenStorage,
+  }) : _apiClient = apiClient,
+       _tokenStorage = tokenStorage;
+
+  final ApiClient _apiClient;
+  final AuthTokenStorage _tokenStorage;
+
+  SupabaseClient get _supabase => Supabase.instance.client;
+
+  Future<void> requestOtp(String phone) async {
+    await _supabase.auth.signInWithOtp(phone: phone);
+  }
+
+  Future<void> signInWithPassword({
+    required String phone,
+    required String password,
+  }) async {
+    final response = await _supabase.auth.signInWithPassword(
+      phone: phone,
+      password: password,
+    );
+    final session = response.session ?? _supabase.auth.currentSession;
+    if (session == null) {
+      throw StateError('Session missing after sign in.');
+    }
+    await _tokenStorage.save(session.accessToken);
+    await _apiClient.get('/users/me');
+  }
+
+  Future<void> signUpWithPassword({
+    required String fullName,
+    required String phone,
+    required String password,
+    String? email,
+  }) async {
+    final response = await _supabase.auth.signUp(
+      phone: phone,
+      password: password,
+      data: {
+        'full_name': fullName,
+        if (email != null && email.trim().isNotEmpty) 'email': email.trim(),
+      },
+    );
+    final session = response.session ?? _supabase.auth.currentSession;
+    if (session == null) {
+      throw StateError('Session missing after sign up.');
+    }
+    await _tokenStorage.save(session.accessToken);
+    await _apiClient.get('/users/me');
+  }
+
+  Future<void> verifyOtp({required String phone, required String otp}) async {
+    final response = await _supabase.auth.verifyOTP(
+      phone: phone,
+      token: otp,
+      type: OtpType.sms,
+    );
+    final session = response.session ?? _supabase.auth.currentSession;
+    if (session == null) {
+      throw StateError('Session missing after OTP verification.');
+    }
+    await _tokenStorage.save(session.accessToken);
+    await _apiClient.get('/users/me');
+  }
+
+  Future<void> signOut() async {
+    await _supabase.auth.signOut();
+    await _tokenStorage.clear();
+  }
+}
