@@ -33,7 +33,7 @@
   },
   "discoverTitle": "Discover",
   "emptyListings": "No flatmate listings are available right now.",
-  "homeGreeting": "Hi, {name}",
+  "homeGreeting": "Good afternoon, {name}",
   "@homeGreeting": {
     "placeholders": {
       "name": {
@@ -41,12 +41,31 @@
       }
     }
   },
+  "homeGuestName": "there",
+  "homeSubtitle": "Find your next flatmate in {city}",
+  "@homeSubtitle": {
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMarketInsight": "{count} verified people are actively looking nearby",
+  "@homeMarketInsight": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeMarketInsightCta": "View active seekers",
   "homeLocationFallback": "Set your city and locality to personalize discovery.",
   "locationUpdated": "Location updated",
   "locationPermissionRequired": "Location permission is required to detect your city.",
   "locationDetectionFailed": "Could not detect your location. Please select manually.",
-  "homeSearchHint": "Search by location, area or landmark",
-  "homePickedForYou": "Picked for You",
+  "homeSearchHint": "Search area, budget, flatmate...",
+  "searchMapHint": "Search location, sector, society...",
+  "homePickedForYou": "Best matches for you",
   "homePickedSubtitle": "Top flats that match your preferences and vibe",
   "homeNoResults": "No listings match those filters.",
   "homeNoResultsSubtitle": "Try adjusting your filters or search for a different location.",
@@ -127,10 +146,11 @@
     }
   },
   "likeListingCta": "Like listing",
-  "likesChatTitle": "Likes & Chat",
-  "likesTabLabel": "Likes",
+  "likesChatTitle": "Inbox",
+  "likesTabLabel": "Likes You",
+  "likedTabLabel": "You Liked",
   "chatsTabLabel": "Chats",
-  "likesIncomingLabel": "This connection is ready for a first message.",
+  "likesIncomingLabel": "You matched. Start the conversation.",
   "emptyLikes": "No new likes yet.",
   "chatsTitle": "Chats",
   "emptyChats": "No conversations yet.",
@@ -141,7 +161,7 @@
   "openConversationCta": "Open conversation",
   "todayLabel": "Today",
   "safetyFirstTitle": "Safety first",
-  "safetyFirstSubtitle": "We verify profiles to keep the community safer.",
+  "safetyFirstSubtitle": "Visit the room before paying.",
   "scheduleTitle": "Schedule",
   "scheduleSubtitle": "Track your flat visits and meetups in one place.",
   "visitsTitle": "Visits",
@@ -150,8 +170,21 @@
   "flatmateMeetLabel": "Flatmate meet",
   "propertyTourLabel": "Property tour",
   "scheduleVisitCta": "Schedule visit",
-  "profilePageTitle": "Profile",
+  "profilePageTitle": "Me",
   "profileTitle": "Profile & Settings",
+  "profileStrengthTitle": "Profile strength: {percent}%",
+  "@profileStrengthTitle": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "profileStrengthSubtitle": "Complete 2 steps to get 3x more responses",
+  "completeProfileCta": "Complete profile",
+  "discoverySectionLabel": "Discovery",
+  "trustSectionLabel": "Trust",
+  "accountSectionLabel": "Account",
   "profileFallbackName": "Your Flatmates profile",
   "profileStatListings": "Listings",
   "profileStatChats": "Chats",
@@ -178,10 +211,10 @@
   "languageHindi": "Hindi",
   "logoutCta": "Logout",
   "modeTitle": "Mode",
-  "modeRoomPoster": "Room Poster",
-  "modeSeeker": "Seeker",
-  "modeCoHunter": "Co-Hunter",
-  "modeOpenToBoth": "Open to Both",
+  "modeRoomPoster": "Has a room",
+  "modeSeeker": "Looking for a room",
+  "modeCoHunter": "Looking together",
+  "modeOpenToBoth": "Looking for room + flatmate",
   "cityLabel": "City",
   "localityLabel": "Locality",
   "subLocalityLabel": "Sub-locality",
@@ -225,6 +258,7 @@
   "availableFromUnset": "Select move-in availability",
   "selectDateCta": "Select date",
   "postListingTitle": "Post your space",
+  "postListingCta": "List your space in minutes",
   "postListingSubtitle": "Create a real flatmate listing using the existing 360 Ghar inventory backend.",
   "postListingBasics": "Basics",
   "postListingPricing": "Pricing",
@@ -239,11 +273,11 @@
   "settingsSessionSection": "Session",
   "navHome": "Home",
   "navSwipe": "Swipe",
-  "navLikesChat": "Likes & Chat",
+  "navLikesChat": "Inbox",
   "navSchedule": "Schedule",
   "navPost": "Post",
-  "navExplore": "Explore",
-  "navProfile": "Profile",
+  "navExplore": "Search",
+  "navProfile": "Me",
   "navVisits": "Visits",
   "onboardingGetStarted": "Get Started",
   "onboardingNext": "Next",
@@ -350,7 +384,8 @@
       }
     }
   },
-  "tapToSeeMore": "Tap to see more",
+  "tapToSeeMore": "View full profile",
+  "whyThisMatchWorks": "WHY THIS MATCH WORKS",
   "tapToCollapse": "Tap to collapse",
   "aboutMeSection": "About me",
   "noBioYet": "No bio yet.",
@@ -559,7 +594,7 @@
   "videoTooShort": "Video must be at least 15 seconds",
   "tapToUnmute": "Tap to unmute",
   "soundOn": "Sound on",
-  "superLikeCapLabel": "{count} Super Likes left today",
+  "superLikeCapLabel": "{count} Super Likes left",
   "@superLikeCapLabel": {
     "placeholders": {
       "count": {
@@ -567,7 +602,7 @@
       }
     }
   },
-  "swipeCounterLabel": "{count} swipes remaining today",
+  "swipeCounterLabel": "{count} swipes left today",
   "@swipeCounterLabel": {
     "placeholders": {
       "count": {
@@ -575,6 +610,10 @@
       }
     }
   },
+  "passActionLabel": "Pass",
+  "superLikeActionLabel": "Super Like",
+  "likeActionLabel": "Like",
+  "photoPendingLabel": "Photo pending",
   "readReceiptSent": "Sent",
   "readReceiptDelivered": "Delivered",
   "readReceiptRead": "Read",
@@ -966,10 +1005,12 @@
   },
   "failedToUpdateListingStatus": "Failed to update listing status.",
   "noLikesYet": "No likes yet",
-  "keepSwipingToFindMatches": "Keep swiping to find matches",
-  "noConversations": "No conversations",
-  "startChatWithMatch": "Start a chat with a match",
+  "noLikedYet": "No liked profiles yet",
+  "keepSwipingToFindMatches": "Complete your profile to get more visibility.",
+  "noConversations": "No chats yet",
+  "startChatWithMatch": "Like a few profiles to start conversations.",
   "matchAction": "Match",
+  "waitingForResponse": "Waiting",
   "matchCreateFailed": "Could not create match. Try again.",
   "couldNotLoadConversations": "Could not load conversations",
   "downloadToConnect": "Download 360 FlatMates to connect",
@@ -1221,5 +1262,26 @@
         "type": "int"
       }
     }
-  }
+  },
+  "availableNowLabel": "Available Now",
+  "availableLabel": "Available",
+  "availableFromShort": "From {date}",
+  "@availableFromShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "availableFromFull": "Available from {date}",
+  "@availableFromFull": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "genderSuffixMaleOnly": "M Only",
+  "genderSuffixFemaleOnly": "F Only",
+  "genderSuffixAny": "Any Gender"
 }

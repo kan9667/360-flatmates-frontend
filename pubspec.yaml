@@ -1,11 +1,11 @@
 name: flatmates_app
 description: "360 FlatMates"
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.2+5
 
 environment:
-  sdk: ^3.11.0
-  flutter: ">=3.38.4"
+  sdk: ^3.9.0
+  flutter: ">=3.35.0"
 
 dependencies:
   app_links: ^6.3.3
@@ -43,6 +43,7 @@ dependencies:
   confetti: ^0.7.0
   qr_flutter: ^4.1.0
   video_player: ^2.11.1
+  stack_trace: ^1.12.1
 
 dev_dependencies:
   build_runner: ^2.4.14
@@ -65,7 +66,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icons/app_icon.png"
-  adaptive_icon_background: "#5B4BCF"
+  adaptive_icon_background: "#F3F3F2"
   adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
 
 flutter_native_splash:

@@ -42,6 +42,9 @@ val releaseStoreFilePath = keystoreProperties.getProperty("storeFile")
     ?: System.getenv("KEYSTORE_FILE")
 val releaseSigningRequested = keystorePropertiesFile.exists()
     || System.getenv("KEYSTORE_FILE") != null
+    || System.getenv("KEY_ALIAS") != null
+    || System.getenv("KEY_PASSWORD") != null
+    || System.getenv("KEYSTORE_PASSWORD") != null
 val releaseSigningComplete = releaseKeyAlias.isNotBlank()
     && releaseKeyPassword.isNotBlank()
     && releaseStorePassword.isNotBlank()
@@ -55,8 +58,15 @@ if (releaseTaskRequested && releaseSigningRequested && !releaseSigningComplete) 
     )
 }
 
+if (releaseTaskRequested && !releaseSigningRequested && !releaseSigningComplete) {
+    throw GradleException(
+        "Release builds require signing. " +
+            "Provide key.properties or set KEYSTORE_FILE, KEY_ALIAS, KEY_PASSWORD, and KEYSTORE_PASSWORD environment variables."
+    )
+}
+
 android {
-    namespace = "com.the360ghar.flatmates"
+    namespace = "com.the360ghar.flatmates360"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -83,9 +93,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.the360ghar.flatmates"
+        applicationId = "com.the360ghar.flatmates360"
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Pin to 35 to match the previous Play Store release's device catalog.
+        // Flutter 3.41.x defaults to 36 which drops ~18k device profiles.
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

@@ -6,8 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_radius.dart';
 import '../core/theme/app_semantic_colors.dart';
-import '../l10n/gen/app_localizations.dart';
 import '../features/bootstrap/bootstrap_controller.dart';
+import '../l10n/gen/app_localizations.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({required this.navigationShell, super.key});
@@ -18,7 +18,7 @@ class AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    // CRITICAL FIX: Use select so AppShell only rebuilds when mode changes,
+    // Use select so AppShell only rebuilds when mode changes,
     // not on every bootstrap async lifecycle event.
     final mode = ref.watch(
           bootstrapControllerProvider.select(
@@ -123,19 +123,16 @@ class AppShell extends ConsumerWidget {
         label: locale.navSwipe,
       ),
       NavigationDestination(
-        icon: _navIcon('nav_likes_chat_tab', Icons.favorite_border_rounded),
+        icon: _navIcon('nav_inbox_tab', Icons.markunread_outlined),
         selectedIcon: _navIcon(
-          'nav_likes_chat_tab_selected',
-          Icons.favorite_rounded,
+          'nav_inbox_tab_selected',
+          Icons.markunread_rounded,
         ),
         label: locale.navLikesChat,
       ),
       NavigationDestination(
-        icon: _navIcon('nav_profile_tab', Icons.person_outline),
-        selectedIcon: _navIcon(
-          'nav_profile_tab_selected',
-          Icons.person_rounded,
-        ),
+        icon: _navIcon('nav_me_tab', Icons.person_outline),
+        selectedIcon: _navIcon('nav_me_tab_selected', Icons.person_rounded),
         label: locale.navProfile,
       ),
     ];

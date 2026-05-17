@@ -4,18 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../compatibility/compatibility_engine.dart';
+import '../theme/app_semantic_colors.dart';
 
 class CompatibilityRing extends ConsumerStatefulWidget {
   const CompatibilityRing({
     required this.percentage,
     this.size = 72,
     this.strokeWidth = 5,
+    this.newLabel = 'New',
     super.key,
   });
 
   final double percentage;
   final double size;
   final double strokeWidth;
+  final String newLabel;
 
   @override
   ConsumerState<CompatibilityRing> createState() => _CompatibilityRingState();
@@ -51,7 +54,12 @@ class _CompatibilityRingState extends ConsumerState<CompatibilityRing>
     super.dispose();
   }
 
-  Color _color() => compatibilityScoreColor(widget.percentage);
+  bool get _hasReliableScore => widget.percentage > 0;
+
+  Color _color() {
+    if (!_hasReliableScore) return AppSemanticColors.accent;
+    return compatibilityScoreColor(widget.percentage);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,8 +75,9 @@ class _CompatibilityRingState extends ConsumerState<CompatibilityRing>
           AnimatedBuilder(
             animation: _animation,
             builder: (context, _) {
-              final animatedValue =
-                  (widget.percentage / 100) * _animation.value;
+              final animatedValue = _hasReliableScore
+                  ? (widget.percentage / 100) * _animation.value
+                  : 0.0;
               return CustomPaint(
                 size: Size(widget.size, widget.size),
                 painter: _ArcPainter(
@@ -81,11 +90,13 @@ class _CompatibilityRingState extends ConsumerState<CompatibilityRing>
             },
           ),
           Text(
-            '${widget.percentage.round()}%',
+            _hasReliableScore ? '${widget.percentage.round()}%' : widget.newLabel,
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w800,
               color: color,
-              fontSize: widget.size * 0.22,
+              fontSize: _hasReliableScore
+                  ? widget.size * 0.22
+                  : widget.size * 0.20,
             ),
           ),
         ],

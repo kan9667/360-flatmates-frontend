@@ -106,7 +106,7 @@ https://the360ghar.com/support
 | Asset | Size | Notes |
 |-------|------|-------|
 | Feature graphic | 1024 × 500 px | Landscape banner, no transparency |
-| Icon | 512 × 512 px | Same as adaptive icon foreground |
+| Icon | 512 × 512 px | Same artwork as launcher icon, no transparency |
 | Phone screenshots | Min 2, max 8 | 1080 × 1920 px or 1080 × 2400 px |
 | Tablet screenshots (7") | Min 2, max 8 | 1200 × 1920 px |
 | Tablet screenshots (10") | Min 2, max 8 | 1600 × 2560 px |
@@ -117,7 +117,7 @@ https://the360ghar.com/support
 
 | Field | Value |
 |-------|-------|
-| Bundle ID | `com.the360ghar.flatmates` |
+| Bundle ID | `com.the360ghar.flatmates360` |
 | App Store ID | Set `APP_STORE_ID` with `--dart-define` after App Store Connect assigns it |
 | SKU | `360flatmates` |
 | Primary language | English |
@@ -127,7 +127,7 @@ https://the360ghar.com/support
 
 | Field | Value |
 |-------|-------|
-| Package name | `com.the360ghar.flatmates` |
+| Package name | `com.the360ghar.flatmates360` |
 | App signing | Google-managed |
 | Default language | English (US) |
 

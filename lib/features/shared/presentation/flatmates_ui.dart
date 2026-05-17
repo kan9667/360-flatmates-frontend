@@ -38,12 +38,14 @@ class FlatmatesAvatar extends StatefulWidget {
     this.imageUrl,
     this.size = 52,
     this.showRing = false,
+    this.onTap,
   });
 
   final String? name;
   final String? imageUrl;
   final double size;
   final bool showRing;
+  final VoidCallback? onTap;
 
   @override
   State<FlatmatesAvatar> createState() => _FlatmatesAvatarState();
@@ -116,22 +118,34 @@ class _FlatmatesAvatarState extends State<FlatmatesAvatar>
           : _AvatarFallback(initials: initials, size: widget.size),
     );
 
-    if (!widget.showRing) return avatar;
+    Widget avatarContent = avatar;
 
-    return AnimatedBuilder(
-      animation: _ringController,
-      builder: (context, child) {
-        return CustomPaint(
-          painter: _RingPainter(
-            progress: _ringController.value,
-            color: AppSemanticColors.accent,
-            strokeWidth: 2.5,
-          ),
-          child: child,
-        );
-      },
-      child: Padding(padding: const EdgeInsets.all(3), child: avatar),
-    );
+    if (widget.showRing) {
+      avatarContent = AnimatedBuilder(
+        animation: _ringController,
+        builder: (context, child) {
+          return CustomPaint(
+            painter: _RingPainter(
+              progress: _ringController.value,
+              color: AppSemanticColors.accent,
+              strokeWidth: 2.5,
+            ),
+            child: child,
+          );
+        },
+        child: Padding(padding: const EdgeInsets.all(3), child: avatar),
+      );
+    }
+
+    if (widget.onTap != null) {
+      avatarContent = GestureDetector(
+        onTap: widget.onTap,
+        behavior: HitTestBehavior.opaque,
+        child: avatarContent,
+      );
+    }
+
+    return avatarContent;
   }
 }
 
@@ -1003,16 +1017,18 @@ class _FlatmatesProfileGridCardState extends State<FlatmatesProfileGridCard>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final matchColor = compatibilityScoreColor(widget.matchPercentage ?? 0);
+    final hasReliableMatch =
+        widget.matchPercentage != null && widget.matchPercentage! > 0;
+    final matchColor = hasReliableMatch
+        ? compatibilityScoreColor(widget.matchPercentage!)
+        : AppSemanticColors.accent;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: double.infinity,
-          child: AspectRatio(
-            aspectRatio: 0.85,
+        Expanded(
+          child: SizedBox(
+            width: double.infinity,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Stack(
@@ -1032,12 +1048,38 @@ class _FlatmatesProfileGridCardState extends State<FlatmatesProfileGridCard>
                   else
                     DecoratedBox(
                       decoration: BoxDecoration(
-                        color: AppSemanticColors.accent.withValues(alpha: 0.15),
+                        gradient: LinearGradient(
+                          colors: [
+                            AppSemanticColors.accent.withValues(alpha: 0.18),
+                            AppSemanticColors.paper2,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                       ),
-                      child: Icon(
-                        Icons.person,
-                        size: 40,
-                        color: AppSemanticColors.accent,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              initialsFromName(widget.name),
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                color: AppSemanticColors.accent,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              AppLocalizations.of(context).photoPendingLabel,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: AppSemanticColors.textSecondaryFor(
+                                  theme.brightness,
+                                ),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   if (widget.matchPercentage != null)
@@ -1065,7 +1107,9 @@ class _FlatmatesProfileGridCardState extends State<FlatmatesProfileGridCard>
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            '${widget.matchPercentage!.toInt()}%',
+                            hasReliableMatch
+                                ? '${widget.matchPercentage!.toInt()}%'
+                                : 'New',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -1080,7 +1124,7 @@ class _FlatmatesProfileGridCardState extends State<FlatmatesProfileGridCard>
             ),
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         Text(
           widget.age == null ? widget.name : '${widget.name}, ${widget.age}',
           style: theme.textTheme.bodyLarge?.copyWith(
@@ -1103,17 +1147,11 @@ class _FlatmatesProfileGridCardState extends State<FlatmatesProfileGridCard>
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-        const SizedBox(height: 10),
-        TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.8, end: 1.0),
-          duration: AppMotion.slow,
-          curve: AppMotion.easeOutBack,
-          builder: (context, scale, child) {
-            return Transform.scale(scale: scale, child: child);
-          },
-          child: SizedBox(
+        if (widget.matchButtonLabel.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          SizedBox(
             width: double.infinity,
-            height: 42,
+            height: 34,
             child: FilledButton(
               onPressed: widget.onMatchTap,
               style: FilledButton.styleFrom(
@@ -1125,13 +1163,13 @@ class _FlatmatesProfileGridCardState extends State<FlatmatesProfileGridCard>
               child: Text(
                 widget.matchButtonLabel,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -1282,6 +1320,8 @@ String humanizeFlatmatesToken(String value) {
 String formatDistanceText(AppLocalizations locale, double? distanceKm) {
   if (distanceKm == null) return '';
   if (distanceKm < 1) return locale.distanceMeters((distanceKm * 1000).round());
-  if (distanceKm < 10) return locale.distanceKmDecimal(distanceKm.toStringAsFixed(1));
+  if (distanceKm < 10) {
+    return locale.distanceKmDecimal(distanceKm.toStringAsFixed(1));
+  }
   return locale.distanceKm(distanceKm.round());
 }

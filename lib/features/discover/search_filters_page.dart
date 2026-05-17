@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../bootstrap/bootstrap_controller.dart';
@@ -28,31 +29,19 @@ class SearchFiltersPage extends ConsumerStatefulWidget {
 
 class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
   final _searchController = TextEditingController();
-  String? _selectedLocation;
+  bool _initialized = false;
 
-  // Budget filter
   static const double _budgetMin = 5000;
   static const double _budgetMax = 100000;
   RangeValues _budgetValues = const RangeValues(5000, 50000);
 
-  // Room type filter: null = Any
-  String? _selectedRoomType; // 'private' | 'shared' | null
+  String? _selectedRoomType;
+  String? _selectedFurnishing;
+  String? _selectedGender;
+  String? _selectedMoveIn;
+  String? _selectedPets;
+  String? _selectedSmoking;
 
-  // Furnishing filter: null = Any
-  String? _selectedFurnishing; // 'furnished' | 'unfurnished' | null
-
-  // Gender filter: null = Any
-  String? _selectedGender; // 'male' | 'female' | null
-
-  // Move-in filter: null = Anytime
-  String? _selectedMoveIn; // 'immediate' | 'this_month' | 'next_month' | null
-
-  // More filters
-  String? _selectedPets; // 'yes' | 'no' | null (null = no preference)
-  String? _selectedSmoking; // 'yes' | 'no' | null (null = no preference)
-
-  /// Resolve a catalog's options as a list of (id, label) pairs.
-  /// Falls back to hardcoded keys with localized labels when catalog is empty.
   List<({String id, String label})> _catalogOrFallback(
     String catalogKey,
     List<String> fallbackIds,
@@ -65,13 +54,11 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
           .map((opt) => (id: opt.id, label: opt.label))
           .toList();
     }
-    // Build fallback with localized labels
     return fallbackIds
         .map((id) => (id: id, label: _localizedLabel(locale, catalogKey, id)))
         .toList();
   }
 
-  /// Resolve localized label for fallback filter option keys.
   String _localizedLabel(
     AppLocalizations locale,
     String catalogKey,
@@ -212,14 +199,8 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
     };
   }
 
-  /// Returns a list of (label, onRemove) pairs for all active filters.
   List<({String label, VoidCallback onRemove})> get _activeFilters {
     return [
-      if (_selectedLocation != null)
-        (
-          label: _selectedLocation!,
-          onRemove: () => setState(() => _selectedLocation = null),
-        ),
       if (_budgetValues.start != _budgetMin || _budgetValues.end != _budgetMax)
         (
           label:
@@ -263,7 +244,6 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
 
   void _clearAllFilters() {
     setState(() {
-      _selectedLocation = null;
       _budgetValues = const RangeValues(_budgetMin, _budgetMax);
       _selectedRoomType = null;
       _selectedFurnishing = null;
@@ -279,14 +259,11 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
       query: _searchController.text.trim().isEmpty
           ? null
           : _searchController.text.trim(),
-      location: _selectedLocation,
       priceMin: _budgetValues.start == _budgetMin ? null : _budgetValues.start,
       priceMax: _budgetValues.end == _budgetMax ? null : _budgetValues.end,
       sharingType: _normalizedSharingType(),
       genderPreference: _normalizedGenderPreference(),
-      features: [
-        if (_selectedFurnishing != null) _selectedFurnishing!,
-      ],
+      features: [?_selectedFurnishing],
       pets: _selectedPets,
       smoking: _selectedSmoking,
       moveInTimeline: _selectedMoveIn,
@@ -298,6 +275,31 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_initialized) {
+      _initialized = true;
+      final existing = ref.read(discoverFiltersProvider);
+      if (existing != null) {
+        _budgetValues = RangeValues(
+          existing.priceMin ?? _budgetMin,
+          existing.priceMax ?? _budgetMax,
+        );
+        _selectedRoomType = switch (existing.sharingType) {
+          'private_room' => 'private',
+          'shared_room' => 'shared',
+          _ => existing.sharingType,
+        };
+        _selectedFurnishing =
+            existing.features.isNotEmpty ? existing.features.first : null;
+        _selectedGender = existing.genderPreference;
+        _selectedMoveIn = existing.moveInTimeline;
+        _selectedPets = existing.pets;
+        _selectedSmoking = existing.smoking;
+        if (existing.query != null && existing.query!.isNotEmpty) {
+          _searchController.text = existing.query!;
+        }
+      }
+    }
+
     final locale = AppLocalizations.of(context);
     final listings = ref.watch(discoverListingsProvider);
     final activeFilters = _activeFilters;
@@ -317,56 +319,24 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
       body: SafeArea(
         child: listings.when(
           data: (items) {
-            final locations =
-                items
-                    .map((item) => item.locality ?? item.city)
-                    .whereType<String>()
-                    .where((value) => value.trim().isNotEmpty)
-                    .toSet()
-                    .toList()
-                  ..sort();
-
             return Column(
               children: [
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.screen,
-                      AppSpacing.md,
-                      AppSpacing.screen,
                       AppSpacing.lg,
+                      AppSpacing.sm,
+                      AppSpacing.lg,
+                      AppSpacing.xl,
                     ),
                     children: [
-                      // Search bar
                       FlatmatesSearchBar(
                         controller: _searchController,
                         hint: locale.homeSearchHint,
-                        trailingIcon: Icons.location_on_outlined,
+                        trailingIcon: Icons.search_rounded,
                       ),
-
-                      // Selected filter summary (removable chips)
                       ActiveFilterChips(filters: activeFilters),
-
                       const SizedBox(height: AppSpacing.lg),
-
-                      // Location filter
-                      FilterSectionCard(
-                        title: locale.cityLabel,
-                        subtitle: _selectedLocation,
-                        icon: Icons.location_on_outlined,
-                        initiallyExpanded: true,
-                        child: FilterChipWrap(
-                          values: locations,
-                          selected: _selectedLocation,
-                          onSelected: (value) => setState(() {
-                            _selectedLocation = _selectedLocation == value
-                                ? null
-                                : value;
-                          }),
-                        ),
-                      ),
-
-                      // Budget filter
                       BudgetFilterCard(
                         budgetValues: _budgetValues,
                         budgetMin: _budgetMin,
@@ -375,12 +345,12 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
                             setState(() => _budgetValues = values),
                         formatBudget: _formatBudget,
                       ),
-
-                      // Room Type filter
                       FilterSectionCard(
                         title: locale.roomTypeFilterLabel,
                         subtitle: _roomTypeSubtitle(),
                         icon: Icons.bed_outlined,
+                        iconColor: AppSemanticColors.blueMid,
+                        iconBgColor: AppSemanticColors.blueSoft,
                         child: CatalogFilterChips(
                           options: _catalogOrFallback('flatmates_room_types', [
                             'any',
@@ -394,14 +364,15 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
                           ),
                         ),
                       ),
-
-                      // Furnishing filter
                       FilterSectionCard(
                         title: locale.furnishingFilterLabel,
                         subtitle: _furnishingSubtitle(),
                         icon: Icons.chair_outlined,
+                        iconColor: AppSemanticColors.orangeMid,
+                        iconBgColor: AppSemanticColors.orangeSoft,
                         child: CatalogFilterChips(
-                          options: _catalogOrFallback('flatmates_furnishing', [
+                          options:
+                              _catalogOrFallback('flatmates_furnishing', [
                             'any',
                             'furnished',
                             'unfurnished',
@@ -409,16 +380,17 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
                           selectedId: _selectedFurnishing ?? 'any',
                           anyKey: 'any',
                           onSelected: (id) => setState(
-                            () => _selectedFurnishing = id == 'any' ? null : id,
+                            () =>
+                                _selectedFurnishing = id == 'any' ? null : id,
                           ),
                         ),
                       ),
-
-                      // Gender filter
                       FilterSectionCard(
                         title: locale.genderFilterLabel,
                         subtitle: _genderSubtitle(),
                         icon: Icons.people_outlined,
+                        iconColor: AppSemanticColors.purpleMid,
+                        iconBgColor: AppSemanticColors.purpleSoft,
                         child: CatalogFilterChips(
                           options: _catalogOrFallback(
                             'flatmates_gender_options',
@@ -431,12 +403,12 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
                           ),
                         ),
                       ),
-
-                      // Move-in filter
                       FilterSectionCard(
                         title: locale.moveInFilterLabel,
                         subtitle: _moveInSubtitle(),
                         icon: Icons.calendar_today_outlined,
+                        iconColor: AppSemanticColors.tealMid,
+                        iconBgColor: AppSemanticColors.tealSoft,
                         child: CatalogFilterChips(
                           options: _catalogOrFallback(
                             'flatmates_move_in_timelines',
@@ -449,12 +421,11 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
                           ),
                         ),
                       ),
-
-                      // More filters (Pets & Smoking)
                       MoreFiltersCard(
                         selectedPets: _selectedPets,
                         selectedSmoking: _selectedSmoking,
-                        onPetsChanged: (v) => setState(() => _selectedPets = v),
+                        onPetsChanged: (v) =>
+                            setState(() => _selectedPets = v),
                         onSmokingChanged: (v) =>
                             setState(() => _selectedSmoking = v),
                         catalogOrFallback: _catalogOrFallback,
@@ -462,8 +433,6 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
                     ],
                   ),
                 ),
-
-                // Sticky bottom bar
                 FlatmatesBottomActionBar(
                   primaryButtonKey: const Key('search_show_results_button'),
                   label: locale.showResultsCta,

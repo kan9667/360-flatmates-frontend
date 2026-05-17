@@ -80,7 +80,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isDeepLink =
           location.startsWith('/chats/') ||
           location.startsWith('/flat-details/') ||
+          location.startsWith('/flatmates/listing/') ||
+          location.startsWith('/flatmates/chat/') ||
           location.startsWith('/listing-review/') ||
+          location.startsWith('/manage-listings') ||
           location == '/notifications' ||
           location == '/schedule-visit' ||
           location == '/search-filters' ||
@@ -180,6 +183,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           }
           return FlatDetailsPage(listingId: id);
         },
+      ),
+      GoRoute(
+        path: '/flatmates/listing/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        redirect: (context, state) =>
+            '/flat-details/${state.pathParameters['id']}',
+      ),
+      GoRoute(
+        path: '/flatmates/chat/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        redirect: (context, state) =>
+            '/chats/${state.pathParameters['id']}',
       ),
       GoRoute(
         path: '/notifications',
@@ -292,6 +307,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           listingId: int.tryParse(state.uri.queryParameters['listingId'] ?? ''),
         ),
       ),
+      GoRoute(
+        path: '/manage-listings',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ManageListingPage(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return AppShell(navigationShell: navigationShell);
@@ -390,12 +410,6 @@ class _ModeTab2Switcher extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bootstrap = ref.watch(bootstrapControllerProvider).valueOrNull;
-    final mode = bootstrap?.profile.mode ?? 'co_hunter';
-    final isRoomPoster = mode.trim().toLowerCase() == 'room_poster';
-    if (isRoomPoster) {
-      return const ManageListingPage();
-    }
     return const MapViewPage();
   }
 }

@@ -6,12 +6,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/debouncer.dart';
+import '../../core/errors/app_failure.dart';
+import '../../core/errors/l10n_bridge.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../bootstrap/bootstrap_controller.dart';
+import '../chats/chats_repository.dart';
 import '../shared/presentation/flatmates_error_state.dart';
 import '../shared/presentation/flatmates_skeleton.dart';
 import 'application/profile_compatibility.dart';
 import 'application/profile_view_tracker.dart';
+import 'application/swipe_deck_controller.dart';
 import 'application/swipe_quota_controller.dart';
 import 'presentation/match_celebration_route.dart';
 import 'presentation/widgets/swipe_action_buttons.dart';
@@ -19,6 +23,8 @@ import 'presentation/widgets/swipe_card_stack.dart';
 import 'presentation/widgets/swipe_empty_state.dart';
 import 'presentation/widgets/swipe_quota_header.dart';
 import 'swipe_repository.dart';
+
+part 'swipe_deck_actions.dart';
 
 class SwipeDeckPage extends ConsumerStatefulWidget {
   const SwipeDeckPage({super.key});
@@ -106,9 +112,18 @@ class _SwipeDeckPageState extends ConsumerState<SwipeDeckPage>
   }
 
   void _onPanStart(DragStartDetails details) {
-    if (_isAnimating || _isExpanded) return;
+    if (_isAnimating) return;
     _snapBackController.stop();
-    setState(() { _isDragging = true; _dragOffset = Offset.zero; });
+    if (_isExpanded) {
+      setState(() {
+        _isExpanded = false;
+      });
+      _recordExpandedProfileView();
+    }
+    setState(() {
+      _isDragging = true;
+      _dragOffset = Offset.zero;
+    });
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
@@ -153,6 +168,24 @@ class _SwipeDeckPageState extends ConsumerState<SwipeDeckPage>
   }
 
   void _triggerFlyOff({required bool superLike}) {
+    final quota = ref.read(swipeQuotaControllerProvider);
+    if (superLike && quota.superLikesRemaining <= 0) {
+      if (mounted) {
+        final locale = AppLocalizations.of(context);
+        _showSnack(locale.superLikeCapLabel(0));
+      }
+      _triggerSnapBack();
+      return;
+    }
+    if (quota.isCapped) {
+      if (mounted) {
+        final locale = AppLocalizations.of(context);
+        _showSnack(locale.swipeCounterLabel(0));
+      }
+      _triggerSnapBack();
+      return;
+    }
+
     _recordExpandedProfileView();
     if (superLike) {
       _flyOffDirectionX = 0;
@@ -189,7 +222,9 @@ class _SwipeDeckPageState extends ConsumerState<SwipeDeckPage>
     if (status != AnimationStatus.completed) return;
     _flyOffController.removeListener(_onFlyOffTick);
     _flyOffController.removeStatusListener(_onFlyOffStatus);
-    setState(() { _dragOffset = Offset.zero; });
+    setState(() {
+      _dragOffset = Offset.zero;
+    });
     _processSwipeAction(_actionFromDirection());
   }
 
@@ -212,7 +247,7 @@ class _SwipeDeckPageState extends ConsumerState<SwipeDeckPage>
       return;
     }
 
-    final profiles = ref.read(swipeProfilesProvider).valueOrNull ?? [];
+    final profiles = ref.read(swipeDeckControllerProvider).valueOrNull ?? [];
     final bootstrap = ref.read(bootstrapControllerProvider).valueOrNull;
     final userProfile = bootstrap?.profile;
     final visible = profiles.where((i) => i.id != userProfile?.id).toList();
@@ -231,7 +266,10 @@ class _SwipeDeckPageState extends ConsumerState<SwipeDeckPage>
           .swipeProfile(targetUserId: item.id, action: action);
     } catch (e) {
       if (mounted) {
-        _showSnack(locale.actionFailedRetry);
+        final message = e is AppFailure
+            ? e.userMessage(locale.toUserMessageL10n())
+            : locale.actionFailedRetry;
+        _showSnack(message);
       }
       _resetAfterSwipe();
       return;
@@ -243,12 +281,22 @@ class _SwipeDeckPageState extends ConsumerState<SwipeDeckPage>
         .read(swipeQuotaControllerProvider.notifier)
         .recordSwipe(isSuperLike: action == 'super_like');
 
+    ref.read(swipeDeckControllerProvider.notifier).markSwiped(item.id);
+
     setState(() {
-      _currentIndex++;
       _isExpanded = false;
     });
 
     final isLikeAction = action == 'like' || action == 'super_like';
+
+    if (isLikeAction) {
+      ref.invalidate(conversationsProvider);
+      ref.invalidate(outgoingLikesProvider);
+      if (swipeResult.didMatch) {
+        ref.invalidate(incomingLikesProvider);
+      }
+    }
+
     if (isLikeAction && swipeResult.didMatch) {
       _showMatchCelebration(
         peerName: item.fullName ?? 'Flatmate',
@@ -267,12 +315,6 @@ class _SwipeDeckPageState extends ConsumerState<SwipeDeckPage>
 
     _flyOffController.addListener(_onFlyOffTick);
     _flyOffController.addStatusListener(_onFlyOffStatus);
-  }
-
-  void _showSnack(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _recordExpandedProfileView() {
@@ -299,27 +341,11 @@ class _SwipeDeckPageState extends ConsumerState<SwipeDeckPage>
     setState(() => _isExpanded = !_isExpanded);
   }
 
-  void _showMatchCelebration({
-    required String peerName,
-    required String? peerImageUrl,
-    required int? conversationId,
-  }) {
-    final userProfile = ref
-        .read(bootstrapControllerProvider)
-        .valueOrNull
-        ?.profile;
-    pushMatchCelebration(
-      context,
-      userName: userProfile?.fullName ?? 'You',
-      userImageUrl: userProfile?.profileImageUrl,
-      peerName: peerName,
-      peerImageUrl: peerImageUrl,
-      conversationId: conversationId,
-    );
-  }
-
   void _resetAfterSwipe() {
-    setState(() { _dragOffset = Offset.zero; _isAnimating = false; });
+    setState(() {
+      _dragOffset = Offset.zero;
+      _isAnimating = false;
+    });
     _flyOffController.addListener(_onFlyOffTick);
     _flyOffController.addStatusListener(_onFlyOffStatus);
   }
@@ -330,14 +356,20 @@ class _SwipeDeckPageState extends ConsumerState<SwipeDeckPage>
     return 'pass';
   }
 
+  void _beginButtonFlyOff() {
+    setState(() {
+      _isAnimating = true;
+    });
+  }
+
   void _refreshProfiles() {
     setState(() => _currentIndex = 0);
-    ref.invalidate(swipeProfilesProvider);
+    ref.read(swipeDeckControllerProvider.notifier).refresh();
   }
 
   @override
   Widget build(BuildContext context) {
-    final profiles = ref.watch(swipeProfilesProvider);
+    final profiles = ref.watch(swipeDeckControllerProvider);
     final userProfile = ref.watch(
       bootstrapControllerProvider.select((s) => s.valueOrNull?.profile),
     );
@@ -440,54 +472,10 @@ class _SwipeDeckPageState extends ConsumerState<SwipeDeckPage>
       error: (e, _) => Scaffold(
         body: FlatmatesErrorState(
           message: locale.failedToLoadProfiles,
-          onRetry: () => ref.invalidate(swipeProfilesProvider),
+          onRetry: () =>
+              ref.read(swipeDeckControllerProvider.notifier).refresh(),
         ),
       ),
     );
-  }
-
-  Future<void> _handleActionButton(String action) async {
-    if (_isAnimating) return;
-
-    HapticFeedback.lightImpact();
-
-    final quota = ref.read(swipeQuotaControllerProvider);
-    if (action == 'super_like' && quota.superLikesRemaining <= 0) {
-      final locale = AppLocalizations.of(context);
-      _showSnack(locale.superLikeCapLabel(0));
-      return;
-    }
-
-    if (quota.isCapped) {
-      final locale = AppLocalizations.of(context);
-      _showSnack(locale.swipeCounterLabel(0));
-      return;
-    }
-
-    switch (action) {
-      case 'like':
-        _flyOffDirectionX = 1;
-        _flyOffDirectionY = 0;
-        break;
-      case 'pass':
-        _flyOffDirectionX = -1;
-        _flyOffDirectionY = 0;
-        break;
-      case 'super_like':
-        _flyOffDirectionX = 0;
-        _flyOffDirectionY = -1;
-        break;
-    }
-
-    _flyOffStartOffset = Offset.zero;
-    _dragOffset = Offset.zero;
-    _isButtonTriggered = true;
-    setState(() { _isAnimating = true; });
-
-    _flyOffController.removeListener(_onFlyOffTick);
-    _flyOffController.removeStatusListener(_onFlyOffStatus);
-    _flyOffController.addListener(_onFlyOffTick);
-    _flyOffController.addStatusListener(_onFlyOffStatus);
-    _flyOffController.forward(from: 0);
   }
 }
