@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/map/map_controller.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../l10n/gen/app_localizations.dart';
 
+/// Canonical "simple map" example: a non-interactive MapLibre map centered on a
+/// single coordinate with one pin. Because all gestures are disabled the camera
+/// can never move, so the pin is drawn as a centered Flutter overlay instead of
+/// a map symbol — this avoids depending on the style's glyph/sprite sheet and
+/// keeps the marker pixel-perfect.
 class MiniMapView extends StatelessWidget {
   final double latitude;
   final double longitude;
@@ -31,66 +36,39 @@ class MiniMapView extends StatelessWidget {
       borderRadius: AppRadius.mdBorder,
       child: SizedBox(
         height: height,
-        child: FlutterMap(
-          options: MapOptions(
-            initialCenter: center,
-            initialZoom: 15,
-            interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.none,
-            ),
-          ),
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.flatmates.app',
+            MapLibreMap(
+              styleString: kLibertyStyle,
+              initialCameraPosition: CameraPosition(target: center, zoom: 15),
+              // Fully non-interactive single-pin map.
+              scrollGesturesEnabled: false,
+              zoomGesturesEnabled: false,
+              rotateGesturesEnabled: false,
+              tiltGesturesEnabled: false,
+              dragEnabled: false,
+              doubleClickZoomEnabled: false,
+              compassEnabled: false,
+              myLocationEnabled: false,
+              // Keep attribution visible per OSM/OpenFreeMap license.
+              attributionButtonPosition: AttributionButtonPosition.bottomRight,
             ),
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: center,
-                  width: 40,
-                  height: 40,
-                  child: Icon(
-                    Icons.location_on,
-                    color: AppSemanticColors.accent,
-                    size: 40,
-                  ),
+            // The pin: map is locked on `center`, so screen-center == `center`.
+            IgnorePointer(
+              child: Padding(
+                // Anchor the tip of the pin (icon bottom) on the centre point.
+                padding: const EdgeInsets.only(bottom: 40),
+                child: Icon(
+                  Icons.location_on,
+                  color: AppSemanticColors.accent,
+                  size: 40,
                 ),
-              ],
+              ),
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class MapRadiusCircle extends StatelessWidget {
-  final LatLng center;
-  final double radiusKm;
-  final Color? color;
-
-  const MapRadiusCircle({
-    required this.center,
-    required this.radiusKm,
-    super.key,
-    this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final circleColor = color ?? AppSemanticColors.accent;
-
-    return CircleLayer(
-      circles: [
-        CircleMarker(
-          point: center,
-          radius: radiusKm * 1000,
-          color: circleColor.withValues(alpha: 0.15),
-          borderColor: circleColor.withValues(alpha: 0.4),
-          borderStrokeWidth: 1.5,
-        ),
-      ],
     );
   }
 }
@@ -166,7 +144,9 @@ class _MapControlButton extends StatelessWidget {
             ? AppSemanticColors.darkSurfaceElevated
             : AppSemanticColors.card,
         borderRadius: AppRadius.smBorder,
-        boxShadow: [AppShadows.floatingFor(isDark ? Brightness.dark : Brightness.light)],
+        boxShadow: [
+          AppShadows.floatingFor(isDark ? Brightness.dark : Brightness.light),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -179,9 +159,7 @@ class _MapControlButton extends StatelessWidget {
             child: Icon(
               icon,
               size: 20,
-              color: isDark
-                  ? AppSemanticColors.paper3
-                  : AppSemanticColors.ink2,
+              color: isDark ? AppSemanticColors.paper3 : AppSemanticColors.ink2,
             ),
           ),
         ),
@@ -212,9 +190,7 @@ class GetDirectionsButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         foregroundColor: AppSemanticColors.accent,
         side: const BorderSide(color: AppSemanticColors.accent),
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.smBorder,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.smBorder),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.md,

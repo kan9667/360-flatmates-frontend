@@ -98,7 +98,10 @@ class BlockedUsersPage extends ConsumerWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text(locale.userUnblocked)),
                                 );
-                              } catch (_) {
+                              } catch (e) {
+                                debugPrint(
+                                  'BlockedUsersPage: unblock failed for user ${user.blockedUserId}: $e',
+                                );
                                 if (!context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text(locale.unblockFailed)),

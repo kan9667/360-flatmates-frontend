@@ -8,8 +8,10 @@ import '../app_shell.dart';
 import '../../features/auth/auth_controller.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../features/auth/presentation/enter_phone_page.dart';
+import '../../features/auth/presentation/forgot_password_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/otp_page.dart';
+import '../../features/auth/presentation/reset_password_page.dart';
 import '../../features/auth/presentation/signup_page.dart';
 import '../../features/auth/presentation/splash_page.dart';
 import '../../features/bootstrap/bootstrap_controller.dart';
@@ -17,14 +19,17 @@ import '../../features/chats/chat_thread_page.dart';
 import '../../features/chats/chats_repository.dart';
 import '../../features/chats/conversations_page.dart';
 import '../../features/discover/discover_page.dart';
+import '../../features/discover/presentation/browse_listings_page.dart';
 import '../../features/discover/change_location_page.dart';
 import '../../features/location_search/location_search_page.dart';
 import '../../features/discover/flat_details_page.dart';
 import '../../features/discover/map_view_page.dart';
 import '../../features/discover/search_filters_page.dart';
+import '../../features/feedback/domain/feedback_model.dart';
+import '../../features/feedback/presentation/feedback_form_page.dart';
 import '../../features/listings/create_listing_page.dart';
 import '../../features/listings/listing_under_review_page.dart';
-import '../../features/listings/manage_listing_page.dart';
+import '../../features/listings/manage_listing_page.dart' as listings;
 import '../../features/notifications/notifications_page.dart';
 import '../../features/onboarding/onboarding_page.dart';
 import '../../features/onboarding/waitlist_page.dart';
@@ -34,10 +39,13 @@ import '../../features/profile/profile_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/settings/blocked_users_page.dart';
 import '../../features/settings/change_password_page.dart';
+import '../../features/settings/delete_account_page.dart';
+import '../../features/settings/notification_settings_page.dart';
 import '../../features/shared/presentation/flatmates_bottom_sheet.dart';
 import '../../features/swipe/swipe_deck_page.dart';
 import '../../features/swipe/match_celebration_screen.dart';
 import '../../features/swipe/match_qna_nudge.dart';
+import '../../features/profile/legal_content_page.dart';
 import '../../features/visits/schedule_visit_page.dart';
 import '../../features/visits/visits_page.dart';
 
@@ -75,7 +83,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           location == '/enter-phone' ||
           location == '/login' ||
           location == '/signup' ||
-          location == '/otp';
+          location == '/otp' ||
+          location == '/forgot-password' ||
+          location == '/reset-password';
       final isOnboarding = location == '/onboarding';
       final isDeepLink =
           location.startsWith('/chats/') ||
@@ -85,10 +95,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           location.startsWith('/listing-review/') ||
           location.startsWith('/manage-listings') ||
           location == '/notifications' ||
+          location == '/notification-settings' ||
           location == '/schedule-visit' ||
           location == '/search-filters' ||
-          location == '/help-safety' ||
+          location.startsWith('/help-safety') ||
+          location == '/privacy-policy' ||
+          location == '/terms-of-service' ||
           location == '/change-password' ||
+          location == '/delete-account' ||
           location == '/blocked-users' ||
           location == '/match-celebration' ||
           location == '/waitlist' ||
@@ -101,7 +115,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (!auth.isLoggedIn) {
-        return isAuthRoute ? null : '/enter-phone';
+        return isAuthRoute ? null : '/login';
       }
 
       if (bootstrap.isLoading) {
@@ -161,6 +175,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             OtpPage(phone: state.uri.queryParameters['phone'] ?? ''),
       ),
       GoRoute(
+        path: '/forgot-password',
+        builder: (context, state) =>
+            ForgotPasswordPage(phone: state.uri.queryParameters['phone']),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        builder: (context, state) => const ResetPasswordPage(),
+      ),
+      GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingPage(),
       ),
@@ -193,13 +216,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/flatmates/chat/:id',
         parentNavigatorKey: _rootNavigatorKey,
-        redirect: (context, state) =>
-            '/chats/${state.pathParameters['id']}',
+        redirect: (context, state) => '/chats/${state.pathParameters['id']}',
       ),
       GoRoute(
         path: '/notifications',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const NotificationsPage(),
+      ),
+      GoRoute(
+        path: '/notification-settings',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NotificationSettingsPage(),
       ),
       GoRoute(
         path: '/change-location',
@@ -237,11 +264,71 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/help-safety',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const HelpSafetyPage(),
+        routes: [
+          GoRoute(
+            path: 'faq',
+            builder: (context, state) =>
+                const HelpSafetyTopicPage(topic: HelpSafetyTopic.faq),
+          ),
+          GoRoute(
+            path: 'popular-topics',
+            builder: (context, state) =>
+                const HelpSafetyTopicPage(topic: HelpSafetyTopic.popularTopics),
+          ),
+          GoRoute(
+            path: 'bookings',
+            builder: (context, state) => const HelpSafetyTopicPage(
+              topic: HelpSafetyTopic.bookingAgreements,
+            ),
+          ),
+          GoRoute(
+            path: 'account',
+            builder: (context, state) => const HelpSafetyTopicPage(
+              topic: HelpSafetyTopic.accountProfile,
+            ),
+          ),
+          GoRoute(
+            path: 'contact',
+            builder: (context, state) =>
+                const HelpSafetyTopicPage(topic: HelpSafetyTopic.contact),
+          ),
+          GoRoute(
+            path: 'report-bug',
+            builder: (context, state) =>
+                const FeedbackFormPage(type: FeedbackType.bug),
+          ),
+          GoRoute(
+            path: 'request-feature',
+            builder: (context, state) =>
+                const FeedbackFormPage(type: FeedbackType.feature),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/privacy-policy',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const LegalContentPage(
+          title: 'Privacy Policy',
+          assetPath: 'assets/legal/privacy_policy.md',
+        ),
+      ),
+      GoRoute(
+        path: '/terms-of-service',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const LegalContentPage(
+          title: 'Terms of Service',
+          assetPath: 'assets/legal/terms_of_service.md',
+        ),
       ),
       GoRoute(
         path: '/change-password',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ChangePasswordPage(),
+      ),
+      GoRoute(
+        path: '/delete-account',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const DeleteAccountPage(),
       ),
       GoRoute(
         path: '/blocked-users',
@@ -310,7 +397,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/manage-listings',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ManageListingPage(),
+        builder: (context, state) => const listings.ManageListingPage(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -322,6 +409,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/discover',
                 builder: (context, state) => const DiscoverPage(),
+                routes: [
+                  GoRoute(
+                    path: 'browse-listings',
+                    builder: (context, state) => const BrowseListingsPage(),
+                  ),
+                ],
               ),
             ],
           ),
@@ -410,6 +503,16 @@ class _ModeTab2Switcher extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return const MapViewPage();
+    final mode = ref.watch(
+      bootstrapControllerProvider.select((v) => v.valueOrNull?.profile.mode),
+    );
+    // Keyed by mode so the branch's State is rebuilt cleanly when the
+    // user switches seeker_mode mid-session.
+    if (mode == 'room_poster') {
+      return const listings.ManageListingPage(
+        key: ValueKey('tab2_room_poster'),
+      );
+    }
+    return const MapViewPage(key: ValueKey('tab2_map'));
   }
 }

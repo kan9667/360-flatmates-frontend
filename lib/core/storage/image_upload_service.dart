@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -87,7 +88,8 @@ class ImageUploadService {
     try {
       await controller.initialize();
       return controller.value.duration;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ImageUploadService._getVideoDuration failed: $e');
       return Duration.zero;
     } finally {
       await controller.dispose();
@@ -132,7 +134,9 @@ class ImageUploadService {
     final supabase = Supabase.instance.client;
     final uid = supabase.auth.currentUser?.id;
     if (uid == null) {
-      return const UploadFailure(reason: 'Not authenticated — please log in again.');
+      return const UploadFailure(
+        reason: 'Not authenticated — please log in again.',
+      );
     }
 
     final ext = file.path.split('.').last;
@@ -144,7 +148,9 @@ class ImageUploadService {
       await supabase.storage.from(_bucket).upload(name, file);
       // 7-day signed URL. TODO: migrate to path-based storage and generate
       // fresh signed URLs on read so URLs are short-lived and revocable.
-      final url = await supabase.storage.from(_bucket).createSignedUrl(name, 604800);
+      final url = await supabase.storage
+          .from(_bucket)
+          .createSignedUrl(name, 604800);
       return UploadSuccess(url);
     } on StorageException catch (e) {
       return UploadFailure(

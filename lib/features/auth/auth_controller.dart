@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/errors/app_failure.dart';
@@ -59,7 +60,8 @@ class AuthController extends Notifier<AuthState> {
         status: AuthStatus.authenticated,
         phone: _repository.currentPhone,
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('AuthController.checkSession failed: $e');
       state = const AuthState(status: AuthStatus.unauthenticated);
     }
   }
@@ -157,11 +159,31 @@ class AuthController extends Notifier<AuthState> {
   Future<void> signOut() async {
     try {
       await ref.read(notificationServiceProvider).clearToken();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('AuthController.signOut: clearToken failed: $e');
+    }
     try {
       await _repository.signOut();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('AuthController.signOut: repository.signOut failed: $e');
+    }
     state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  Future<bool> deleteAccount() async {
+    try {
+      await ref.read(notificationServiceProvider).clearToken();
+    } catch (e) {
+      debugPrint('AuthController.deleteAccount: clearToken failed: $e');
+    }
+    try {
+      await _repository.deleteAccount();
+      state = const AuthState(status: AuthStatus.unauthenticated);
+      return true;
+    } catch (e) {
+      debugPrint('AuthController.deleteAccount: failed: $e');
+      return false;
+    }
   }
 }
 

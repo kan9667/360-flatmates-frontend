@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart' hide Path;
+import 'package:maplibre_gl/maplibre_gl.dart';
 
 import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../discover_repository.dart';
 
@@ -17,11 +17,41 @@ String _formatCompactPrice(int amount) {
   return '₹${thousands.toStringAsFixed(thousands == thousands.roundToDouble() ? 0 : 1)}K';
 }
 
-List<Marker> buildClusteredMarkers({
+/// A map marker described as data: a geographic [point] plus the Flutter widget
+/// that should be drawn at that point. The map page projects [point] to screen
+/// pixels via the MapLibre controller and positions [child] as an overlay.
+///
+/// We deliberately keep the rich Flutter chip widgets (price bubble, BHK badge,
+/// cluster ring) rather than rendering native symbol layers, so the existing
+/// visual design and tap-to-open-sheet behavior carry over unchanged. The
+/// app's clustering is locality-based (not zoom-based), which an overlay
+/// preserves exactly; native GeoJSON clustering would change that semantics.
+class FlatmatesMapMarker {
+  const FlatmatesMapMarker({
+    required this.id,
+    required this.point,
+    required this.size,
+    required this.child,
+  });
+
+  /// Stable key for diffing/positioning (listing id or cluster key).
+  final String id;
+
+  /// MapLibre coordinate (latitude first).
+  final LatLng point;
+
+  /// The pixel footprint of [child]; used to center the overlay on [point].
+  final Size size;
+
+  final Widget child;
+}
+
+List<FlatmatesMapMarker> buildClusteredMarkers({
   required List<PropertyListing> items,
   required ThemeData theme,
   required void Function(PropertyListing) onListingTap,
   required void Function(List<PropertyListing>) onClusterTap,
+  String? selectedPropertyId,
 }) {
   final groups = <String, List<PropertyListing>>{};
   for (final item in items) {
@@ -32,7 +62,7 @@ List<Marker> buildClusteredMarkers({
     groups.putIfAbsent(key, () => []).add(item);
   }
 
-  final markers = <Marker>[];
+  final markers = <FlatmatesMapMarker>[];
 
   for (final entry in groups.entries) {
     final groupItems = entry.value;
@@ -40,18 +70,20 @@ List<Marker> buildClusteredMarkers({
     if (groupItems.length == 1) {
       final item = groupItems.first;
       final isRoom = item.ownerId != null;
-      final color =
-          isRoom ? const Color(0xFFFF9800) : const Color(0xFF2196F3);
+      final color = isRoom
+          ? AppSemanticColors.mapMarkerRoom
+          : AppSemanticColors.mapMarkerProperty;
       markers.add(
-        Marker(
+        FlatmatesMapMarker(
+          id: 'listing-${item.id}',
           point: LatLng(item.latitude!, item.longitude!),
-          width: 72,
-          height: 68,
+          size: const Size(72, 68),
           child: _ListingMarkerWidget(
             price: item.monthlyRent.toInt(),
             color: color,
             bedrooms: item.bedrooms,
             sharingType: item.sharingType,
+            isSelected: selectedPropertyId == item.id.toString(),
             onTap: () => onListingTap(item),
           ),
         ),
@@ -65,10 +97,10 @@ List<Marker> buildClusteredMarkers({
           groupItems.length;
 
       markers.add(
-        Marker(
+        FlatmatesMapMarker(
+          id: 'cluster-${entry.key}',
           point: LatLng(avgLat, avgLng),
-          width: 56,
-          height: 70,
+          size: const Size(56, 70),
           child: _ClusterMarkerWidget(
             clusterItems: groupItems,
             label: groupItems.first.locality ?? 'listings',
@@ -89,6 +121,7 @@ class _ListingMarkerWidget extends StatelessWidget {
     required this.onTap,
     this.bedrooms,
     this.sharingType,
+    this.isSelected = false,
   });
 
   final int price;
@@ -96,6 +129,7 @@ class _ListingMarkerWidget extends StatelessWidget {
   final VoidCallback onTap;
   final int? bedrooms;
   final String? sharingType;
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -131,10 +165,13 @@ class _ListingMarkerWidget extends StatelessWidget {
                     borderRadius: BorderRadius.all(
                       Radius.circular(AppRadius.md),
                     ),
+                    border: isSelected
+                        ? Border.all(color: Colors.white, width: 3)
+                        : null,
                     boxShadow: [
                       BoxShadow(
-                        color: color.withValues(alpha: 0.4),
-                        blurRadius: 6,
+                        color: color.withValues(alpha: isSelected ? 0.6 : 0.4),
+                        blurRadius: isSelected ? 10 : 6,
                         offset: const Offset(0, 2),
                       ),
                     ],
@@ -229,12 +266,10 @@ class _ClusterMarkerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final clusterColor = const Color(0xFF673AB7);
+    const clusterColor = AppSemanticColors.mapMarkerCluster;
     final count = clusterItems.length;
 
-    final rents = clusterItems
-        .map((i) => i.monthlyRent.toInt())
-        .toList()
+    final rents = clusterItems.map((i) => i.monthlyRent.toInt()).toList()
       ..sort();
     final minRent = rents.first;
     final maxRent = rents.last;

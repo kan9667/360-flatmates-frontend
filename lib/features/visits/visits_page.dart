@@ -8,6 +8,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../shared/presentation/flatmates_async_view.dart';
 import '../shared/presentation/flatmates_card.dart';
 import '../shared/presentation/flatmates_empty_state.dart';
+import '../shared/presentation/flatmates_header.dart';
 import '../shared/presentation/flatmates_trust_badge.dart';
 import '../shared/presentation/flatmates_ui.dart';
 import 'visits_repository.dart';
@@ -27,100 +28,97 @@ class _VisitsPageState extends ConsumerState<VisitsPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: SafeArea(
-        child: FlatmatesAsyncView<List<VisitItem>>(
-          value: visits,
-          empty: FlatmatesEmptyState(
-            title: locale.emptyVisits,
-            subtitle: locale.scheduleSubtitle,
-            icon: Icons.calendar_today_rounded,
-          ),
-          onRetry: () => ref.invalidate(visitsProvider),
-          data: (items) {
-            // Organize into timeline sections
-            final upcoming = items
-                .where(
-                  (v) => v.status == 'scheduled' || v.status == 'confirmed',
-                )
-                .toList();
-            final requested = items
-                .where((v) => v.status == 'requested')
-                .toList();
-            final completed = items
-                .where((v) => v.status == 'completed')
-                .toList();
-
-            return RefreshIndicator(
-              onRefresh: () async => ref.invalidate(visitsProvider),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.xl,
-                  AppSpacing.screen,
-                  AppSpacing.xl,
-                  120,
-                ),
-                children: [
-                  FlatmatesSectionHeader(
-                    title: locale.scheduleTitle,
-                    subtitle: locale.scheduleSubtitle,
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  if (upcoming.isNotEmpty) ...[
-                    _SectionHeader(title: locale.visitStatusConfirmed),
-                    const SizedBox(height: AppSpacing.md),
-                    ...upcoming.map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                        child: _VisitCard(
-                          item: item,
-                          locale: locale,
-                          theme: theme,
-                          badgeVariant: FlatmatesTrustBadgeVariant.verified,
-                          onConfirm: () => _confirmVisit(item),
-                          onCancel: () => _cancelVisit(item),
-                          onReschedule: () => _rescheduleVisit(item),
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (requested.isNotEmpty) ...[
-                    _SectionHeader(title: locale.visitStatusRequested),
-                    const SizedBox(height: AppSpacing.md),
-                    ...requested.map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                        child: _VisitCard(
-                          item: item,
-                          locale: locale,
-                          theme: theme,
-                          badgeVariant: FlatmatesTrustBadgeVariant.reviewed,
-                          onConfirm: () => _confirmVisit(item),
-                          onCancel: () => _cancelVisit(item),
-                          onReschedule: () => _rescheduleVisit(item),
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (completed.isNotEmpty) ...[
-                    _SectionHeader(title: locale.visitStatusCompleted),
-                    const SizedBox(height: AppSpacing.md),
-                    ...completed.map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                        child: _VisitCard(
-                          item: item,
-                          locale: locale,
-                          theme: theme,
-                          badgeVariant: FlatmatesTrustBadgeVariant.safe,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            );
-          },
+      appBar: FlatmatesHeader.backTitle(title: locale.scheduleTitle),
+      body: FlatmatesAsyncView<List<VisitItem>>(
+        value: visits,
+        empty: FlatmatesEmptyState(
+          title: locale.emptyVisits,
+          subtitle: locale.scheduleSubtitle,
+          icon: Icons.calendar_today_rounded,
         ),
+        onRetry: () => ref.invalidate(visitsProvider),
+        data: (items) {
+          // Organize into timeline sections
+          final upcoming = items
+              .where((v) => v.status == 'scheduled' || v.status == 'confirmed')
+              .toList();
+          final requested = items
+              .where((v) => v.status == 'requested')
+              .toList();
+          final completed = items
+              .where((v) => v.status == 'completed')
+              .toList();
+
+          return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(visitsProvider),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl,
+                AppSpacing.screen,
+                AppSpacing.xl,
+                120,
+              ),
+              children: [
+                FlatmatesSectionHeader(
+                  title: locale.scheduleTitle,
+                  subtitle: locale.scheduleSubtitle,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                if (upcoming.isNotEmpty) ...[
+                  _SectionHeader(title: locale.visitStatusConfirmed),
+                  const SizedBox(height: AppSpacing.sm),
+                  ...upcoming.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _VisitCard(
+                        item: item,
+                        locale: locale,
+                        theme: theme,
+                        badgeVariant: FlatmatesTrustBadgeVariant.verified,
+                        onConfirm: () => _confirmVisit(item),
+                        onCancel: () => _cancelVisit(item),
+                        onReschedule: () => _rescheduleVisit(item),
+                      ),
+                    ),
+                  ),
+                ],
+                if (requested.isNotEmpty) ...[
+                  _SectionHeader(title: locale.visitStatusRequested),
+                  const SizedBox(height: AppSpacing.sm),
+                  ...requested.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _VisitCard(
+                        item: item,
+                        locale: locale,
+                        theme: theme,
+                        badgeVariant: FlatmatesTrustBadgeVariant.reviewed,
+                        onConfirm: () => _confirmVisit(item),
+                        onCancel: () => _cancelVisit(item),
+                        onReschedule: () => _rescheduleVisit(item),
+                      ),
+                    ),
+                  ),
+                ],
+                if (completed.isNotEmpty) ...[
+                  _SectionHeader(title: locale.visitStatusCompleted),
+                  const SizedBox(height: AppSpacing.sm),
+                  ...completed.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _VisitCard(
+                        item: item,
+                        locale: locale,
+                        theme: theme,
+                        badgeVariant: FlatmatesTrustBadgeVariant.safe,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -244,7 +242,7 @@ class _SectionHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return Text(
       title,
-      style: theme.textTheme.titleMedium?.copyWith(
+      style: theme.textTheme.titleSmall?.copyWith(
         fontWeight: FontWeight.w700,
         color: AppSemanticColors.textSecondaryFor(theme.brightness),
       ),
@@ -271,50 +269,64 @@ class _VisitCard extends StatelessWidget {
   final VoidCallback? onCancel;
   final VoidCallback? onReschedule;
 
-  bool _hasActions(String status) {
-    return status == 'requested' ||
-        status == 'scheduled' ||
-        status == 'confirmed';
-  }
-
   @override
   Widget build(BuildContext context) {
+    final hasActions =
+        item.status == 'requested' ||
+        item.status == 'scheduled' ||
+        item.status == 'confirmed';
+
     return FlatmatesCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm + 2,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 54,
-                height: 54,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppSemanticColors.accent,
-                      AppSemanticColors.accent.withValues(alpha: 0.55),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(18),
+                  color: AppSemanticColors.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.event_available_outlined,
-                  color: Colors.white,
+                  color: AppSemanticColors.accent,
+                  size: 16,
                 ),
               ),
-              const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item.propertyTitle, style: theme.textTheme.titleLarge),
-                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      item.propertyTitle,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppSemanticColors.textPrimaryFor(
+                          theme.brightness,
+                        ),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 1),
                     Text(
                       DateFormat(
-                        'd MMM yyyy, h:mm a',
+                        'd MMM, h:mm a',
                         locale.localeName,
                       ).format(item.scheduledDate.toLocal()),
-                      style: theme.textTheme.bodyLarge,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 11,
+                        color: AppSemanticColors.textTertiaryFor(
+                          theme.brightness,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -326,93 +338,127 @@ class _VisitCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
+          const SizedBox(height: AppSpacing.sm),
+          Row(
             children: [
-              InfoPill(
-                icon: Icons.meeting_room_outlined,
-                label: item.visitContext == 'flatmate_meet'
+              Icon(
+                item.visitContext == 'flatmate_meet'
+                    ? Icons.people_outline
+                    : Icons.meeting_room_outlined,
+                size: 12,
+                color: AppSemanticColors.textTertiaryFor(theme.brightness),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                item.visitContext == 'flatmate_meet'
                     ? locale.flatmateMeetLabel
                     : locale.propertyTourLabel,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontSize: 11,
+                  color: AppSemanticColors.textTertiaryFor(theme.brightness),
+                ),
               ),
-              InfoPill(
-                icon: Icons.calendar_month_outlined,
-                label: DateFormat(
+              const SizedBox(width: AppSpacing.sm),
+              Icon(
+                Icons.calendar_month_outlined,
+                size: 12,
+                color: AppSemanticColors.textTertiaryFor(theme.brightness),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                DateFormat(
                   'EEEE',
                   locale.localeName,
                 ).format(item.scheduledDate.toLocal()),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontSize: 11,
+                  color: AppSemanticColors.textTertiaryFor(theme.brightness),
+                ),
               ),
             ],
           ),
-          if (_hasActions(item.status)) ...[
-            const SizedBox(height: AppSpacing.md),
-            Row(children: _buildActions()),
+          if (hasActions) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(children: _buildActions(context)),
           ],
         ],
       ),
     );
   }
 
-  List<Widget> _buildActions() {
-    final actions = <Widget>[];
-
+  List<Widget> _buildActions(BuildContext context) {
     if (item.status == 'requested') {
-      if (onConfirm != null) {
-        actions.add(
-          Expanded(
-            child: FlatmatesButton(
-              key: const Key('visit_confirm_button'),
-              label: locale.visitConfirmTitle,
-              onPressed: onConfirm,
-            ),
-          ),
-        );
-      }
-      actions.add(const SizedBox(width: AppSpacing.sm));
-      if (onCancel != null) {
-        actions.add(
-          Expanded(
-            child: FlatmatesButton.secondary(
-              key: const Key('visit_cancel_button'),
-              label: locale.visitCancelCta,
-              onPressed: onCancel,
-              destructive: true,
-              height: 36,
-            ),
-          ),
-        );
-      }
-    } else if (item.status == 'scheduled' || item.status == 'confirmed') {
-      if (onReschedule != null) {
-        actions.add(
-          Expanded(
-            child: FlatmatesButton.secondary(
-              key: const Key('visit_reschedule_button'),
-              label: locale.visitRescheduleCta,
-              onPressed: onReschedule,
-              height: 36,
-            ),
-          ),
-        );
-      }
-      actions.add(const SizedBox(width: AppSpacing.sm));
-      if (onCancel != null) {
-        actions.add(
-          Expanded(
-            child: FlatmatesButton.secondary(
-              key: const Key('visit_cancel_button'),
-              label: locale.visitCancelCta,
-              onPressed: onCancel,
-              destructive: true,
-              height: 36,
-            ),
-          ),
-        );
-      }
+      return [
+        _CompactActionChip(
+          label: locale.visitConfirmTitle,
+          onTap: onConfirm,
+          filled: true,
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        _CompactActionChip(
+          label: locale.visitCancelCta,
+          onTap: onCancel,
+          destructive: true,
+        ),
+      ];
     }
+    // scheduled / confirmed
+    return [
+      _CompactActionChip(label: locale.visitRescheduleCta, onTap: onReschedule),
+      const SizedBox(width: AppSpacing.xs),
+      _CompactActionChip(
+        label: locale.visitCancelCta,
+        onTap: onCancel,
+        destructive: true,
+      ),
+    ];
+  }
+}
 
-    return actions;
+/// Tiny action chip for visit cards — avoids FlatmatesButton's 40dp minimum.
+class _CompactActionChip extends StatelessWidget {
+  const _CompactActionChip({
+    required this.label,
+    this.onTap,
+    this.filled = false,
+    this.destructive = false,
+  });
+
+  final String label;
+  final VoidCallback? onTap;
+  final bool filled;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = destructive
+        ? AppSemanticColors.error
+        : AppSemanticColors.accent;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: filled ? accent : null,
+            border: filled
+                ? null
+                : Border.all(color: accent.withValues(alpha: 0.5)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: filled ? Colors.white : accent,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -9,7 +9,7 @@
   "seeAllCta": "सभी देखें",
   "cancelCta": "रद्द करें",
   "enterPhoneTitle": "अपना फोन नंबर दर्ज करें",
-  "enterPhoneSubtitle": "पासवर्ड लॉगिन करें या OTP के साथ जारी रखें।",
+  "enterPhoneSubtitle": "शुरू करने के लिए साइन इन करें या खाता बनाएं।",
   "phoneNumberLabel": "फोन नंबर",
   "loginWithPassword": "पासवर्ड से लॉगिन करें",
   "continueWithOtp": "OTP के साथ जारी रखें",
@@ -35,6 +35,30 @@
   "emptyListings": "अभी कोई फ्लैटमेट लिस्टिंग उपलब्ध नहीं है।",
   "homeGreeting": "नमस्ते, {name}",
   "@homeGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetingMorning": "सुप्रभात, {name}",
+  "@homeGreetingMorning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetingAfternoon": "नमस्कार, {name}",
+  "@homeGreetingAfternoon": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetingEvening": "शुभ संध्या, {name}",
+  "@homeGreetingEvening": {
     "placeholders": {
       "name": {
         "type": "String"
@@ -190,12 +214,11 @@
   "profileStatChats": "चैट्स",
   "profileStatUnread": "अनरीड",
   "profileMenuVisits": "मेरा शेड्यूल",
-  "profileMenuLikesChat": "लाइक्स और चैट",
+  "profileMenuLikesChat": "मैच और चैट",
   "profileMenuPostListing": "लिस्टिंग पोस्ट करें",
   "profileMenuShortlisted": "शॉर्टलिस्टेड",
   "profileMenuChats": "मेरी चैट",
   "profileMenuDocuments": "दस्तावेज़",
-  "profileMenuPaymentMethods": "भुकतान के तरीके",
   "editProfileCta": "प्रोफ़ाइल संपादित करें",
   "themeModeTitle": "थीम मोड",
   "themeSystem": "सिस्टम",
@@ -307,6 +330,7 @@
   "profilePhotoTitle": "अपनी फ़ोटो जोड़ें",
   "profilePhotoSubtitle": "अच्छी फ़ोटो से ज़्यादा मैच मिलते हैं।",
   "profilePhotoNudge": "3+ फ़ोटो वाली प्रोफ़ाइल्स को 4 गुना ज़्यादा मैच मिलते हैं!",
+  "profilePhotoMinimumRequired": "आगे बढ़ने के लिए कम से कम एक फ़ोटो जोड़ें।",
   "addPhotoCta": "फ़ोटो जोड़ें",
   "quizProgress": "{total} में से {answered} जवाब दिए",
   "@quizProgress": {
@@ -594,7 +618,7 @@
   "videoTooShort": "वीडियो कम से कम 15 सेकंड का होना चाहिए",
   "tapToUnmute": "अनम्यूट करने के लिए टैप करें",
   "soundOn": "आवाज़ चालू",
-  "superLikeCapLabel": "{count} सुपर लाइक बचे हैं",
+  "superLikeCapLabel": "{count} स्टार मैच बचे हैं",
   "@superLikeCapLabel": {
     "placeholders": {
       "count": {
@@ -611,7 +635,7 @@
     }
   },
   "passActionLabel": "पास",
-  "superLikeActionLabel": "सुपर लाइक",
+  "superLikeActionLabel": "स्टार मैच",
   "likeActionLabel": "लाइक",
   "photoPendingLabel": "फ़ोटो बाकी है",
   "readReceiptSent": "भेजा गया",
@@ -635,6 +659,13 @@
   "viewListing": "लिस्टिंग देखें",
   "editResubmit": "संपादित करें और फिर से भेजें",
   "reportListing": "लिस्टिंग की रिपोर्ट करें",
+  "reportListingTitle": "इस लिस्टिंग की रिपोर्ट करें",
+  "reportListingReason": "आप यह लिस्टिंग क्यों रिपोर्ट कर रहे हैं?",
+  "reportListingSubmitted": "धन्यवाद। हम इस लिस्टिंग की समीक्षा करेंगे।",
+  "reportReasonInappropriate": "अनुपयुक्त सामग्री",
+  "reportReasonScam": "संदिग्ध घोटाला या धोखाधड़ी",
+  "reportReasonOutdated": "लिस्टिंग पुरानी या अनुपलब्ध है",
+  "reportReasonOther": "अन्य",
   "compatibilityScore": "कंपैटिबिलिटी स्कोर",
   "aboutMe": "मेरे बारे में",
   "flatDetails": "फ्लैट विवरण",
@@ -690,6 +721,20 @@
   "privacySecurityLabel": "गोपनीयता और सुरक्षा",
   "preferencesLabel": "पसंद",
   "notificationSettingsLabel": "नोटिफिकेशन सेटिंग्स",
+  "notificationSettingsTitle": "नोटिफिकेशन प्राथमिकताएं",
+  "notificationSettingsSubtitle": "चुनें कि आप कौन सी नोटिफिकेशन प्राप्त करना चाहते हैं",
+  "notifNewMessages": "नए संदेश",
+  "notifNewMessagesDesc": "नया संदेश मिलने पर सूचित करें",
+  "notifVisitReminders": "विजिट रिमाइंडर",
+  "notifVisitRemindersDesc": "आगामी प्रॉपर्टी विजिट के रिमाइंडर",
+  "notifNewMatches": "नए मैच",
+  "notifNewMatchesDesc": "जब कोई आपकी प्रोफ़ाइल को पसंद करे तो सूचित करें",
+  "notifListingUpdates": "लिस्टिंग अपडेट",
+  "notifListingUpdatesDesc": "आपकी लिस्टिंग व्यूज़ और रुचि के बारे में अपडेट",
+  "notifPromotions": "प्रमोशन और टिप्स",
+  "notifPromotionsDesc": "ऑफ़र, टिप्स और प्रोडक्ट अपडेट",
+  "notifEnableAll": "सभी सक्षम करें",
+  "notifDisableAll": "सभी अक्षम करें",
   "blockedUsersLabel": "ब्लॉक किए गए उपयोगकर्ता",
   "noBlockedUsers": "आपने अभी तक किसी को ब्लॉक नहीं किया है।",
   "unblockCta": "अनब्लॉक करें",
@@ -703,14 +748,14 @@
   "passwordMinLength": "पासवर्ड कम से कम 8 अक्षरों का होना चाहिए।",
   "aboutLabel": "के बारे में",
   "termsAndConditionsLabel": "नियम और शर्तें",
+  "termsAgreementPrefix": "मैं इनसे सहमत हूं: ",
+  "termsAgreementConjunction": " और ",
   "@@notifications_new_keys": {},
   "@@help_safety_new_keys": {},
   "searchHelpPlaceholder": "सहायता खोजें",
   "faqSubtitle": "सामान्य प्रश्नों के उत्तर खोजें",
   "popularTopicsLabel": "लोकप्रिय विषय",
   "popularTopicsSubtitle": "लोकप्रिय मदद विषयों का अन्वेषण करें",
-  "paymentsLabel": "भुगतान और वापसी",
-  "paymentsSubtitle": "भुगतान समस्याएं, वापसी और अधिक",
   "bookingAgreementsLabel": "बुकिंग और समझौते",
   "bookingAgreementsSubtitle": "बुकिंग, समझौते और नीतियाँ",
   "accountProfileLabel": "खाता और प्रोफ़ाइल",
@@ -719,6 +764,53 @@
   "chatWithUsCta": "हमसे चैट करें",
   "comingSoon": "जल्द आ रहा है",
   "replyTimeNote": "हम आमतौर पर कुछ मिनटों में उत्तर देते हैं",
+  "helpFaqIntro": "360 FlatMates के सबसे सामान्य सवालों के त्वरित जवाब।",
+  "helpFaqStartTitle": "मैं फ्लैटमेट ढूंढना कैसे शुरू करूं?",
+  "helpFaqStartBody": "ऑनबोर्डिंग पूरी करें, शहर और बजट सेट करें, फिर Discover, Map, Swipe और Chats का उपयोग करके उपयुक्त फ्लैटमेट या लिस्टिंग से जुड़ें।",
+  "helpFaqSafetyTitle": "मिलने से पहले सुरक्षित कैसे रहें?",
+  "helpFaqSafetyBody": "शुरुआती बातचीत ऐप में रखें, परिचित या साझा जगह पर मिलें, किराया और डिपॉजिट की जानकारी सत्यापित करें, और भरोसा बनने से पहले संवेदनशील दस्तावेज न भेजें।",
+  "helpFaqReportTitle": "किसी को रिपोर्ट या ब्लॉक कैसे करूं?",
+  "helpFaqReportBody": "उस व्यक्ति की चैट खोलें और रिपोर्ट या ब्लॉक एक्शन का उपयोग करें। रिपोर्ट समीक्षा के लिए 360 FlatMates टीम को भेजी जाती है।",
+  "helpFaqListingTitle": "मैं अपना फ्लैट कैसे लिस्ट करूं?",
+  "helpFaqListingBody": "प्रोफ़ाइल से Post Listing खोलें, जरूरी फ्लैट विवरण पूरे करें, और दूसरे उपयोगकर्ताओं को दिखने से पहले समीक्षा के लिए सबमिट करें।",
+  "helpPopularIntro": "सक्रिय उपयोगकर्ताओं के लिए सबसे उपयोगी सुरक्षा और सहायता विषय।",
+  "helpPopularMeetingsTitle": "पहली मुलाकात को सुरक्षित रखें",
+  "helpPopularMeetingsBody": "संभव हो तो दिन में मिलें, किसी भरोसेमंद व्यक्ति को बताएं कि आप कहां जा रहे हैं, और शर्तें स्पष्ट होने तक नकद लेन-देन से बचें।",
+  "helpPopularVerifiedTitle": "प्रोफ़ाइल भरोसा बढ़ाएं",
+  "helpPopularVerifiedBody": "अपना असली नाम उपयोग करें, स्पष्ट प्रोफ़ाइल फोटो जोड़ें, और लाइफस्टाइल प्राथमिकताएं सही रखें ताकि मैच अनुकूलता समझ सकें।",
+  "helpPopularVisitsTitle": "चैट और विज़िट",
+  "helpPopularVisitsBody": "उपलब्धता की पुष्टि के लिए इन-ऐप चैट का उपयोग करें, लिस्टिंग या बातचीत स्क्रीन से विज़िट शेड्यूल करें, और जरूरी फैसले लिखित में रखें।",
+  "helpBookingsIntro": "विज़िट, समझौतों और लिस्टिंग समीक्षा के लिए मार्गदर्शन। 360 FlatMates आपको जोड़ने में मदद करता है; अंतिम किराये की शर्तें संबंधित लोगों के बीच रहती हैं।",
+  "helpBookingsDecisionTitle": "मूव करने से पहले",
+  "helpBookingsDecisionBody": "मासिक किराया, डिपॉजिट, मेंटेनेंस, मूव-इन तारीख, नोटिस अवधि, घर के नियम और समझौते में किसका नाम होगा, यह पुष्टि करें।",
+  "helpBookingsAgreementsTitle": "समझौते और दस्तावेज",
+  "helpBookingsAgreementsBody": "तय शर्तों की लिखित कॉपी रखें और ऐप के बाहर साइन या भुगतान करने से पहले भरोसेमंद माध्यमों से ID या स्वामित्व विवरण सत्यापित करें।",
+  "helpBookingsListingReviewTitle": "लिस्टिंग समीक्षा",
+  "helpBookingsListingReviewBody": "सबमिट की गई लिस्टिंग लाइव होने से पहले गुणवत्ता और सुरक्षा के लिए समीक्षा में जा सकती है। विवरण बदलने पर आप संपादित करके फिर सबमिट कर सकते हैं।",
+  "helpAccountIntro": "प्रोफ़ाइल, पासवर्ड, गोपनीयता और ब्लॉक किए गए उपयोगकर्ताओं को एक सुरक्षित जगह से संभालें।",
+  "helpAccountEditTitle": "प्रोफ़ाइल विवरण संपादित करें",
+  "helpAccountEditBody": "अपनी फोटो, लोकेशन, बजट, मूव-इन टाइमलाइन और लाइफस्टाइल जवाब अपडेट रखें ताकि सुझाव प्रासंगिक रहें।",
+  "helpAccountPrivacyTitle": "गोपनीयता नियंत्रण",
+  "helpAccountPrivacyBody": "थीम, भाषा और अंतिम नाम या सटीक लोकेशन छिपाने जैसी गोपनीयता प्राथमिकताओं को संभालने के लिए Settings का उपयोग करें।",
+  "helpAccountBlockedTitle": "ब्लॉक किए गए उपयोगकर्ता",
+  "helpAccountBlockedBody": "ब्लॉक किए गए लोग ऐप में आपसे संपर्क नहीं कर सकते। आप Blocked Users में उन्हें देख और अनब्लॉक कर सकते हैं।",
+  "helpContactIntro": "कुछ गलत, असुरक्षित या अटका हुआ लगे तो सहायता से संपर्क करें।",
+  "helpContactWhatToSendTitle": "क्या भेजें",
+  "helpContactWhatToSendBody": "अपना फोन नंबर, संबंधित लिस्टिंग या बातचीत, उपयोगी स्क्रीनशॉट और क्या हुआ इसका छोटा विवरण भेजें।",
+  "helpContactUrgentTitle": "तुरंत सुरक्षा समस्या",
+  "helpContactUrgentBody": "अगर तत्काल खतरा है, तो पहले स्थानीय आपातकालीन सेवाओं से संपर्क करें, फिर सुरक्षित रूप से साझा की जा सकने वाली जानकारी के साथ सहायता को रिपोर्ट करें।",
+  "emailSupportCta": "सपोर्ट को ईमेल करें",
+  "supportEmailSubject": "360 FlatMates सहायता अनुरोध",
+  "supportEmailBody": "Hi 360 FlatMates Support, मुझे इसमें मदद चाहिए:",
+  "supportEmailFallback": "हमें {email} पर ईमेल करें",
+  "@supportEmailFallback": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "externalLinkUnavailable": "यह लिंक नहीं खुल सका। कृपया फिर कोशिश करें।",
   "@@listing_create_new_keys": {},
   "stepLabel": "चरण",
   "stepOfLabel": "में से",
@@ -901,7 +993,7 @@
   "shareToWhatsapp": "WhatsApp पर शेयर करें",
   "whatsappNotInstalled": "WhatsApp इंस्टॉल नहीं है",
   "scanToOpen": "लिस्टिंग खोलने के लिए स्कैन करें",
-  "matchItsAMatch": "यह एक मैच है!",
+  "matchItsAMatch": "बढ़िया मैच!",
   "matchLikedEachOther": "आप और {peerName} ने एक-दूसरे को पसंद किया",
   "@matchLikedEachOther": {
     "placeholders": {
@@ -1283,5 +1375,70 @@
   },
   "genderSuffixMaleOnly": "केवल पुरुष",
   "genderSuffixFemaleOnly": "केवल महिला",
-  "genderSuffixAny": "कोई भी जेंडर"
+  "genderSuffixAny": "कोई भी जेंडर",
+  "activeRecentlyLabel": "हाल ही में सक्रिय",
+  "couldNotLoadContent": "सामग्री लोड नहीं हो सकी।",
+  "@@app_infra_keys": {},
+  "forceUpdateTitle": "अपडेट ज़रूरी है",
+  "forceUpdateMessage": "360 फ्लैटमेट्स का एक नया वर्शन उपलब्ध है। कृपया ऐप इस्तेमाल करने के लिए अपडेट करें।",
+  "forceUpdateCta": "अभी अपडेट करें",
+  "optionalUpdateTitle": "अपडेट उपलब्ध",
+  "optionalUpdateMessage": "360 फ्लैटमेट्स का एक नया वर्शन सुधार और बग फिक्स के साथ उपलब्ध है।",
+  "optionalUpdateCta": "अभी अपडेट करें",
+  "optionalUpdateLater": "बाद में",
+  "maintenanceTitle": "मेंटेनेंस चल रहा है",
+  "maintenanceMessage": "हम चीज़ें बेहतर बना रहे हैं। कृपया कुछ देर बाद दोबारा देखें।",
+  "maintenanceRetry": "फिर से जांचें",
+  "deleteAccountCta": "खाता हटाएं",
+  "deleteAccountTitle": "अपना खाता हटाएं",
+  "deleteAccountWarning": "यह कार्रवाई स्थायी है और इसे पूर्ववत नहीं किया जा सकता। आपका सारा डेटा जिसमें प्रोफ़ाइल, लिस्टिंग, चैट और मैच शामिल हैं, स्थायी रूप से हटा दिया जाएगा।",
+  "deleteAccountConfirmLabel": "पुष्टि करने के लिए DELETE टाइप करें",
+  "deleteAccountConfirmHint": "DELETE टाइप करें",
+  "deleteAccountButton": "मेरा खाता हटाएं",
+  "deleteAccountCancelled": "खाता हटाना रद्द किया गया।",
+  "deleteAccountFailed": "खाता हटाने में विफल। कृपया पुनः प्रयास करें या सहायता से संपर्क करें।",
+  "forgotPasswordTitle": "पासवर्ड भूल गए",
+  "forgotPasswordSubtitle": "अपना फोन नंबर दर्ज करें और हम पासवर्ड रीसेट करने के लिए OTP भेजेंगे।",
+  "sendOtpCta": "OTP भेजें",
+  "resetPasswordTitle": "पासवर्ड रीसेट करें",
+  "resetPasswordSubtitle": "{phone} पर भेजा गया OTP दर्ज करें और अपना नया पासवर्ड सेट करें।",
+  "@resetPasswordSubtitle": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "forgotPasswordCta": "पासवर्ड भूल गए?",
+  "noAccountCta": "खाता नहीं है?",
+  "passwordResetSuccess": "पासवर्ड सफलतापूर्वक रीसेट किया गया। कृपया साइन इन करें।",
+  "phoneNotRegistered": "यह फोन नंबर पंजीकृत नहीं है।",
+  "loginWithPasswordCta": "पासवर्ड से लॉगिन करें",
+  "reportABug": "बग की रिपोर्ट करें",
+  "reportABugSubtitle": "कुछ काम नहीं कर रहा? हमें बताएं।",
+  "requestAFeature": "फीचर का अनुरोध करें",
+  "requestAFeatureSubtitle": "ऐप को बेहतर बनाने का सुझाव साझा करें।",
+  "reportABugIntro": "हमें बताएं कि क्या गलत हुआ और हम इसे देखेंगे।",
+  "requestAFeatureIntro": "हमें बताएं कि आप ऐप में क्या देखना चाहेंगे।",
+  "feedbackTitleLabel": "शीर्षक",
+  "feedbackTitleBugHint": "बग का संक्षिप्त सारांश",
+  "feedbackTitleFeatureHint": "आपके विचार का संक्षिप्त सारांश",
+  "feedbackTitleRequired": "कृपया एक शीर्षक दर्ज करें।",
+  "feedbackDescriptionLabel": "विवरण",
+  "feedbackDescriptionBugHint": "दोहराने के चरण, आपने क्या उम्मीद की थी और क्या हुआ",
+  "feedbackDescriptionFeatureHint": "फीचर का वर्णन करें और यह कैसे मदद करेगा",
+  "feedbackDescriptionRequired": "कृपया एक विवरण दर्ज करें।",
+  "feedbackBugTypeLabel": "बग का प्रकार",
+  "feedbackBugTypeFunctionality": "कार्यक्षमता बग",
+  "feedbackBugTypeUi": "यूआई बग",
+  "feedbackBugTypePerformance": "प्रदर्शन समस्या",
+  "feedbackBugTypeCrash": "क्रैश",
+  "feedbackBugTypeOther": "अन्य",
+  "feedbackSeverityLabel": "गंभीरता",
+  "feedbackSeverityLow": "कम",
+  "feedbackSeverityMedium": "मध्यम",
+  "feedbackSeverityHigh": "उच्च",
+  "feedbackSeverityCritical": "गंभीर",
+  "feedbackSubmitCta": "सबमिट करें",
+  "feedbackSubmitSuccess": "आपकी प्रतिक्रिया के लिए धन्यवाद!"
 }

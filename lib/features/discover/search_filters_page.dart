@@ -7,16 +7,12 @@ import '../../core/theme/app_spacing.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../bootstrap/bootstrap_controller.dart';
 import '../bootstrap/catalog_helpers.dart';
-import '../shared/presentation/flatmates_bottom_action_bar.dart';
-import '../shared/presentation/flatmates_error_state.dart';
-import '../shared/presentation/flatmates_header.dart';
-import '../shared/presentation/flatmates_skeleton.dart';
-import '../shared/presentation/flatmates_search_bar.dart';
-import '../shared/presentation/flatmates_ui.dart';
+import '../shared/presentation/components.dart';
 import 'application/discover_feed_controller.dart';
 import 'discover_repository.dart';
 import 'presentation/widgets/search_active_filter_chips.dart';
 import 'presentation/widgets/search_budget_filter_card.dart';
+import 'presentation/widgets/search_filter_form_skeleton.dart';
 import 'presentation/widgets/search_filter_widgets.dart';
 import 'presentation/widgets/search_more_filters_card.dart';
 
@@ -288,8 +284,9 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
           'shared_room' => 'shared',
           _ => existing.sharingType,
         };
-        _selectedFurnishing =
-            existing.features.isNotEmpty ? existing.features.first : null;
+        _selectedFurnishing = existing.features.isNotEmpty
+            ? existing.features.first
+            : null;
         _selectedGender = existing.genderPreference;
         _selectedMoveIn = existing.moveInTimeline;
         _selectedPets = existing.pets;
@@ -301,10 +298,13 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
     }
 
     final locale = AppLocalizations.of(context);
-    final listings = ref.watch(discoverListingsProvider);
+    final bootstrap = ref.watch(bootstrapControllerProvider);
+    final showSkeleton = bootstrap.isLoading && bootstrap.valueOrNull == null;
+    final showError = bootstrap.hasError && bootstrap.valueOrNull == null;
     final activeFilters = _activeFilters;
 
-    return Scaffold(
+    return FlatmatesScreen(
+      useSafeArea: true,
       appBar: FlatmatesHeader.backTitle(
         title: locale.searchFiltersTitle,
         actions: [
@@ -316,10 +316,15 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
             ),
         ],
       ),
-      body: SafeArea(
-        child: listings.when(
-          data: (items) {
-            return Column(
+      body: showSkeleton
+          ? const SearchFilterFormSkeleton()
+          : showError
+          ? FlatmatesErrorState(
+              message: locale.couldNotLoadListing,
+              onRetry: () =>
+                  ref.read(bootstrapControllerProvider.notifier).load(),
+            )
+          : Column(
               children: [
                 Expanded(
                   child: ListView(
@@ -371,8 +376,7 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
                         iconColor: AppSemanticColors.orangeMid,
                         iconBgColor: AppSemanticColors.orangeSoft,
                         child: CatalogFilterChips(
-                          options:
-                              _catalogOrFallback('flatmates_furnishing', [
+                          options: _catalogOrFallback('flatmates_furnishing', [
                             'any',
                             'furnished',
                             'unfurnished',
@@ -380,8 +384,7 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
                           selectedId: _selectedFurnishing ?? 'any',
                           anyKey: 'any',
                           onSelected: (id) => setState(
-                            () =>
-                                _selectedFurnishing = id == 'any' ? null : id,
+                            () => _selectedFurnishing = id == 'any' ? null : id,
                           ),
                         ),
                       ),
@@ -424,8 +427,7 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
                       MoreFiltersCard(
                         selectedPets: _selectedPets,
                         selectedSmoking: _selectedSmoking,
-                        onPetsChanged: (v) =>
-                            setState(() => _selectedPets = v),
+                        onPetsChanged: (v) => setState(() => _selectedPets = v),
                         onSmokingChanged: (v) =>
                             setState(() => _selectedSmoking = v),
                         catalogOrFallback: _catalogOrFallback,
@@ -440,13 +442,7 @@ class _SearchFiltersPageState extends ConsumerState<SearchFiltersPage> {
                   onPressed: _applyFilters,
                 ),
               ],
-            );
-          },
-          loading: () => const FlatmatesSkeleton.list(),
-          error: (error, _) =>
-              const FlatmatesErrorState(message: 'Could not load filters'),
-        ),
-      ),
+            ),
     );
   }
 }

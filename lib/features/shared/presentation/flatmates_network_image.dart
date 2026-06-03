@@ -35,7 +35,17 @@ class FlatmatesNetworkImage extends ConsumerWidget {
       return imageUrl;
     }
     final base = ref.read(appConfigProvider).apiBaseUrl;
-    return '$base/$imageUrl';
+    // Normalize-join: preserves the full base path (e.g. `/api/v1`) regardless
+    // of whether `base` has a trailing slash or `imageUrl` has a leading one.
+    // `Uri.resolve` would strip the last path segment of the base when the
+    // base lacks a trailing slash, dropping `/api/v1` from the resolved URL.
+    final trimmedBase = base.endsWith('/')
+        ? base.substring(0, base.length - 1)
+        : base;
+    final trimmedPath = imageUrl.startsWith('/')
+        ? imageUrl.substring(1)
+        : imageUrl;
+    return '$trimmedBase/$trimmedPath';
   }
 
   @override
@@ -45,38 +55,16 @@ class FlatmatesNetworkImage extends ConsumerWidget {
     final placeholderColor = theme.brightness == Brightness.dark
         ? AppSemanticColors.darkSurfaceElevated
         : AppSemanticColors.paper2;
-    final image = CachedNetworkImage(
-      imageUrl: resolvedUrl,
+
+    Widget child = _ResilientImage(
+      url: resolvedUrl,
       width: width,
       height: height,
       fit: fit ?? BoxFit.cover,
-      placeholder: (context, url) => Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: placeholderColor,
-          borderRadius: borderRadius,
-        ),
-        child: const Center(
-          child: SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-      ),
-      errorWidget: (context, url, error) => _PhotoPendingFallback(
-        width: width,
-        height: height,
-        borderRadius: borderRadius,
-        fallbackName: fallbackName,
-      ),
-      fadeInDuration: const Duration(milliseconds: 200),
-      memCacheWidth: width != null && width!.isFinite ? (width! * 2).toInt() : null,
-      memCacheHeight: height != null && height!.isFinite ? (height! * 2).toInt() : null,
+      borderRadius: borderRadius,
+      placeholderColor: placeholderColor,
+      fallbackName: fallbackName,
     );
-
-    Widget child = image;
 
     if (semanticLabel != null) {
       child = Semantics(label: semanticLabel, child: child);
@@ -91,6 +79,137 @@ class FlatmatesNetworkImage extends ConsumerWidget {
     }
 
     return child;
+  }
+}
+
+/// Tries [CachedNetworkImage] first. Falls back to [Image.network] when the
+/// cache manager fails (e.g. path_provider FFI issues on newer simulators).
+class _ResilientImage extends StatefulWidget {
+  const _ResilientImage({
+    required this.url,
+    this.width,
+    this.height,
+    this.fit,
+    this.borderRadius,
+    this.placeholderColor,
+    this.fallbackName,
+  });
+
+  final String url;
+  final double? width;
+  final double? height;
+  final BoxFit? fit;
+  final BorderRadius? borderRadius;
+  final Color? placeholderColor;
+  final String? fallbackName;
+
+  @override
+  State<_ResilientImage> createState() => _ResilientImageState();
+}
+
+class _ResilientImageState extends State<_ResilientImage> {
+  bool _useFallback = false;
+
+  @override
+  void didUpdateWidget(_ResilientImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When the URL changes (e.g. element recycled during list scroll), reset
+    // the fallback flag so the new image gets another shot at CachedNetworkImage
+    // (and its memCacheWidth/memCacheHeight downscaling) instead of being stuck
+    // on the uncached Image.network path.
+    if (oldWidget.url != widget.url && _useFallback) {
+      setState(() => _useFallback = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_useFallback) {
+      return Image.network(
+        widget.url,
+        width: widget.width,
+        height: widget.height,
+        fit: widget.fit,
+        errorBuilder: (context, error, stackTrace) => _PhotoPendingFallback(
+          width: widget.width,
+          height: widget.height,
+          borderRadius: widget.borderRadius,
+          fallbackName: widget.fallbackName,
+        ),
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return _Placeholder(
+            width: widget.width,
+            height: widget.height,
+            borderRadius: widget.borderRadius,
+            color: widget.placeholderColor,
+          );
+        },
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: widget.url,
+      width: widget.width,
+      height: widget.height,
+      fit: widget.fit,
+      placeholder: (context, url) => _Placeholder(
+        width: widget.width,
+        height: widget.height,
+        borderRadius: widget.borderRadius,
+        color: widget.placeholderColor,
+      ),
+      errorWidget: (context, url, error) {
+        // Silent: _PhotoPendingFallback renders the failure visually; logging
+        // here would duplicate the package-level HttpException print.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && !_useFallback) {
+            setState(() => _useFallback = true);
+          }
+        });
+        return _Placeholder(
+          width: widget.width,
+          height: widget.height,
+          borderRadius: widget.borderRadius,
+          color: widget.placeholderColor,
+        );
+      },
+      fadeInDuration: const Duration(milliseconds: 200),
+      memCacheWidth: widget.width != null && widget.width!.isFinite
+          ? (widget.width! * 2).toInt().clamp(1, 4096)
+          : null,
+      memCacheHeight: widget.height != null && widget.height!.isFinite
+          ? (widget.height! * 2).toInt().clamp(1, 4096)
+          : null,
+    );
+  }
+}
+
+class _Placeholder extends StatelessWidget {
+  const _Placeholder({this.width, this.height, this.borderRadius, this.color});
+
+  final double? width;
+  final double? height;
+  final BorderRadius? borderRadius;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: color ?? AppSemanticColors.paper2,
+        borderRadius: borderRadius,
+      ),
+      child: const Center(
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
   }
 }
 

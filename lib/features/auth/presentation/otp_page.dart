@@ -73,9 +73,12 @@ class _OtpPageState extends ConsumerState<OtpPage> with CodeAutoFill {
       if (mounted) {
         setState(() => _isListening = true);
       }
-    } catch (_) {
+    } catch (e) {
       // SMS auto-fill not available on this platform (e.g. iOS simulator).
       // The user will enter the OTP manually.
+      debugPrint(
+        'OtpPage._startListeningForSms: SMS auto-fill unavailable: $e',
+      );
     }
   }
 
@@ -184,153 +187,146 @@ class _OtpPageState extends ConsumerState<OtpPage> with CodeAutoFill {
     final theme = Theme.of(context);
     final isSuccess = auth.status == AuthStatus.authenticated;
 
-    return Scaffold(
+    return FlatmatesScreen(
       appBar: AppBar(),
-      body: SafeArea(
-        minimum: AppSpacing.horizontalScreen,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(locale.otpTitle, style: theme.textTheme.headlineMedium),
+      scrollable: true,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(locale.otpTitle, style: theme.textTheme.headlineMedium),
+          const SizedBox(height: AppSpacing.sm),
+          Text(locale.otpSubtitle(_phone)),
+          if (_isListening) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text(locale.otpSubtitle(_phone)),
-            if (_isListening) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                locale.otpAutoReadHint,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppSemanticColors.textSecondaryFor(theme.brightness),
-                ),
+            Text(
+              locale.otpAutoReadHint,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppSemanticColors.textSecondaryFor(theme.brightness),
               ),
-            ],
-            if (isSuccess) ...[
-              const SizedBox(height: AppSpacing.lg),
-              Center(
-                child: FlatmatesTrustBadge(
-                  label: locale.phoneVerifiedLabel,
-                  variant: FlatmatesTrustBadgeVariant.verified,
-                  compact: true,
-                ),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.screen),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                const digitCount = 6;
-                const gapCount = digitCount - 1;
-                const gap = AppSpacing.sm;
-                const maxBoxWidth = AppSpacing.screen + AppSpacing.section;
-                final boxWidth =
-                    ((constraints.maxWidth - gap * gapCount) / digitCount)
-                        .clamp(0, maxBoxWidth)
-                        .toDouble();
-                final fontSize = boxWidth >= AppSpacing.screen + AppSpacing.xl
-                    ? AppTypography.h2Size
-                    : AppTypography.h3SizeLarge;
-
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(digitCount, (index) {
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        right: index < gapCount ? gap : 0,
-                      ),
-                      child: SizedBox(
-                        width: boxWidth,
-                        height: boxWidth + AppSpacing.sm,
-                        child: KeyboardListener(
-                          focusNode: _keyboardFocusNodes[index],
-                          onKeyEvent: (event) {
-                            if (event.logicalKey.keyLabel == 'Backspace' ||
-                                event.logicalKey.keyLabel == 'Delete') {
-                              _onOtpDigitDeleted(index);
-                            }
-                          },
-                          child: TextField(
-                            key: Key('otp_digit_$index'),
-                            controller: _otpControllers[index],
-                            focusNode: _focusNodes[index],
-                            keyboardType: TextInputType.number,
-                            textAlign: TextAlign.center,
-                            maxLength: 1,
-                            style: theme.textTheme.headlineLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              fontSize: fontSize,
-                            ),
-                            decoration: InputDecoration(
-                              counterText: '',
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: AppSpacing.sm,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: AppRadius.mdBorder,
-                                borderSide: BorderSide(
-                                  color: AppSemanticColors.line,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: AppRadius.mdBorder,
-                                borderSide: BorderSide(
-                                  color: AppSemanticColors.accent,
-                                  width: 2,
-                                ),
-                              ),
-                              errorBorder: OutlineInputBorder(
-                                borderRadius: AppRadius.mdBorder,
-                                borderSide: BorderSide(
-                                  color: AppSemanticColors.error,
-                                ),
-                              ),
-                            ),
-                            onChanged: (value) =>
-                                _onOtpDigitChanged(index, value),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                );
-              },
-            ),
-            if (auth.status == AuthStatus.error &&
-                auth.errorMessage != null) ...[
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                auth.errorMessage!,
-                style: TextStyle(color: AppSemanticColors.error),
-              ),
-            ],
-            const Spacer(),
-            // Resend OTP button with countdown.
-            Center(
-              child: _countdownSeconds > 0
-                  ? Text(
-                      locale.resendOtpCountdown(_countdownSeconds),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppSemanticColors.textSecondaryFor(
-                          theme.brightness,
-                        ),
-                      ),
-                    )
-                  : FlatmatesButton.tertiary(
-                      label: locale.resendOtpCta,
-                      onPressed: auth.status == AuthStatus.submitting
-                          ? null
-                          : _resendOtp,
-                    ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            // Verify button.
-            FlatmatesButton(
-              key: const Key('otp_submit_button'),
-              label: locale.verifyOtpCta,
-              fullWidth: true,
-              onPressed: auth.status == AuthStatus.submitting
-                  ? null
-                  : _submitOtp,
             ),
           ],
-        ),
+          if (isSuccess) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Center(
+              child: FlatmatesTrustBadge(
+                label: locale.phoneVerifiedLabel,
+                variant: FlatmatesTrustBadgeVariant.verified,
+                compact: true,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.screen),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const digitCount = 6;
+              const gapCount = digitCount - 1;
+              const gap = AppSpacing.sm;
+              const maxBoxWidth = AppSpacing.screen + AppSpacing.section;
+              final boxWidth =
+                  ((constraints.maxWidth - gap * gapCount) / digitCount)
+                      .clamp(0, maxBoxWidth)
+                      .toDouble();
+              final fontSize = boxWidth >= AppSpacing.screen + AppSpacing.xl
+                  ? AppTypography.h2Size
+                  : AppTypography.h3SizeLarge;
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(digitCount, (index) {
+                  return Padding(
+                    padding: EdgeInsets.only(right: index < gapCount ? gap : 0),
+                    child: SizedBox(
+                      width: boxWidth,
+                      height: boxWidth + AppSpacing.sm,
+                      child: KeyboardListener(
+                        focusNode: _keyboardFocusNodes[index],
+                        onKeyEvent: (event) {
+                          if (event.logicalKey.keyLabel == 'Backspace' ||
+                              event.logicalKey.keyLabel == 'Delete') {
+                            _onOtpDigitDeleted(index);
+                          }
+                        },
+                        child: TextField(
+                          key: Key('otp_digit_$index'),
+                          controller: _otpControllers[index],
+                          focusNode: _focusNodes[index],
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          maxLength: 1,
+                          style: theme.textTheme.headlineLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: fontSize,
+                          ),
+                          decoration: InputDecoration(
+                            counterText: '',
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.sm,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: AppRadius.mdBorder,
+                              borderSide: BorderSide(
+                                color: AppSemanticColors.line,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: AppRadius.mdBorder,
+                              borderSide: BorderSide(
+                                color: AppSemanticColors.accent,
+                                width: 2,
+                              ),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: AppRadius.mdBorder,
+                              borderSide: BorderSide(
+                                color: AppSemanticColors.error,
+                              ),
+                            ),
+                          ),
+                          onChanged: (value) =>
+                              _onOtpDigitChanged(index, value),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              );
+            },
+          ),
+          if (auth.status == AuthStatus.error && auth.errorMessage != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              auth.errorMessage!,
+              style: TextStyle(color: AppSemanticColors.error),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.screen),
+          // Resend OTP button with countdown.
+          Center(
+            child: _countdownSeconds > 0
+                ? Text(
+                    locale.resendOtpCountdown(_countdownSeconds),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppSemanticColors.textSecondaryFor(
+                        theme.brightness,
+                      ),
+                    ),
+                  )
+                : FlatmatesButton.tertiary(
+                    label: locale.resendOtpCta,
+                    onPressed: auth.status == AuthStatus.submitting
+                        ? null
+                        : _resendOtp,
+                  ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          // Verify button.
+          FlatmatesButton(
+            key: const Key('otp_submit_button'),
+            label: locale.verifyOtpCta,
+            fullWidth: true,
+            onPressed: auth.status == AuthStatus.submitting ? null : _submitOtp,
+          ),
+        ],
       ),
     );
   }

@@ -54,12 +54,17 @@ class OnboardingController extends Notifier<OnboardingState> {
             nonNegotiables:
                 (savedData['non_negotiables'] as List?)?.cast<String>() ??
                 const [],
+            isHydrated: true,
           );
+          return;
         }
       }
     } catch (e, st) {
       debugPrint('[OnboardingController] _loadSavedState error: $e\n$st');
     }
+    // No saved draft (or load failed) — hydration is still complete; consumer
+    // pages can stop showing a placeholder and render the default splash.
+    state = state.copyWith(isHydrated: true);
   }
 
   Future<void> _saveState() async {
@@ -85,6 +90,7 @@ class OnboardingController extends Notifier<OnboardingState> {
       await prefs.setString(_prefsKey, jsonEncode(data));
     } catch (e) {
       // Ignore save errors
+      debugPrint('[OnboardingController] _saveState error: $e');
     }
   }
 
@@ -94,6 +100,7 @@ class OnboardingController extends Notifier<OnboardingState> {
       await prefs.remove(_prefsKey);
     } catch (e) {
       // Ignore errors
+      debugPrint('[OnboardingController] _clearSavedState error: $e');
     }
   }
 

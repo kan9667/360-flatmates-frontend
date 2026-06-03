@@ -4,6 +4,7 @@
 abstract final class FlatmatesEndpoints {
   // -- Auth / User --
   static const me = '/users/me';
+  static const deleteAccount = '/users/me/delete';
   static const userLocation = '/users/location';
 
   // -- Bootstrap & Profile --
@@ -50,6 +51,12 @@ abstract final class FlatmatesEndpoints {
   static const notificationMarkAllRead = '/flatmates/notifications';
   static const notificationRegister = '/notifications/devices/register';
   static const notificationUnregister = '/notifications/devices/unregister';
+
+  // -- App Config --
+  static const appConfig = '/flatmates/app-config';
+
+  // -- Feedback (GLOBAL path, not under /flatmates) --
+  static const bugs = '/bugs';
 
   // -- Flatmates --
   static const sse = '/flatmates/sse';

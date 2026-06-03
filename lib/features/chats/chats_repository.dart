@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config/endpoints.dart';
+import '../../core/network/sse_providers.dart';
+import '../../core/network/sse_service.dart';
 import '../../core/providers.dart';
 import 'domain/chat_models.dart';
 
@@ -89,22 +92,45 @@ class ChatsRepository {
     return ConversationSummaryModel.fromJson(data);
   }
 
-  Future<List<ChatMessage>> fetchMessages(int conversationId) async {
+  Future<MessageListResponse> fetchMessages(int conversationId) async {
     final response = await _ref
         .read(apiClientProvider)
         .get(FlatmatesEndpoints.conversationMessages(conversationId));
-    final rows = (response.data as List? ?? const []);
-    return rows
+    final data = response.data;
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      final rows = (map['messages'] as List? ?? const []);
+      final messages = rows
+          .map(
+            (item) =>
+                ChatMessage.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
+          .toList();
+      return MessageListResponse(
+        messages: messages,
+        total: (map['total'] as num?)?.toInt() ?? messages.length,
+        hasMore: map['has_more'] as bool? ?? false,
+      );
+    }
+    // Fallback: handle legacy responses that return a raw list
+    final rows = (data as List? ?? const []);
+    final messages = rows
         .map(
           (item) =>
               ChatMessage.fromJson(Map<String, dynamic>.from(item as Map)),
         )
         .toList();
+    return MessageListResponse(
+      messages: messages,
+      total: messages.length,
+      hasMore: false,
+    );
   }
 
   Stream<List<ChatMessage>> watchMessages(int conversationId) {
     late final StreamController<List<ChatMessage>> controller;
     StreamSubscription<List<ChatMessage>>? realtimeSubscription;
+    StreamSubscription<SseEvent>? sseFallbackSubscription;
     var hasEmittedMessages = false;
 
     void emitMessages(List<ChatMessage> messages) {
@@ -113,9 +139,10 @@ class ChatsRepository {
       controller.add(messages);
     }
 
-    Future<void> pollMessages() async {
+    Future<void> refetch() async {
       try {
-        emitMessages(await fetchMessages(conversationId));
+        final response = await fetchMessages(conversationId);
+        emitMessages(response.messages);
       } catch (error, stackTrace) {
         if (!controller.isClosed && !hasEmittedMessages) {
           controller.addError(error, stackTrace);
@@ -125,9 +152,28 @@ class ChatsRepository {
 
     controller = StreamController<List<ChatMessage>>(
       onListen: () {
-        // Initial fetch to populate the stream before realtime kicks in.
-        unawaited(pollMessages());
-        // Supabase Realtime provides live updates; no HTTP polling needed.
+        var realtimeHealthy = false;
+
+        // Fallback path: listen for `new_message` SSE events and refetch.
+        // Activated only when Supabase realtime fails or drops. Cancelled
+        // automatically as soon as realtime recovers.
+        void startSseFallbackIfNeeded() {
+          if (realtimeHealthy || sseFallbackSubscription != null) return;
+          sseFallbackSubscription = _ref.read(sseServiceProvider).events.listen(
+            (event) {
+              if (event.type != 'new_message') return;
+              final convId = (event.data['conversation_id'] as num?)?.toInt();
+              // Refetch when the event is for this conversation, or when
+              // the payload omits a conversation id (defensive).
+              if (convId == null || convId == conversationId) {
+                unawaited(refetch());
+              }
+            },
+          );
+        }
+
+        unawaited(refetch());
+
         try {
           realtimeSubscription = Supabase.instance.client
               .from(_messagesRealtimeTable)
@@ -135,12 +181,29 @@ class ChatsRepository {
               .eq('conversation_id', conversationId)
               .order('created_at', ascending: true)
               .map(_parseMessageRows)
-              .listen(emitMessages, onError: (_) => unawaited(pollMessages()));
-        } catch (_) {
-          unawaited(pollMessages());
+              .listen(
+                (messages) {
+                  if (!realtimeHealthy) {
+                    realtimeHealthy = true;
+                    sseFallbackSubscription?.cancel();
+                    sseFallbackSubscription = null;
+                  }
+                  emitMessages(messages);
+                },
+                onError: (_) {
+                  realtimeHealthy = false;
+                  startSseFallbackIfNeeded();
+                },
+              );
+        } catch (e) {
+          debugPrint(
+            'ChatsRepository.watchMessages: realtime subscription failed, falling back to SSE event refetch: $e',
+          );
+          startSseFallbackIfNeeded();
         }
       },
       onCancel: () async {
+        await sseFallbackSubscription?.cancel();
         await realtimeSubscription?.cancel();
       },
     );
@@ -252,7 +315,7 @@ final conversationProvider =
           ref.watch(chatsRepositoryProvider).fetchConversation(conversationId),
     );
 
-final messagesProvider = FutureProvider.family<List<ChatMessage>, int>(
+final messagesProvider = FutureProvider.family<MessageListResponse, int>(
   (ref, conversationId) =>
       ref.watch(chatsRepositoryProvider).fetchMessages(conversationId),
 );

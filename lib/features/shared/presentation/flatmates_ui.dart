@@ -133,7 +133,10 @@ class _FlatmatesAvatarState extends State<FlatmatesAvatar>
             child: child,
           );
         },
-        child: Padding(padding: const EdgeInsets.all(3), child: avatar),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xs),
+          child: avatar,
+        ),
       );
     }
 
@@ -564,7 +567,7 @@ class FlatmatesSectionHeader extends StatelessWidget {
                 Text(
                   subtitle!,
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppSemanticColors.ink2,
+                    color: AppSemanticColors.textSecondaryFor(theme.brightness),
                   ),
                 ),
               ],
@@ -893,7 +896,7 @@ class FlatmatesNotificationCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: AppSpacing.edgeLg,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1051,7 +1054,9 @@ class _FlatmatesProfileGridCardState extends State<FlatmatesProfileGridCard>
                         gradient: LinearGradient(
                           colors: [
                             AppSemanticColors.accent.withValues(alpha: 0.18),
-                            AppSemanticColors.paper2,
+                            AppSemanticColors.secondarySurfaceFor(
+                              theme.brightness,
+                            ),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -1101,8 +1106,10 @@ class _FlatmatesProfileGridCardState extends State<FlatmatesProfileGridCard>
                         child: Container(
                           width: 44,
                           height: 44,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
+                          decoration: BoxDecoration(
+                            color: AppSemanticColors.surfaceFor(
+                              theme.brightness,
+                            ),
                             shape: BoxShape.circle,
                           ),
                           alignment: Alignment.center,

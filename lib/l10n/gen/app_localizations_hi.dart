@@ -38,7 +38,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get enterPhoneSubtitle =>
-      'पासवर्ड लॉगिन करें या OTP के साथ जारी रखें।';
+      'शुरू करने के लिए साइन इन करें या खाता बनाएं।';
 
   @override
   String get phoneNumberLabel => 'फोन नंबर';
@@ -93,6 +93,21 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String homeGreeting(String name) {
     return 'नमस्ते, $name';
+  }
+
+  @override
+  String homeGreetingMorning(String name) {
+    return 'सुप्रभात, $name';
+  }
+
+  @override
+  String homeGreetingAfternoon(String name) {
+    return 'नमस्कार, $name';
+  }
+
+  @override
+  String homeGreetingEvening(String name) {
+    return 'शुभ संध्या, $name';
   }
 
   @override
@@ -322,7 +337,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get profileMenuVisits => 'मेरा शेड्यूल';
 
   @override
-  String get profileMenuLikesChat => 'लाइक्स और चैट';
+  String get profileMenuLikesChat => 'मैच और चैट';
 
   @override
   String get profileMenuPostListing => 'लिस्टिंग पोस्ट करें';
@@ -335,9 +350,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get profileMenuDocuments => 'दस्तावेज़';
-
-  @override
-  String get profileMenuPaymentMethods => 'भुकतान के तरीके';
 
   @override
   String get editProfileCta => 'प्रोफ़ाइल संपादित करें';
@@ -683,6 +695,10 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get profilePhotoNudge =>
       '3+ फ़ोटो वाली प्रोफ़ाइल्स को 4 गुना ज़्यादा मैच मिलते हैं!';
+
+  @override
+  String get profilePhotoMinimumRequired =>
+      'आगे बढ़ने के लिए कम से कम एक फ़ोटो जोड़ें।';
 
   @override
   String get addPhotoCta => 'फ़ोटो जोड़ें';
@@ -1360,7 +1376,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String superLikeCapLabel(int count) {
-    return '$count सुपर लाइक बचे हैं';
+    return '$count स्टार मैच बचे हैं';
   }
 
   @override
@@ -1372,7 +1388,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get passActionLabel => 'पास';
 
   @override
-  String get superLikeActionLabel => 'सुपर लाइक';
+  String get superLikeActionLabel => 'स्टार मैच';
 
   @override
   String get likeActionLabel => 'लाइक';
@@ -1442,6 +1458,28 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get reportListing => 'लिस्टिंग की रिपोर्ट करें';
+
+  @override
+  String get reportListingTitle => 'इस लिस्टिंग की रिपोर्ट करें';
+
+  @override
+  String get reportListingReason => 'आप यह लिस्टिंग क्यों रिपोर्ट कर रहे हैं?';
+
+  @override
+  String get reportListingSubmitted =>
+      'धन्यवाद। हम इस लिस्टिंग की समीक्षा करेंगे।';
+
+  @override
+  String get reportReasonInappropriate => 'अनुपयुक्त सामग्री';
+
+  @override
+  String get reportReasonScam => 'संदिग्ध घोटाला या धोखाधड़ी';
+
+  @override
+  String get reportReasonOutdated => 'लिस्टिंग पुरानी या अनुपलब्ध है';
+
+  @override
+  String get reportReasonOther => 'अन्य';
 
   @override
   String get compatibilityScore => 'कंपैटिबिलिटी स्कोर';
@@ -1591,6 +1629,51 @@ class AppLocalizationsHi extends AppLocalizations {
   String get notificationSettingsLabel => 'नोटिफिकेशन सेटिंग्स';
 
   @override
+  String get notificationSettingsTitle => 'नोटिफिकेशन प्राथमिकताएं';
+
+  @override
+  String get notificationSettingsSubtitle =>
+      'चुनें कि आप कौन सी नोटिफिकेशन प्राप्त करना चाहते हैं';
+
+  @override
+  String get notifNewMessages => 'नए संदेश';
+
+  @override
+  String get notifNewMessagesDesc => 'नया संदेश मिलने पर सूचित करें';
+
+  @override
+  String get notifVisitReminders => 'विजिट रिमाइंडर';
+
+  @override
+  String get notifVisitRemindersDesc => 'आगामी प्रॉपर्टी विजिट के रिमाइंडर';
+
+  @override
+  String get notifNewMatches => 'नए मैच';
+
+  @override
+  String get notifNewMatchesDesc =>
+      'जब कोई आपकी प्रोफ़ाइल को पसंद करे तो सूचित करें';
+
+  @override
+  String get notifListingUpdates => 'लिस्टिंग अपडेट';
+
+  @override
+  String get notifListingUpdatesDesc =>
+      'आपकी लिस्टिंग व्यूज़ और रुचि के बारे में अपडेट';
+
+  @override
+  String get notifPromotions => 'प्रमोशन और टिप्स';
+
+  @override
+  String get notifPromotionsDesc => 'ऑफ़र, टिप्स और प्रोडक्ट अपडेट';
+
+  @override
+  String get notifEnableAll => 'सभी सक्षम करें';
+
+  @override
+  String get notifDisableAll => 'सभी अक्षम करें';
+
+  @override
   String get blockedUsersLabel => 'ब्लॉक किए गए उपयोगकर्ता';
 
   @override
@@ -1630,6 +1713,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get termsAndConditionsLabel => 'नियम और शर्तें';
 
   @override
+  String get termsAgreementPrefix => 'मैं इनसे सहमत हूं: ';
+
+  @override
+  String get termsAgreementConjunction => ' और ';
+
+  @override
   String get searchHelpPlaceholder => 'सहायता खोजें';
 
   @override
@@ -1640,12 +1729,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get popularTopicsSubtitle => 'लोकप्रिय मदद विषयों का अन्वेषण करें';
-
-  @override
-  String get paymentsLabel => 'भुगतान और वापसी';
-
-  @override
-  String get paymentsSubtitle => 'भुगतान समस्याएं, वापसी और अधिक';
 
   @override
   String get bookingAgreementsLabel => 'बुकिंग और समझौते';
@@ -1670,6 +1753,150 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get replyTimeNote => 'हम आमतौर पर कुछ मिनटों में उत्तर देते हैं';
+
+  @override
+  String get helpFaqIntro =>
+      '360 FlatMates के सबसे सामान्य सवालों के त्वरित जवाब।';
+
+  @override
+  String get helpFaqStartTitle => 'मैं फ्लैटमेट ढूंढना कैसे शुरू करूं?';
+
+  @override
+  String get helpFaqStartBody =>
+      'ऑनबोर्डिंग पूरी करें, शहर और बजट सेट करें, फिर Discover, Map, Swipe और Chats का उपयोग करके उपयुक्त फ्लैटमेट या लिस्टिंग से जुड़ें।';
+
+  @override
+  String get helpFaqSafetyTitle => 'मिलने से पहले सुरक्षित कैसे रहें?';
+
+  @override
+  String get helpFaqSafetyBody =>
+      'शुरुआती बातचीत ऐप में रखें, परिचित या साझा जगह पर मिलें, किराया और डिपॉजिट की जानकारी सत्यापित करें, और भरोसा बनने से पहले संवेदनशील दस्तावेज न भेजें।';
+
+  @override
+  String get helpFaqReportTitle => 'किसी को रिपोर्ट या ब्लॉक कैसे करूं?';
+
+  @override
+  String get helpFaqReportBody =>
+      'उस व्यक्ति की चैट खोलें और रिपोर्ट या ब्लॉक एक्शन का उपयोग करें। रिपोर्ट समीक्षा के लिए 360 FlatMates टीम को भेजी जाती है।';
+
+  @override
+  String get helpFaqListingTitle => 'मैं अपना फ्लैट कैसे लिस्ट करूं?';
+
+  @override
+  String get helpFaqListingBody =>
+      'प्रोफ़ाइल से Post Listing खोलें, जरूरी फ्लैट विवरण पूरे करें, और दूसरे उपयोगकर्ताओं को दिखने से पहले समीक्षा के लिए सबमिट करें।';
+
+  @override
+  String get helpPopularIntro =>
+      'सक्रिय उपयोगकर्ताओं के लिए सबसे उपयोगी सुरक्षा और सहायता विषय।';
+
+  @override
+  String get helpPopularMeetingsTitle => 'पहली मुलाकात को सुरक्षित रखें';
+
+  @override
+  String get helpPopularMeetingsBody =>
+      'संभव हो तो दिन में मिलें, किसी भरोसेमंद व्यक्ति को बताएं कि आप कहां जा रहे हैं, और शर्तें स्पष्ट होने तक नकद लेन-देन से बचें।';
+
+  @override
+  String get helpPopularVerifiedTitle => 'प्रोफ़ाइल भरोसा बढ़ाएं';
+
+  @override
+  String get helpPopularVerifiedBody =>
+      'अपना असली नाम उपयोग करें, स्पष्ट प्रोफ़ाइल फोटो जोड़ें, और लाइफस्टाइल प्राथमिकताएं सही रखें ताकि मैच अनुकूलता समझ सकें।';
+
+  @override
+  String get helpPopularVisitsTitle => 'चैट और विज़िट';
+
+  @override
+  String get helpPopularVisitsBody =>
+      'उपलब्धता की पुष्टि के लिए इन-ऐप चैट का उपयोग करें, लिस्टिंग या बातचीत स्क्रीन से विज़िट शेड्यूल करें, और जरूरी फैसले लिखित में रखें।';
+
+  @override
+  String get helpBookingsIntro =>
+      'विज़िट, समझौतों और लिस्टिंग समीक्षा के लिए मार्गदर्शन। 360 FlatMates आपको जोड़ने में मदद करता है; अंतिम किराये की शर्तें संबंधित लोगों के बीच रहती हैं।';
+
+  @override
+  String get helpBookingsDecisionTitle => 'मूव करने से पहले';
+
+  @override
+  String get helpBookingsDecisionBody =>
+      'मासिक किराया, डिपॉजिट, मेंटेनेंस, मूव-इन तारीख, नोटिस अवधि, घर के नियम और समझौते में किसका नाम होगा, यह पुष्टि करें।';
+
+  @override
+  String get helpBookingsAgreementsTitle => 'समझौते और दस्तावेज';
+
+  @override
+  String get helpBookingsAgreementsBody =>
+      'तय शर्तों की लिखित कॉपी रखें और ऐप के बाहर साइन या भुगतान करने से पहले भरोसेमंद माध्यमों से ID या स्वामित्व विवरण सत्यापित करें।';
+
+  @override
+  String get helpBookingsListingReviewTitle => 'लिस्टिंग समीक्षा';
+
+  @override
+  String get helpBookingsListingReviewBody =>
+      'सबमिट की गई लिस्टिंग लाइव होने से पहले गुणवत्ता और सुरक्षा के लिए समीक्षा में जा सकती है। विवरण बदलने पर आप संपादित करके फिर सबमिट कर सकते हैं।';
+
+  @override
+  String get helpAccountIntro =>
+      'प्रोफ़ाइल, पासवर्ड, गोपनीयता और ब्लॉक किए गए उपयोगकर्ताओं को एक सुरक्षित जगह से संभालें।';
+
+  @override
+  String get helpAccountEditTitle => 'प्रोफ़ाइल विवरण संपादित करें';
+
+  @override
+  String get helpAccountEditBody =>
+      'अपनी फोटो, लोकेशन, बजट, मूव-इन टाइमलाइन और लाइफस्टाइल जवाब अपडेट रखें ताकि सुझाव प्रासंगिक रहें।';
+
+  @override
+  String get helpAccountPrivacyTitle => 'गोपनीयता नियंत्रण';
+
+  @override
+  String get helpAccountPrivacyBody =>
+      'थीम, भाषा और अंतिम नाम या सटीक लोकेशन छिपाने जैसी गोपनीयता प्राथमिकताओं को संभालने के लिए Settings का उपयोग करें।';
+
+  @override
+  String get helpAccountBlockedTitle => 'ब्लॉक किए गए उपयोगकर्ता';
+
+  @override
+  String get helpAccountBlockedBody =>
+      'ब्लॉक किए गए लोग ऐप में आपसे संपर्क नहीं कर सकते। आप Blocked Users में उन्हें देख और अनब्लॉक कर सकते हैं।';
+
+  @override
+  String get helpContactIntro =>
+      'कुछ गलत, असुरक्षित या अटका हुआ लगे तो सहायता से संपर्क करें।';
+
+  @override
+  String get helpContactWhatToSendTitle => 'क्या भेजें';
+
+  @override
+  String get helpContactWhatToSendBody =>
+      'अपना फोन नंबर, संबंधित लिस्टिंग या बातचीत, उपयोगी स्क्रीनशॉट और क्या हुआ इसका छोटा विवरण भेजें।';
+
+  @override
+  String get helpContactUrgentTitle => 'तुरंत सुरक्षा समस्या';
+
+  @override
+  String get helpContactUrgentBody =>
+      'अगर तत्काल खतरा है, तो पहले स्थानीय आपातकालीन सेवाओं से संपर्क करें, फिर सुरक्षित रूप से साझा की जा सकने वाली जानकारी के साथ सहायता को रिपोर्ट करें।';
+
+  @override
+  String get emailSupportCta => 'सपोर्ट को ईमेल करें';
+
+  @override
+  String get supportEmailSubject => '360 FlatMates सहायता अनुरोध';
+
+  @override
+  String get supportEmailBody =>
+      'Hi 360 FlatMates Support, मुझे इसमें मदद चाहिए:';
+
+  @override
+  String supportEmailFallback(String email) {
+    return 'हमें $email पर ईमेल करें';
+  }
+
+  @override
+  String get externalLinkUnavailable =>
+      'यह लिंक नहीं खुल सका। कृपया फिर कोशिश करें।';
 
   @override
   String get stepLabel => 'चरण';
@@ -2066,7 +2293,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get scanToOpen => 'लिस्टिंग खोलने के लिए स्कैन करें';
 
   @override
-  String get matchItsAMatch => 'यह एक मैच है!';
+  String get matchItsAMatch => 'बढ़िया मैच!';
 
   @override
   String matchLikedEachOther(String peerName) {
@@ -2693,4 +2920,187 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get genderSuffixAny => 'कोई भी जेंडर';
+
+  @override
+  String get activeRecentlyLabel => 'हाल ही में सक्रिय';
+
+  @override
+  String get couldNotLoadContent => 'सामग्री लोड नहीं हो सकी।';
+
+  @override
+  String get forceUpdateTitle => 'अपडेट ज़रूरी है';
+
+  @override
+  String get forceUpdateMessage =>
+      '360 फ्लैटमेट्स का एक नया वर्शन उपलब्ध है। कृपया ऐप इस्तेमाल करने के लिए अपडेट करें।';
+
+  @override
+  String get forceUpdateCta => 'अभी अपडेट करें';
+
+  @override
+  String get optionalUpdateTitle => 'अपडेट उपलब्ध';
+
+  @override
+  String get optionalUpdateMessage =>
+      '360 फ्लैटमेट्स का एक नया वर्शन सुधार और बग फिक्स के साथ उपलब्ध है।';
+
+  @override
+  String get optionalUpdateCta => 'अभी अपडेट करें';
+
+  @override
+  String get optionalUpdateLater => 'बाद में';
+
+  @override
+  String get maintenanceTitle => 'मेंटेनेंस चल रहा है';
+
+  @override
+  String get maintenanceMessage =>
+      'हम चीज़ें बेहतर बना रहे हैं। कृपया कुछ देर बाद दोबारा देखें।';
+
+  @override
+  String get maintenanceRetry => 'फिर से जांचें';
+
+  @override
+  String get deleteAccountCta => 'खाता हटाएं';
+
+  @override
+  String get deleteAccountTitle => 'अपना खाता हटाएं';
+
+  @override
+  String get deleteAccountWarning =>
+      'यह कार्रवाई स्थायी है और इसे पूर्ववत नहीं किया जा सकता। आपका सारा डेटा जिसमें प्रोफ़ाइल, लिस्टिंग, चैट और मैच शामिल हैं, स्थायी रूप से हटा दिया जाएगा।';
+
+  @override
+  String get deleteAccountConfirmLabel => 'पुष्टि करने के लिए DELETE टाइप करें';
+
+  @override
+  String get deleteAccountConfirmHint => 'DELETE टाइप करें';
+
+  @override
+  String get deleteAccountButton => 'मेरा खाता हटाएं';
+
+  @override
+  String get deleteAccountCancelled => 'खाता हटाना रद्द किया गया।';
+
+  @override
+  String get deleteAccountFailed =>
+      'खाता हटाने में विफल। कृपया पुनः प्रयास करें या सहायता से संपर्क करें।';
+
+  @override
+  String get forgotPasswordTitle => 'पासवर्ड भूल गए';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'अपना फोन नंबर दर्ज करें और हम पासवर्ड रीसेट करने के लिए OTP भेजेंगे।';
+
+  @override
+  String get sendOtpCta => 'OTP भेजें';
+
+  @override
+  String get resetPasswordTitle => 'पासवर्ड रीसेट करें';
+
+  @override
+  String resetPasswordSubtitle(String phone) {
+    return '$phone पर भेजा गया OTP दर्ज करें और अपना नया पासवर्ड सेट करें।';
+  }
+
+  @override
+  String get forgotPasswordCta => 'पासवर्ड भूल गए?';
+
+  @override
+  String get noAccountCta => 'खाता नहीं है?';
+
+  @override
+  String get passwordResetSuccess =>
+      'पासवर्ड सफलतापूर्वक रीसेट किया गया। कृपया साइन इन करें।';
+
+  @override
+  String get phoneNotRegistered => 'यह फोन नंबर पंजीकृत नहीं है।';
+
+  @override
+  String get loginWithPasswordCta => 'पासवर्ड से लॉगिन करें';
+
+  @override
+  String get reportABug => 'बग की रिपोर्ट करें';
+
+  @override
+  String get reportABugSubtitle => 'कुछ काम नहीं कर रहा? हमें बताएं।';
+
+  @override
+  String get requestAFeature => 'फीचर का अनुरोध करें';
+
+  @override
+  String get requestAFeatureSubtitle => 'ऐप को बेहतर बनाने का सुझाव साझा करें।';
+
+  @override
+  String get reportABugIntro => 'हमें बताएं कि क्या गलत हुआ और हम इसे देखेंगे।';
+
+  @override
+  String get requestAFeatureIntro =>
+      'हमें बताएं कि आप ऐप में क्या देखना चाहेंगे।';
+
+  @override
+  String get feedbackTitleLabel => 'शीर्षक';
+
+  @override
+  String get feedbackTitleBugHint => 'बग का संक्षिप्त सारांश';
+
+  @override
+  String get feedbackTitleFeatureHint => 'आपके विचार का संक्षिप्त सारांश';
+
+  @override
+  String get feedbackTitleRequired => 'कृपया एक शीर्षक दर्ज करें।';
+
+  @override
+  String get feedbackDescriptionLabel => 'विवरण';
+
+  @override
+  String get feedbackDescriptionBugHint =>
+      'दोहराने के चरण, आपने क्या उम्मीद की थी और क्या हुआ';
+
+  @override
+  String get feedbackDescriptionFeatureHint =>
+      'फीचर का वर्णन करें और यह कैसे मदद करेगा';
+
+  @override
+  String get feedbackDescriptionRequired => 'कृपया एक विवरण दर्ज करें।';
+
+  @override
+  String get feedbackBugTypeLabel => 'बग का प्रकार';
+
+  @override
+  String get feedbackBugTypeFunctionality => 'कार्यक्षमता बग';
+
+  @override
+  String get feedbackBugTypeUi => 'यूआई बग';
+
+  @override
+  String get feedbackBugTypePerformance => 'प्रदर्शन समस्या';
+
+  @override
+  String get feedbackBugTypeCrash => 'क्रैश';
+
+  @override
+  String get feedbackBugTypeOther => 'अन्य';
+
+  @override
+  String get feedbackSeverityLabel => 'गंभीरता';
+
+  @override
+  String get feedbackSeverityLow => 'कम';
+
+  @override
+  String get feedbackSeverityMedium => 'मध्यम';
+
+  @override
+  String get feedbackSeverityHigh => 'उच्च';
+
+  @override
+  String get feedbackSeverityCritical => 'गंभीर';
+
+  @override
+  String get feedbackSubmitCta => 'सबमिट करें';
+
+  @override
+  String get feedbackSubmitSuccess => 'आपकी प्रतिक्रिया के लिए धन्यवाद!';
 }

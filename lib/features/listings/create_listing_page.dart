@@ -7,6 +7,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../bootstrap/bootstrap_controller.dart';
 import '../bootstrap/catalog_helpers.dart';
+import '../discover/application/discover_feed_controller.dart';
 import '../discover/discover_repository.dart';
 import '../shared/presentation/components.dart';
 import 'listings_repository.dart';
@@ -95,7 +96,11 @@ class _CreateListingPageState extends ConsumerState<CreateListingPage> {
         _rentController.text = listing.monthlyRent.toStringAsFixed(0);
         _availableFrom = listing.availableFrom;
       });
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+        'CreateListingPage._loadListingForEdit failed for listing $listingId: $e',
+      );
+    }
   }
 
   List<CatalogOption> _catalog(String key) {
@@ -188,9 +193,9 @@ class _CreateListingPageState extends ConsumerState<CreateListingPage> {
           });
         } else if (result is UploadFailure) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result.reason)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(result.reason)));
           break;
         }
       }
@@ -211,7 +216,7 @@ class _CreateListingPageState extends ConsumerState<CreateListingPage> {
       final listingId = await ref
           .read(listingsRepositoryProvider)
           .createListing(request);
-      ref.invalidate(discoverListingsProvider);
+      ref.read(discoverFeedControllerProvider.notifier).refresh();
       await ref.read(bootstrapControllerProvider.notifier).load();
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -272,8 +277,7 @@ class _CreateListingPageState extends ConsumerState<CreateListingPage> {
         primaryButtonKey: _step < totalSteps - 1
             ? const Key('listing_next_button')
             : const Key('listing_publish_button'),
-        secondaryButtonKey:
-            _step > 0 ? const Key('listing_back_button') : null,
+        secondaryButtonKey: _step > 0 ? const Key('listing_back_button') : null,
         label: _submitting
             ? locale.postingInProgress
             : (_step < totalSteps - 1

@@ -6,6 +6,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
+import 'core/analytics/analytics_service.dart';
 import 'core/config/app_config.dart';
 import 'core/config/env_loader.dart';
 import 'core/notifications/notification_service.dart';
@@ -55,14 +56,20 @@ Future<void> bootstrap() async {
   try {
     await Firebase.initializeApp();
     firebaseInitialized = true;
-  } catch (_) {
+  } catch (e) {
     // Firebase may not be configured yet (e.g. missing google-services.json /
     // GoogleService-Info.plist). Allow the app to start so it can still be
     // developed and tested without Firebase.
+    debugPrint('[bootstrap] Firebase init skipped: $e');
   }
   if (firebaseInitialized) {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   }
+
+  // Initialize Crashlytics + Analytics.
+  final analyticsService = await AnalyticsService.create(
+    firebaseReady: firebaseInitialized,
+  );
 
   // Initialize the local notifications plugin early so it is ready before
   // the widget tree mounts and before any foreground / background messages
@@ -87,6 +94,7 @@ Future<void> bootstrap() async {
           (ref) =>
               NotificationService(ref, messagingEnabled: firebaseInitialized),
         ),
+        analyticsServiceProvider.overrideWithValue(analyticsService),
       ],
       child: const App(),
     ),

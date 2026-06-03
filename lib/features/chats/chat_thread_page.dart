@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flatmates_app/core/theme/app_semantic_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,12 +9,11 @@ import '../../core/providers.dart';
 import '../../core/storage/image_upload_service.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/debouncer.dart';
+import '../../core/utils/profanity_filter.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../bootstrap/bootstrap_controller.dart';
 import '../bootstrap/catalog_helpers.dart';
-import '../shared/presentation/flatmates_bottom_sheet.dart';
-import '../shared/presentation/flatmates_error_state.dart';
-import '../shared/presentation/flatmates_skeleton.dart';
+import '../shared/presentation/components.dart';
 import '../visits/visits_repository.dart';
 import 'chats_repository.dart';
 import 'domain/chat_report_reason.dart';
@@ -125,7 +123,9 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
       await ref
           .read(chatsRepositoryProvider)
           .markMessagesAsRead(widget.conversationId);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ChatThreadPage._markMessagesAsRead failed: $e');
+    }
   }
 
   Future<void> _scheduleVisit() async {
@@ -138,17 +138,23 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
   }
 
   Future<void> _sendMessage() async {
-    final body = _messageController.text.trim();
+    var body = _messageController.text.trim();
     if (body.isEmpty) return;
+    body = ProfanityFilter.censor(body);
     final locale = AppLocalizations.of(context);
+    final previousText = _messageController.text;
+    final previousSelection = _messageController.selection;
+    _messageController.clear();
     try {
       await ref
           .read(chatsRepositoryProvider)
           .sendMessage(conversationId: widget.conversationId, body: body);
-      _messageController.clear();
       setState(() => _hasSentFirstMessage = true);
       ref.invalidate(conversationsProvider);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ChatThreadPage._sendMessage failed: $e');
+      _messageController.text = previousText;
+      _messageController.selection = previousSelection;
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -183,7 +189,8 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
           );
       setState(() => _hasSentFirstMessage = true);
       ref.invalidate(conversationsProvider);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ChatThreadPage._sendPhoto failed: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -232,7 +239,11 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
       updatedConversation = await repository.fetchConversation(
         widget.conversationId,
       );
-    } catch (_) {}
+    } catch (e) {
+      debugPrint(
+        'ChatThreadPage._submitQnA failed for conversation ${widget.conversationId}: $e',
+      );
+    }
     _markQnANudgeDismissed();
     if (mounted) {
       setState(() {
@@ -260,86 +271,6 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
       _markQnANudgeDismissed();
       if (mounted) setState(() => _showQnANudge = false);
     });
-  }
-
-  void _showEmojiPicker() {
-    const emojis = [
-      '🙂',
-      '😄',
-      '😂',
-      '😍',
-      '👍',
-      '🙌',
-      '🙏',
-      '👌',
-      '✨',
-      '🏠',
-      '🛋️',
-      '☕',
-      '🌙',
-      '🧹',
-      '🍽️',
-      '🎉',
-    ];
-    FlatmatesBottomSheet.show(
-      context: context,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl,
-              AppSpacing.md,
-              AppSpacing.xl,
-              AppSpacing.xl,
-            ),
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: emojis
-                  .map((emoji) {
-                    return SizedBox.square(
-                      dimension: 48,
-                      child: Material(
-                        color: AppSemanticColors.disabledSurfaceFor(
-                          theme.brightness,
-                        ),
-                        shape: const CircleBorder(),
-                        child: InkWell(
-                          customBorder: const CircleBorder(),
-                          onTap: () {
-                            _insertTextAtCursor(emoji);
-                            Navigator.pop(ctx);
-                          },
-                          child: Center(
-                            child: Text(
-                              emoji,
-                              style: theme.textTheme.titleLarge,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  })
-                  .toList(growable: false),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _insertTextAtCursor(String text) {
-    final value = _messageController.value;
-    final selection = value.selection;
-    final start = selection.isValid ? selection.start : value.text.length;
-    final end = selection.isValid ? selection.end : value.text.length;
-    final nextText = value.text.replaceRange(start, end, text);
-    _messageController.value = TextEditingValue(
-      text: nextText,
-      selection: TextSelection.collapsed(offset: start + text.length),
-    );
   }
 
   Future<void> _handleCall() async {
@@ -388,11 +319,14 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
 
     if (_conversation == null && fetchedConversation != null) {
       if (fetchedConversation.isLoading) {
-        return const Scaffold(body: Center(child: FlatmatesSkeleton.card()));
+        return const FlatmatesScreen(
+          useSafeArea: true,
+          body: Center(child: FlatmatesSkeleton.card()),
+        );
       }
       if (fetchedConversation.hasError) {
-        return Scaffold(
-          appBar: AppBar(),
+        return FlatmatesScreen(
+          useSafeArea: true,
           body: FlatmatesErrorState(
             message: locale.errorUnknown,
             onRetry: () =>
@@ -411,7 +345,8 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
       }
     }
 
-    return Scaffold(
+    return FlatmatesScreen(
+      useSafeArea: true,
       appBar: ChatAppBar(
         conversationId: widget.conversationId,
         conversation: conversation,
@@ -483,9 +418,8 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
           ),
           ChatInputArea(
             controller: _messageController,
-            onSend: () => _sendDebouncer.run(_sendMessage),
+            onSend: _sendMessage,
             onAttachment: _sendPhoto,
-            onEmoji: _showEmojiPicker,
           ),
         ],
       ),

@@ -351,6 +351,15 @@ class DiscoverRepository {
         ? int.tryParse(rawConversationId.toString())
         : null;
   }
+
+  Future<void> reportListing(int propertyId, String reason) async {
+    await _ref
+        .read(apiClientProvider)
+        .post(
+          FlatmatesEndpoints.reports,
+          data: {'reported_property_id': propertyId, 'reason': reason},
+        );
+  }
 }
 
 final discoverRepositoryProvider = Provider<DiscoverRepository>(
@@ -358,6 +367,10 @@ final discoverRepositoryProvider = Provider<DiscoverRepository>(
 );
 
 final discoverFiltersProvider = StateProvider<DiscoverFilters?>((ref) => null);
+
+final selectedPropertyProvider = StateProvider.autoDispose<PropertyListing?>(
+  (ref) => null,
+);
 
 final discoverListingsProvider = FutureProvider<List<PropertyListing>>((ref) {
   final profile = ref.watch(
@@ -370,12 +383,12 @@ final discoverListingsProvider = FutureProvider<List<PropertyListing>>((ref) {
   final effectiveFilters = filters?.hasGeoLocation == true
       ? filters
       : selectedLocation != null
-          ? (filters ?? const DiscoverFilters()).copyWith(
-              latitude: selectedLocation.latitude,
-              longitude: selectedLocation.longitude,
-              radiusKm: DiscoverFeedController.defaultLocationRadiusKm,
-            )
-          : filters;
+      ? (filters ?? const DiscoverFilters()).copyWith(
+          latitude: selectedLocation.latitude,
+          longitude: selectedLocation.longitude,
+          radiusKm: DiscoverFeedController.defaultLocationRadiusKm,
+        )
+      : filters;
   return ref
       .watch(discoverRepositoryProvider)
       .fetchListings(currentUser: profile, filters: effectiveFilters);

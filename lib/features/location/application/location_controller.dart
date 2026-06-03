@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
 
 import '../../../core/location/google_places_service.dart';
 import '../../../core/location/location_data.dart';
@@ -51,15 +50,15 @@ class LocationState {
 }
 
 final locationControllerProvider =
-    NotifierProvider<LocationController, LocationState>(
-  LocationController.new,
-);
+    NotifierProvider<LocationController, LocationState>(LocationController.new);
 
 class LocationController extends Notifier<LocationState> {
-  static final _ipDio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
-  ));
+  static final _ipDio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+    ),
+  );
 
   @override
   LocationState build() => const LocationState();
@@ -147,11 +146,7 @@ class LocationController extends Notifier<LocationState> {
       final region = data['region'] as String? ?? '';
       final name = city.isNotEmpty ? '$city, $region' : region;
 
-      return LocationData(
-        name: name,
-        latitude: lat,
-        longitude: lng,
-      );
+      return LocationData(name: name, latitude: lat, longitude: lng);
     } catch (e) {
       debugPrint('LocationController: IP location error: $e');
       return null;
@@ -170,7 +165,8 @@ class LocationController extends Notifier<LocationState> {
       final place = placemarks.first;
       final parts = <String>[
         if (place.name != null && place.name!.isNotEmpty) place.name!,
-        if (place.locality != null && place.locality!.isNotEmpty) place.locality!,
+        if (place.locality != null && place.locality!.isNotEmpty)
+          place.locality!,
         if (place.administrativeArea != null &&
             place.administrativeArea!.isNotEmpty)
           place.administrativeArea!,
@@ -184,7 +180,7 @@ class LocationController extends Notifier<LocationState> {
 
   Future<List<PlaceSuggestion>> getPlaceSuggestions(
     String query, {
-    LatLng? currentLocation,
+    ({double latitude, double longitude})? currentLocation,
   }) async {
     final service = ref.read(googlePlacesServiceProvider);
     return service.getPlaceSuggestions(query, currentLocation: currentLocation);
@@ -207,11 +203,13 @@ class LocationController extends Notifier<LocationState> {
     final pos = state.currentPosition;
     if (pos != null) {
       final address = state.currentAddress ?? '';
-      selectLocation(LocationData(
-        name: address,
-        latitude: pos.latitude,
-        longitude: pos.longitude,
-      ));
+      selectLocation(
+        LocationData(
+          name: address,
+          latitude: pos.latitude,
+          longitude: pos.longitude,
+        ),
+      );
     }
   }
 

@@ -37,7 +37,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterPhoneTitle => 'Enter your phone number';
 
   @override
-  String get enterPhoneSubtitle => 'Use password login or continue with OTP.';
+  String get enterPhoneSubtitle =>
+      'Sign in or create an account to get started.';
 
   @override
   String get phoneNumberLabel => 'Phone number';
@@ -92,6 +93,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String homeGreeting(String name) {
     return 'Good afternoon, $name';
+  }
+
+  @override
+  String homeGreetingMorning(String name) {
+    return 'Good morning, $name';
+  }
+
+  @override
+  String homeGreetingAfternoon(String name) {
+    return 'Good afternoon, $name';
+  }
+
+  @override
+  String homeGreetingEvening(String name) {
+    return 'Good evening, $name';
   }
 
   @override
@@ -322,7 +338,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileMenuVisits => 'My Schedule';
 
   @override
-  String get profileMenuLikesChat => 'Likes & Chat';
+  String get profileMenuLikesChat => 'Matches & Chat';
 
   @override
   String get profileMenuPostListing => 'Post Listing';
@@ -335,9 +351,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileMenuDocuments => 'Documents';
-
-  @override
-  String get profileMenuPaymentMethods => 'Payment Methods';
 
   @override
   String get editProfileCta => 'Edit profile';
@@ -684,6 +697,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get profilePhotoNudge =>
       'Profiles with 3+ photos get 4x more matches!';
+
+  @override
+  String get profilePhotoMinimumRequired =>
+      'Add at least one photo to continue.';
 
   @override
   String get addPhotoCta => 'Add photo';
@@ -1373,7 +1390,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passActionLabel => 'Pass';
 
   @override
-  String get superLikeActionLabel => 'Super Like';
+  String get superLikeActionLabel => 'Star Match';
 
   @override
   String get likeActionLabel => 'Like';
@@ -1443,6 +1460,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportListing => 'Report listing';
+
+  @override
+  String get reportListingTitle => 'Report this listing';
+
+  @override
+  String get reportListingReason => 'Why are you reporting this listing?';
+
+  @override
+  String get reportListingSubmitted =>
+      'Thank you. We will review this listing.';
+
+  @override
+  String get reportReasonInappropriate => 'Inappropriate content';
+
+  @override
+  String get reportReasonScam => 'Suspected scam or fraud';
+
+  @override
+  String get reportReasonOutdated => 'Listing is outdated or unavailable';
+
+  @override
+  String get reportReasonOther => 'Other';
 
   @override
   String get compatibilityScore => 'Compatibility score';
@@ -1591,6 +1630,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationSettingsLabel => 'Notification Settings';
 
   @override
+  String get notificationSettingsTitle => 'Notification Preferences';
+
+  @override
+  String get notificationSettingsSubtitle =>
+      'Choose which notifications you want to receive';
+
+  @override
+  String get notifNewMessages => 'New Messages';
+
+  @override
+  String get notifNewMessagesDesc =>
+      'Get notified when you receive a new message';
+
+  @override
+  String get notifVisitReminders => 'Visit Reminders';
+
+  @override
+  String get notifVisitRemindersDesc =>
+      'Reminders for upcoming property visits';
+
+  @override
+  String get notifNewMatches => 'New Matches';
+
+  @override
+  String get notifNewMatchesDesc =>
+      'Get notified when someone likes your profile';
+
+  @override
+  String get notifListingUpdates => 'Listing Updates';
+
+  @override
+  String get notifListingUpdatesDesc =>
+      'Updates about your listing views and interest';
+
+  @override
+  String get notifPromotions => 'Promotions & Tips';
+
+  @override
+  String get notifPromotionsDesc => 'Offers, tips, and product updates';
+
+  @override
+  String get notifEnableAll => 'Enable All';
+
+  @override
+  String get notifDisableAll => 'Disable All';
+
+  @override
   String get blockedUsersLabel => 'Blocked Users';
 
   @override
@@ -1630,6 +1716,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get termsAndConditionsLabel => 'Terms & Conditions';
 
   @override
+  String get termsAgreementPrefix => 'I agree to the ';
+
+  @override
+  String get termsAgreementConjunction => ' and ';
+
+  @override
   String get searchHelpPlaceholder => 'Search for help';
 
   @override
@@ -1640,12 +1732,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get popularTopicsSubtitle => 'Explore trending help topics';
-
-  @override
-  String get paymentsLabel => 'Payments & Refunds';
-
-  @override
-  String get paymentsSubtitle => 'Payment issues, refunds and more';
 
   @override
   String get bookingAgreementsLabel => 'Booking & Agreements';
@@ -1670,6 +1756,149 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get replyTimeNote => 'We usually reply in a few minutes';
+
+  @override
+  String get helpFaqIntro =>
+      'Quick answers for the most common 360 FlatMates questions.';
+
+  @override
+  String get helpFaqStartTitle => 'How do I start finding a flatmate?';
+
+  @override
+  String get helpFaqStartBody =>
+      'Complete onboarding, set your city and budget, then use Discover, Map, Swipe, and Chats to connect with relevant flatmates or listings.';
+
+  @override
+  String get helpFaqSafetyTitle => 'How should I stay safe before meeting?';
+
+  @override
+  String get helpFaqSafetyBody =>
+      'Keep early conversations in the app, meet in a familiar or shared place, verify rent and deposit details, and do not send sensitive documents before you trust the other person.';
+
+  @override
+  String get helpFaqReportTitle => 'How do I report or block someone?';
+
+  @override
+  String get helpFaqReportBody =>
+      'Open the chat with that person and use the report or block actions. Reports are sent to the 360 FlatMates team for review.';
+
+  @override
+  String get helpFaqListingTitle => 'How do I list my flat?';
+
+  @override
+  String get helpFaqListingBody =>
+      'Use Post Listing from your profile, complete the required flat details, and submit it for review before it appears to other users.';
+
+  @override
+  String get helpPopularIntro =>
+      'The most useful safety and support topics for active users.';
+
+  @override
+  String get helpPopularMeetingsTitle => 'Safer first meetings';
+
+  @override
+  String get helpPopularMeetingsBody =>
+      'Meet during the day when possible, tell someone you trust where you are going, and avoid cash handovers until terms are clear.';
+
+  @override
+  String get helpPopularVerifiedTitle => 'Profile trust basics';
+
+  @override
+  String get helpPopularVerifiedBody =>
+      'Use your real name, add a clear profile photo, and keep lifestyle preferences accurate so matches can evaluate compatibility.';
+
+  @override
+  String get helpPopularVisitsTitle => 'Chats and visits';
+
+  @override
+  String get helpPopularVisitsBody =>
+      'Use in-app chats to confirm availability, schedule visits from listing or conversation screens, and keep important decisions written down.';
+
+  @override
+  String get helpBookingsIntro =>
+      'Guidance for visits, agreements, and listing review. 360 FlatMates helps you connect; final rental terms stay between the people involved.';
+
+  @override
+  String get helpBookingsDecisionTitle => 'Before confirming a move';
+
+  @override
+  String get helpBookingsDecisionBody =>
+      'Confirm monthly rent, deposit, maintenance, move-in date, notice period, house rules, and who will be named on the agreement.';
+
+  @override
+  String get helpBookingsAgreementsTitle => 'Agreements and documents';
+
+  @override
+  String get helpBookingsAgreementsBody =>
+      'Keep written copies of agreed terms and verify IDs or ownership details through trusted channels before signing or paying outside the app.';
+
+  @override
+  String get helpBookingsListingReviewTitle => 'Listing review';
+
+  @override
+  String get helpBookingsListingReviewBody =>
+      'Submitted listings may be reviewed for quality and safety before going live. You can edit and resubmit if details change.';
+
+  @override
+  String get helpAccountIntro =>
+      'Manage profile, password, privacy, and blocked users from one safe place.';
+
+  @override
+  String get helpAccountEditTitle => 'Edit profile details';
+
+  @override
+  String get helpAccountEditBody =>
+      'Keep your photo, location, budget, move-in timeline, and lifestyle answers current so recommendations stay relevant.';
+
+  @override
+  String get helpAccountPrivacyTitle => 'Privacy controls';
+
+  @override
+  String get helpAccountPrivacyBody =>
+      'Use Settings to manage theme, language, and privacy preferences such as hiding your last name or exact location.';
+
+  @override
+  String get helpAccountBlockedTitle => 'Blocked users';
+
+  @override
+  String get helpAccountBlockedBody =>
+      'Blocked people cannot contact you through the app. You can review and unblock them from Blocked Users.';
+
+  @override
+  String get helpContactIntro =>
+      'Contact support when something looks wrong, unsafe, or stuck.';
+
+  @override
+  String get helpContactWhatToSendTitle => 'What to include';
+
+  @override
+  String get helpContactWhatToSendBody =>
+      'Send your phone number, the listing or conversation involved, screenshots if useful, and a short description of what happened.';
+
+  @override
+  String get helpContactUrgentTitle => 'Urgent safety issues';
+
+  @override
+  String get helpContactUrgentBody =>
+      'If there is immediate danger, contact local emergency services first, then report the issue to support with the details you can safely share.';
+
+  @override
+  String get emailSupportCta => 'Email support';
+
+  @override
+  String get supportEmailSubject => '360 FlatMates support request';
+
+  @override
+  String get supportEmailBody => 'Hi 360 FlatMates Support, I need help with:';
+
+  @override
+  String supportEmailFallback(String email) {
+    return 'Email us at $email';
+  }
+
+  @override
+  String get externalLinkUnavailable =>
+      'Could not open this link. Please try again.';
 
   @override
   String get stepLabel => 'Step';
@@ -2064,7 +2293,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanToOpen => 'Scan to open listing';
 
   @override
-  String get matchItsAMatch => 'It\'s a Match!';
+  String get matchItsAMatch => 'Great Match!';
 
   @override
   String matchLikedEachOther(String peerName) {
@@ -2087,7 +2316,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swipeLikeLabel => 'LIKE';
 
   @override
-  String get swipeNopeLabel => 'NOPE';
+  String get swipeNopeLabel => 'PASS';
 
   @override
   String get failedToLoadProfiles => 'Failed to load profiles';
@@ -2679,4 +2908,188 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get genderSuffixAny => 'Any Gender';
+
+  @override
+  String get activeRecentlyLabel => 'Active recently';
+
+  @override
+  String get couldNotLoadContent => 'Could not load content.';
+
+  @override
+  String get forceUpdateTitle => 'Update required';
+
+  @override
+  String get forceUpdateMessage =>
+      'A new version of 360 FlatMates is available. Please update to continue using the app.';
+
+  @override
+  String get forceUpdateCta => 'Update now';
+
+  @override
+  String get optionalUpdateTitle => 'Update available';
+
+  @override
+  String get optionalUpdateMessage =>
+      'A newer version of 360 FlatMates is available with improvements and bug fixes.';
+
+  @override
+  String get optionalUpdateCta => 'Update now';
+
+  @override
+  String get optionalUpdateLater => 'Later';
+
+  @override
+  String get maintenanceTitle => 'Under maintenance';
+
+  @override
+  String get maintenanceMessage =>
+      'We\'re making things better. Please check back in a little while.';
+
+  @override
+  String get maintenanceRetry => 'Check again';
+
+  @override
+  String get deleteAccountCta => 'Delete Account';
+
+  @override
+  String get deleteAccountTitle => 'Delete Your Account';
+
+  @override
+  String get deleteAccountWarning =>
+      'This action is permanent and cannot be undone. All your data including profile, listings, chats, and matches will be permanently deleted.';
+
+  @override
+  String get deleteAccountConfirmLabel => 'Type DELETE to confirm';
+
+  @override
+  String get deleteAccountConfirmHint => 'Type DELETE';
+
+  @override
+  String get deleteAccountButton => 'Delete My Account';
+
+  @override
+  String get deleteAccountCancelled => 'Account deletion cancelled.';
+
+  @override
+  String get deleteAccountFailed =>
+      'Failed to delete account. Please try again or contact support.';
+
+  @override
+  String get forgotPasswordTitle => 'Forgot Password';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'Enter your phone number and we\'ll send you an OTP to reset your password.';
+
+  @override
+  String get sendOtpCta => 'Send OTP';
+
+  @override
+  String get resetPasswordTitle => 'Reset Password';
+
+  @override
+  String resetPasswordSubtitle(String phone) {
+    return 'Enter the OTP sent to $phone and set your new password.';
+  }
+
+  @override
+  String get forgotPasswordCta => 'Forgot Password?';
+
+  @override
+  String get noAccountCta => 'Don\'t have an account?';
+
+  @override
+  String get passwordResetSuccess =>
+      'Password reset successfully. Please sign in.';
+
+  @override
+  String get phoneNotRegistered => 'This phone number is not registered.';
+
+  @override
+  String get loginWithPasswordCta => 'Login with password';
+
+  @override
+  String get reportABug => 'Report a Bug';
+
+  @override
+  String get reportABugSubtitle => 'Something not working? Let us know.';
+
+  @override
+  String get requestAFeature => 'Request a Feature';
+
+  @override
+  String get requestAFeatureSubtitle => 'Share an idea to make the app better.';
+
+  @override
+  String get reportABugIntro =>
+      'Tell us what went wrong and we\'ll look into it.';
+
+  @override
+  String get requestAFeatureIntro =>
+      'Tell us what you\'d love to see in the app.';
+
+  @override
+  String get feedbackTitleLabel => 'Title';
+
+  @override
+  String get feedbackTitleBugHint => 'Brief summary of the bug';
+
+  @override
+  String get feedbackTitleFeatureHint => 'Brief summary of your idea';
+
+  @override
+  String get feedbackTitleRequired => 'Please enter a title.';
+
+  @override
+  String get feedbackDescriptionLabel => 'Description';
+
+  @override
+  String get feedbackDescriptionBugHint =>
+      'Steps to reproduce, what you expected, and what happened';
+
+  @override
+  String get feedbackDescriptionFeatureHint =>
+      'Describe the feature and how it would help';
+
+  @override
+  String get feedbackDescriptionRequired => 'Please enter a description.';
+
+  @override
+  String get feedbackBugTypeLabel => 'Bug type';
+
+  @override
+  String get feedbackBugTypeFunctionality => 'Functionality bug';
+
+  @override
+  String get feedbackBugTypeUi => 'UI bug';
+
+  @override
+  String get feedbackBugTypePerformance => 'Performance issue';
+
+  @override
+  String get feedbackBugTypeCrash => 'Crash';
+
+  @override
+  String get feedbackBugTypeOther => 'Other';
+
+  @override
+  String get feedbackSeverityLabel => 'Severity';
+
+  @override
+  String get feedbackSeverityLow => 'Low';
+
+  @override
+  String get feedbackSeverityMedium => 'Medium';
+
+  @override
+  String get feedbackSeverityHigh => 'High';
+
+  @override
+  String get feedbackSeverityCritical => 'Critical';
+
+  @override
+  String get feedbackSubmitCta => 'Submit';
+
+  @override
+  String get feedbackSubmitSuccess => 'Thanks for your feedback!';
 }
