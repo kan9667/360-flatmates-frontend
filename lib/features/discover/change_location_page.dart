@@ -136,6 +136,7 @@ class _ChangeLocationPageState extends ConsumerState<ChangeLocationPage> {
           .read(profileRepositoryProvider)
           .updateProfile(payload: {'city': _selectedCity!.label});
       await ref.read(bootstrapControllerProvider.notifier).load();
+      if (!mounted) return;
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
