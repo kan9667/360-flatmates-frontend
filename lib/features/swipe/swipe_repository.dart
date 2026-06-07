@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/config/endpoints.dart';
+import '../../core/errors/app_failure.dart';
 import '../../core/providers.dart';
 import '../bootstrap/bootstrap_controller.dart';
 import '../discover/application/move_in_filter.dart';
@@ -155,76 +156,92 @@ class SwipeRepository {
   Future<List<SwipeProfile>> fetchSwipeProfiles({
     DiscoverFilters? filters,
   }) async {
-    final bootstrap = _ref.read(bootstrapControllerProvider).valueOrNull;
-    final userProfile = bootstrap?.profile;
-    final userNonNegotiables = _extractUserNonNegotiables(
-      userProfile?.preferences,
-    );
+    try {
+      final bootstrap = _ref.read(bootstrapControllerProvider).valueOrNull;
+      final userProfile = bootstrap?.profile;
+      final userNonNegotiables = _extractUserNonNegotiables(
+        userProfile?.preferences,
+      );
 
-    final queryParams = <String, dynamic>{};
-    if (userNonNegotiables.isNotEmpty) {
-      queryParams['non_negotiables'] = userNonNegotiables.join(',');
-    }
-    if (userProfile?.genderPreference != null &&
-        userProfile!.genderPreference != 'any') {
-      queryParams['gender_preference'] = userProfile.genderPreference;
-    }
-    final moveIn = moveInFilterQueryValue(filters?.moveInTimeline);
-    if (moveIn != null) {
-      queryParams['move_in'] = moveIn;
-    }
-    if (filters?.hasGeoLocation ?? false) {
-      final f = filters!;
-      queryParams['lat'] = f.latitude!.toStringAsFixed(6);
-      queryParams['lng'] = f.longitude!.toStringAsFixed(6);
-      if (f.radiusKm != null) {
-        queryParams['radius'] = f.radiusKm!.round();
+      final queryParams = <String, dynamic>{};
+      if (userNonNegotiables.isNotEmpty) {
+        queryParams['non_negotiables'] = userNonNegotiables.join(',');
       }
-    }
+      if (userProfile?.genderPreference != null &&
+          userProfile!.genderPreference != 'any') {
+        queryParams['gender_preference'] = userProfile.genderPreference;
+      }
+      final moveIn = moveInFilterQueryValue(filters?.moveInTimeline);
+      if (moveIn != null) {
+        queryParams['move_in'] = moveIn;
+      }
+      if (filters?.hasGeoLocation ?? false) {
+        final f = filters!;
+        queryParams['lat'] = f.latitude!.toStringAsFixed(6);
+        queryParams['lng'] = f.longitude!.toStringAsFixed(6);
+        if (f.radiusKm != null) {
+          queryParams['radius'] = f.radiusKm!.round();
+        }
+      }
 
-    final response = await _ref
-        .read(apiClientProvider)
-        .get(
-          FlatmatesEndpoints.flatmatesProfiles,
-          queryParameters: queryParams,
+      final response = await _ref
+          .read(apiClientProvider)
+          .get(
+            FlatmatesEndpoints.flatmatesProfiles,
+            queryParameters: queryParams,
+          );
+      final responseData = response.data;
+      // Handle both bare array and wrapped object response formats.
+      // Use `is List` / `is Map` runtime checks so an unexpected wrapper
+      // shape (e.g. `{"data": {...}}`) surfaces as an empty list instead
+      // of throwing a TypeError from a blind `as List?` cast.
+      List<dynamic> rows;
+      if (responseData is List) {
+        rows = responseData;
+      } else if (responseData is Map) {
+        final data = responseData.map(
+          (key, value) => MapEntry(key.toString(), value),
         );
-    final responseData = response.data;
-    // Handle both bare array and wrapped object response formats.
-    List<dynamic> rows;
-    if (responseData is List) {
-      rows = responseData;
-    } else if (responseData is Map) {
-      final data = Map<String, dynamic>.from(responseData);
-      rows =
-          (data['data'] as List?) ??
-          (data['profiles'] as List?) ??
-          (data['results'] as List?) ??
-          const [];
-    } else {
-      rows = const [];
+        final candidates = [data['data'], data['profiles'], data['results']];
+        rows =
+            candidates.firstWhere((e) => e is List, orElse: () => const <dynamic>[])
+                as List<dynamic>;
+      } else {
+        rows = const [];
+      }
+      log(
+        '[SwipeRepo] Response status: ${response.statusCode}, '
+        'rows: ${rows.length}',
+      );
+      final profiles = rows
+          .whereType<Map>()
+          .map(
+            (item) =>
+                SwipeProfile.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList();
+
+      final moveInFiltered = profiles
+          .where(
+            (profile) =>
+                _profileMatchesMoveIn(profile, filters?.moveInTimeline),
+          )
+          .toList();
+
+      return _applyDealBreakerFilter(
+        moveInFiltered,
+        userNonNegotiables,
+        userProfile,
+      );
+    } on AppFailure {
+      // Already typed — let the controller map it to AsyncError.
+      rethrow;
+    } catch (e, st) {
+      // Non-Dio errors (TypeError from parsing, FormatException, etc.) need
+      // to be wrapped so the controller's AsyncError carries an AppFailure
+      // and the error UI can render a typed, localized message.
+      throw UnknownFailure(underlyingError: e, stackTrace: st);
     }
-    log(
-      '[SwipeRepo] Response status: ${response.statusCode}, '
-      'rows: ${rows.length}',
-    );
-    final profiles = rows
-        .map(
-          (item) =>
-              SwipeProfile.fromJson(Map<String, dynamic>.from(item as Map)),
-        )
-        .toList();
-
-    final moveInFiltered = profiles
-        .where(
-          (profile) => _profileMatchesMoveIn(profile, filters?.moveInTimeline),
-        )
-        .toList();
-
-    return _applyDealBreakerFilter(
-      moveInFiltered,
-      userNonNegotiables,
-      userProfile,
-    );
   }
 
   bool _profileMatchesMoveIn(SwipeProfile profile, String? moveInTimeline) {

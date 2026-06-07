@@ -25,7 +25,6 @@ void showClusterSheet(
     context: context,
     isScrollControlled: true,
     builder: (ctx) => DraggableScrollableSheet(
-      initialChildSize: 0.5,
       minChildSize: 0.3,
       maxChildSize: 0.85,
       expand: false,

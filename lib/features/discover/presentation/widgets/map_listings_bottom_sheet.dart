@@ -140,7 +140,7 @@ class _HorizontalCardList extends ConsumerWidget {
         if (notification is ScrollUpdateNotification ||
             notification is ScrollEndNotification) {
           final offset = scrollController.offset;
-          final itemWidth = 130.0 + AppSpacing.sm;
+          const itemWidth = 130.0 + AppSpacing.sm;
           final index = (offset / itemWidth).round().clamp(
             0,
             listings.length - 1,

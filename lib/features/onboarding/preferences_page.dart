@@ -217,10 +217,10 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
             children: [
               _pillOptions(
                 options: [
-                  _PillOption(key: '1', label: '1'),
-                  _PillOption(key: '2', label: '2'),
-                  _PillOption(key: '3', label: '3'),
-                  _PillOption(key: '4+', label: '4+'),
+                  const _PillOption(key: '1', label: '1'),
+                  const _PillOption(key: '2', label: '2'),
+                  const _PillOption(key: '3', label: '3'),
+                  const _PillOption(key: '4+', label: '4+'),
                 ],
                 selectedKey: _allowedFlatmates,
                 onSelected: (v) => setState(() => _allowedFlatmates = v),

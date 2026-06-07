@@ -158,6 +158,42 @@ abstract class AppLocalizations {
   /// **'Sign in or create an account to get started.'**
   String get enterPhoneSubtitle;
 
+  /// No description provided for @authEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome'**
+  String get authEntryTitle;
+
+  /// No description provided for @authEntrySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google, or use your phone or email.'**
+  String get authEntrySubtitle;
+
+  /// No description provided for @continueWithGoogleCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get continueWithGoogleCta;
+
+  /// No description provided for @authDividerOr.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get authDividerOr;
+
+  /// No description provided for @identifierLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone or email'**
+  String get identifierLabel;
+
+  /// No description provided for @continueCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueCta;
+
   /// No description provided for @phoneNumberLabel.
   ///
   /// In en, this message translates to:
@@ -181,6 +217,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create account'**
   String get createAccountCta;
+
+  /// No description provided for @addPhoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your phone number'**
+  String get addPhoneTitle;
+
+  /// No description provided for @addPhoneSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a phone number so flatmates can reach you. You can skip this for now.'**
+  String get addPhoneSubtitle;
+
+  /// No description provided for @addPhoneCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get addPhoneCta;
+
+  /// No description provided for @skipCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip for now'**
+  String get skipCta;
+
+  /// No description provided for @setPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a password'**
+  String get setPasswordTitle;
+
+  /// No description provided for @setPasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a password to secure your account.'**
+  String get setPasswordSubtitle;
+
+  /// No description provided for @lastUsedMethodHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You last signed in with {method}'**
+  String lastUsedMethodHint(String method);
 
   /// No description provided for @loginTitle.
   ///
@@ -1355,20 +1433,14 @@ abstract class AppLocalizations {
   /// No description provided for @profilePhotoSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'A great photo helps you get more matches.'**
+  /// **'We\'ll show your initials until you add a photo. You can skip and add one later.'**
   String get profilePhotoSubtitle;
 
   /// No description provided for @profilePhotoNudge.
   ///
   /// In en, this message translates to:
-  /// **'Profiles with 3+ photos get 4x more matches!'**
+  /// **'Profiles with photos get 4x more matches.'**
   String get profilePhotoNudge;
-
-  /// No description provided for @profilePhotoMinimumRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Add at least one photo to continue.'**
-  String get profilePhotoMinimumRequired;
 
   /// No description provided for @addPhotoCta.
   ///
@@ -1723,12 +1795,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No more profiles to show right now. Check back later!'**
   String get emptySwipeDeck;
-
-  /// No description provided for @swipeDeckRemaining.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} remaining'**
-  String swipeDeckRemaining(int count);
 
   /// No description provided for @tapToSeeMore.
   ///
@@ -2660,29 +2726,11 @@ abstract class AppLocalizations {
   /// **'Sound on'**
   String get soundOn;
 
-  /// No description provided for @superLikeCapLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} Super Likes left'**
-  String superLikeCapLabel(int count);
-
-  /// No description provided for @swipeCounterLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} swipes left today'**
-  String swipeCounterLabel(int count);
-
   /// No description provided for @passActionLabel.
   ///
   /// In en, this message translates to:
   /// **'Pass'**
   String get passActionLabel;
-
-  /// No description provided for @superLikeActionLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Star Match'**
-  String get superLikeActionLabel;
 
   /// No description provided for @likeActionLabel.
   ///
@@ -5803,6 +5851,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Thanks for your feedback!'**
   String get feedbackSubmitSuccess;
+
+  /// No description provided for @profileUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated successfully'**
+  String get profileUpdated;
+
+  /// No description provided for @listingPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing published successfully'**
+  String get listingPublished;
+
+  /// No description provided for @listingResumed.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing resumed'**
+  String get listingResumed;
+
+  /// No description provided for @shortlisted.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to shortlist'**
+  String get shortlisted;
+
+  /// No description provided for @shortlistRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from shortlist'**
+  String get shortlistRemoved;
+
+  /// No description provided for @contactRequestSentToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact request sent'**
+  String get contactRequestSentToast;
+
+  /// No description provided for @listingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'LISTING'**
+  String get listingLabel;
+
+  /// No description provided for @liveBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get liveBadge;
+
+  /// No description provided for @floorPlanSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor Plan'**
+  String get floorPlanSectionTitle;
+
+  /// No description provided for @virtualTourSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'360° Virtual Tour'**
+  String get virtualTourSectionTitle;
+
+  /// No description provided for @exploreVirtualTourPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore this property in 360°'**
+  String get exploreVirtualTourPrompt;
+
+  /// No description provided for @openVirtualTourCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Virtual Tour'**
+  String get openVirtualTourCta;
+
+  /// No description provided for @streetViewCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Street View'**
+  String get streetViewCta;
+
+  /// No description provided for @societyVibeSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Society Vibe'**
+  String get societyVibeSectionTitle;
+
+  /// No description provided for @safetyBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay Safe'**
+  String get safetyBannerTitle;
+
+  /// No description provided for @safetyBannerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Always inspect the property in person before paying. Never wire deposits or rent without visiting first.'**
+  String get safetyBannerBody;
+
+  /// No description provided for @viewsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'views'**
+  String get viewsLabel;
+
+  /// No description provided for @interestedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'interested'**
+  String get interestedLabel;
+
+  /// No description provided for @likesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'likes'**
+  String get likesLabel;
+
+  /// No description provided for @openChatCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Chat'**
+  String get openChatCta;
+
+  /// No description provided for @visitRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit request sent!'**
+  String get visitRequestSent;
+
+  /// No description provided for @visitFromDetailPageNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Interested in this property — scheduled from listing page.'**
+  String get visitFromDetailPageNote;
+
+  /// No description provided for @readMoreCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Read more'**
+  String get readMoreCta;
+
+  /// No description provided for @showLessCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get showLessCta;
+
+  /// No description provided for @viewProfileCta.
+  ///
+  /// In en, this message translates to:
+  /// **'View Profile'**
+  String get viewProfileCta;
+
+  /// No description provided for @visitScheduledBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Your visit is on {date}'**
+  String visitScheduledBanner(String date);
 }
 
 class _AppLocalizationsDelegate

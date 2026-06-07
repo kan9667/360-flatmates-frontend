@@ -147,7 +147,9 @@ void main() {
 
       try {
         await dio.get('/protected');
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('auth_interceptor_test: $e');
+      }
 
       expect(tokenProvider.sessionCleared, isTrue);
     });

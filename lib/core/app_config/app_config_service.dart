@@ -73,7 +73,9 @@ class AppConfigService {
     } catch (e, st) {
       try {
         ref.read(analyticsServiceProvider).recordError(e, st);
-      } catch (_) {}
+      } catch (e2) {
+        debugPrint('AppConfigService.fetchConfig: $e2');
+      }
       return null;
     }
   }

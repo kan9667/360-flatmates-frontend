@@ -79,7 +79,6 @@ class MapListingsController extends Notifier<MapListingsState> {
       final newListings = await repo.fetchListings(
         currentUser: profile,
         filters: state.filters,
-        offset: 0,
         limit: _pageSize,
       );
 

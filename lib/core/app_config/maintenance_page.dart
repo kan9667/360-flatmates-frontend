@@ -22,7 +22,7 @@ class MaintenancePage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   Icons.build_outlined,
                   size: 64,
                   color: AppSemanticColors.textTertiary,
@@ -41,7 +41,7 @@ class MaintenancePage extends StatelessWidget {
                   message?.isNotEmpty == true
                       ? message!
                       : locale.maintenanceMessage,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 15,
                     color: AppSemanticColors.textSecondary,
                   ),

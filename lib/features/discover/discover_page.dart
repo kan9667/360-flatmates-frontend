@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/errors/app_failure.dart';
+import '../../core/errors/l10n_bridge.dart';
 import '../../core/location/location_data.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/debouncer.dart';
@@ -42,7 +44,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
 
   final _scrollController = ScrollController();
   final _likeDebouncer = ActionDebouncer(
-    duration: const Duration(milliseconds: 500),
+    
   );
   final _locationRadiusDebouncer = ActionDebouncer();
 
@@ -150,7 +152,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     );
     final locale = AppLocalizations.of(context);
     final feedState = ref.watch(discoverFeedControllerProvider);
-    final filtered = ref.watch(filteredListingsProvider(locale));
+    final filtered = ref.watch(filteredListingsProvider);
     final selectedLocation = ref.watch(
       locationControllerProvider.select((state) => state.selectedLocation),
     );
@@ -176,9 +178,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     final isSeeker = mode != 'room_poster';
 
     return FlatmatesScreen(
-      useSafeArea: true,
       body: feedState.isLoading && filtered.isEmpty
-          ? const Center(child: FlatmatesSkeleton.feed())
+          ? const FlatmatesSkeleton.discoverFeed()
           : RefreshIndicator(
               onRefresh: () =>
                   ref.read(discoverFeedControllerProvider.notifier).refresh(),
@@ -271,7 +272,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                                       _likeDebouncer.run(() {
                                         ref
                                             .read(discoverRepositoryProvider)
-                                            .likeListing(item.id)
+                                            .setLiked(item.id, true)
                                             .then((conversationId) {
                                               ref
                                                   .read(
@@ -283,32 +284,25 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                                                 conversationsProvider,
                                               );
                                               if (!context.mounted) return;
-                                              ScaffoldMessenger.of(
+                                              FlatmatesToast.success(
                                                 context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    conversationId == null
-                                                        ? locale
-                                                              .contactRequestSent
-                                                        : locale
-                                                              .contactRequestWithConversation(
-                                                                conversationId,
-                                                              ),
-                                                  ),
-                                                ),
+                                                conversationId == null
+                                                    ? locale.contactRequestSent
+                                                    : locale.contactRequestWithConversation(
+                                                        conversationId,
+                                                      ),
                                               );
                                             })
-                                            .catchError((_) {
+                                            .catchError((e) {
                                               if (!context.mounted) return;
-                                              ScaffoldMessenger.of(
+                                              final msg = e is AppFailure
+                                                  ? e.userMessage(
+                                                      locale.toUserMessageL10n(),
+                                                    )
+                                                  : locale.actionFailedRetry;
+                                              FlatmatesToast.error(
                                                 context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    locale.actionFailedRetry,
-                                                  ),
-                                                ),
+                                                msg,
                                               );
                                             });
                                       });

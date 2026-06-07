@@ -3,8 +3,10 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:latlong2/latlong.dart';
 
+import '../../core/errors/app_failure.dart';
+import '../../core/errors/l10n_bridge.dart';
 import '../../core/location/location_data.dart';
 import '../../core/map/map_controller.dart';
 import '../../core/theme/app_motion.dart';
@@ -20,6 +22,7 @@ import '../location/presentation/map_widgets.dart';
 import '../shared/presentation/flatmates_empty_state.dart';
 import '../shared/presentation/flatmates_error_state.dart';
 import '../shared/presentation/flatmates_skeleton.dart';
+import '../shared/presentation/flatmates_toast.dart';
 import 'application/map_listings_controller.dart';
 import 'discover_repository.dart';
 import 'presentation/widgets/discover_map.dart';
@@ -176,9 +179,12 @@ class _MapViewPageState extends ConsumerState<MapViewPage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final searchRadiusKm =
-        mapState.filters.radiusKm ??
-        MapListingsController.defaultLocationRadiusKm;
+    final currentPosition = ref.watch(
+      locationControllerProvider.select((s) => s.currentPosition),
+    );
+    final userLocation = currentPosition != null
+        ? LatLng(currentPosition.latitude, currentPosition.longitude)
+        : null;
     final selectedDisplayText = selectedLocation?.displayText ?? '';
 
     final filtered = mapState.listings;
@@ -189,7 +195,7 @@ class _MapViewPageState extends ConsumerState<MapViewPage> {
         : AppSemanticColors.frostOverlayLight;
 
     if (mapState.isLoading && mapState.listings.isEmpty) {
-      return const Scaffold(body: SafeArea(child: FlatmatesSkeleton.card()));
+      return const Scaffold(body: FlatmatesSkeleton.mapExplore());
     }
 
     if (mapState.hasError) {
@@ -205,11 +211,18 @@ class _MapViewPageState extends ConsumerState<MapViewPage> {
       );
     }
 
+    final safeAreaTop = MediaQuery.of(context).padding.top;
+    // Top bar internal height: md (top) + 48 (icon button) + xs (bottom) ≈ 64
+    const topBarContentHeight =
+        AppSpacing.md + 48.0 + AppSpacing.xs;
+    final controlsTopOffset =
+        safeAreaTop + topBarContentHeight + AppSpacing.lg;
+
     return Scaffold(
       body: Stack(
         children: [
           // Full-screen map
-          Positioned.fill(child: _buildMap(filtered, searchRadiusKm, locale, isDark)),
+          Positioned.fill(child: _buildMap(filtered, userLocation, locale, isDark)),
 
           // Top bar overlay with frosted glass background
           Positioned(
@@ -240,13 +253,15 @@ class _MapViewPageState extends ConsumerState<MapViewPage> {
                           ),
                           child: Row(
                             children: [
-                              MapLocationChip(
-                                locationName: selectedDisplayText.isNotEmpty
-                                    ? selectedDisplayText
-                                    : null,
-                                onTap: () => _showLocationPicker(context),
+                              Flexible(
+                                child: MapLocationChip(
+                                  locationName: selectedDisplayText.isNotEmpty
+                                      ? selectedDisplayText
+                                      : null,
+                                  onTap: () => _showLocationPicker(context),
+                                ),
                               ),
-                              const Spacer(),
+                              const SizedBox(width: AppSpacing.sm),
                               IconButton(
                                 onPressed: () =>
                                     context.push('/search-filters'),
@@ -261,11 +276,12 @@ class _MapViewPageState extends ConsumerState<MapViewPage> {
                                         theme.brightness,
                                       ),
                                 ),
+                                tooltip: 'Search',
                               ),
-                              const SizedBox(width: AppSpacing.sm),
                               IconButton(
                                 onPressed: () => _showFilterSheet(context),
                                 icon: const Icon(Icons.tune_rounded),
+                                tooltip: 'Filters',
                                 style: IconButton.styleFrom(
                                   backgroundColor:
                                       theme.brightness == Brightness.dark
@@ -288,6 +304,18 @@ class _MapViewPageState extends ConsumerState<MapViewPage> {
             ),
           ),
 
+          // Map controls — positioned in the safe zone below the top bar
+          Positioned(
+            right: AppSpacing.screen,
+            top: controlsTopOffset,
+            child: MapControlButtons(
+              onRecenter: _recenterToUserLocation,
+              onFitBounds: _fitBoundsToMarkers,
+              onZoomIn: () => _mapController?.zoomIn(),
+              onZoomOut: () => _mapController?.zoomOut(),
+            ),
+          ),
+
           // Bottom draggable sheet with listing cards
           MapListingsBottomSheet(
             listings: filtered,
@@ -305,30 +333,28 @@ class _MapViewPageState extends ConsumerState<MapViewPage> {
     try {
       final conversationId = await ref
           .read(discoverRepositoryProvider)
-          .likeListing(item.id);
+          .setLiked(item.id, true);
       ref.invalidate(conversationsProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            conversationId == null
-                ? locale.contactRequestSent
-                : locale.contactRequestWithConversation(conversationId),
-          ),
-        ),
+      FlatmatesToast.success(
+        context,
+        conversationId == null
+            ? locale.contactRequestSent
+            : locale.contactRequestWithConversation(conversationId),
       );
     } catch (e) {
       debugPrint('MapViewPage._handleContact failed: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(locale.actionFailedRetry)));
+      final msg = e is AppFailure
+          ? e.userMessage(locale.toUserMessageL10n())
+          : locale.actionFailedRetry;
+      FlatmatesToast.error(context, msg);
     }
   }
 
   Widget _buildMap(
     List<PropertyListing> filtered,
-    double searchRadiusKm,
+    LatLng? userLocation,
     AppLocalizations locale,
     bool isDark,
   ) {
@@ -343,22 +369,12 @@ class _MapViewPageState extends ConsumerState<MapViewPage> {
       children: [
         DiscoverMap(
           listings: filtered,
-          searchRadiusKm: searchRadiusKm,
           initialCenter: _resolveCenter(filtered),
+          userLocation: userLocation,
           selectedPropertyId: selectedPropertyId?.toString(),
           onMapReady: (controller) => _mapController = controller,
           onListingTap: _handleListingTap,
           onClusterTap: _handleClusterTap,
-        ),
-        Positioned(
-          right: AppSpacing.md,
-          top: AppSpacing.md,
-          child: MapControlButtons(
-            onRecenter: _recenterToUserLocation,
-            onFitBounds: _fitBoundsToMarkers,
-            onZoomIn: () => _mapController?.zoomIn(),
-            onZoomOut: () => _mapController?.zoomOut(),
-          ),
         ),
         if (!hasMarkers)
           Positioned.fill(
@@ -412,7 +428,7 @@ class _MapViewPageState extends ConsumerState<MapViewPage> {
 
     final index = _currentFiltered.indexWhere((e) => e.id == item.id);
     if (index >= 0 && _cardScrollController.hasClients) {
-      final itemWidth = 130.0 + AppSpacing.sm;
+      const itemWidth = 130.0 + AppSpacing.sm;
       _cardScrollController.animateTo(
         index * itemWidth,
         duration: AppMotion.standard,

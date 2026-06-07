@@ -47,7 +47,6 @@ class ProfilePage extends ConsumerWidget {
             children: [
               // --- Compact header: avatar left, text right, whole group centered ---
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Stack(
                     clipBehavior: Clip.none,
@@ -129,7 +128,7 @@ class ProfilePage extends ConsumerWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.check_circle_outline,
                                   size: 16,
                                   color: AppSemanticColors.accent,
@@ -272,7 +271,7 @@ class ProfilePage extends ConsumerWidget {
             ],
           );
         },
-        loading: () => const FlatmatesSkeleton.list(),
+        loading: () => const FlatmatesSkeleton.profile(),
         error: (error, _) =>
             const FlatmatesErrorState(message: 'Could not load profile'),
       ),
@@ -363,7 +362,7 @@ class _ProfileStrengthCard extends StatelessWidget {
                   backgroundColor: AppSemanticColors.line.withValues(
                     alpha: 0.25,
                   ),
-                  valueColor: AlwaysStoppedAnimation<Color>(
+                  valueColor: const AlwaysStoppedAnimation<Color>(
                     AppSemanticColors.accent,
                   ),
                 ),
@@ -403,7 +402,7 @@ class _ProfileStrengthCard extends StatelessWidget {
               ],
             ),
           ),
-          Icon(
+          const Icon(
             Icons.chevron_right_rounded,
             size: 20,
             color: AppSemanticColors.accent,

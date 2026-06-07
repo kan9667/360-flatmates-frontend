@@ -36,11 +36,11 @@ class NewInCitySection extends StatelessWidget {
           Container(
             width: 32,
             height: 32,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppSemanticColors.accentSoft,
               borderRadius: AppRadius.smBorder,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.location_city_rounded,
               size: 18,
               color: AppSemanticColors.accent,
@@ -74,7 +74,7 @@ class NewInCitySection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 2),
-                Icon(
+                const Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 12,
                   color: AppSemanticColors.accent,
@@ -259,7 +259,7 @@ class _WaitlistNudgeCardState extends State<WaitlistNudgeCard> {
                   color: AppSemanticColors.coralSoftFor(theme.brightness),
                   borderRadius: AppRadius.smBorder,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.group_add_outlined,
                   color: AppSemanticColors.accent,
                   size: 20,
@@ -334,7 +334,7 @@ class _WaitlistNudgeCardState extends State<WaitlistNudgeCard> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.check_circle_outline,
                     size: 14,
                     color: AppSemanticColors.accent,

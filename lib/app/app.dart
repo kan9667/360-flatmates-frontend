@@ -163,7 +163,7 @@ class _AppState extends ConsumerState<App> {
       final analytics = ref.read(analyticsServiceProvider);
       if (next.isLoggedIn) {
         analytics.logLogin();
-        bootstrap.load();
+        bootstrap.refresh();
         ref.read(notificationServiceProvider).initialize();
         // Connect SSE stream with a token refresher callback so reconnects
         // always use a fresh JWT.

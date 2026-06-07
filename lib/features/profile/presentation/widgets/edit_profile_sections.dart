@@ -43,7 +43,7 @@ class EditProfilePhotoSection extends StatelessWidget {
                     child: Container(
                       width: 120,
                       height: 120,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
                           colors: [
@@ -61,7 +61,7 @@ class EditProfilePhotoSection extends StatelessWidget {
                                 fit: BoxFit.cover,
                               ),
                             )
-                          : Icon(Icons.person, size: 48, color: Colors.white),
+                          : const Icon(Icons.person, size: 48, color: Colors.white),
                     ),
                   ),
                   if (photoUploading)
@@ -85,7 +85,7 @@ class EditProfilePhotoSection extends StatelessWidget {
                     child: Container(
                       width: 36,
                       height: 36,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppSemanticColors.accent,
                         shape: BoxShape.circle,
                       ),

@@ -72,6 +72,7 @@ class SwipeCardStack extends StatelessWidget {
       right: 0,
       bottom: 8,
       child: GestureDetector(
+        key: const Key('swipe_card'),
         onHorizontalDragStart: onHorizontalDragStart,
         onHorizontalDragUpdate: onHorizontalDragUpdate,
         onHorizontalDragEnd: onHorizontalDragEnd,
@@ -131,7 +132,6 @@ class SwipeCardStack extends StatelessWidget {
     );
 
     return Stack(
-      clipBehavior: Clip.hardEdge,
       children: [backgroundCard, currentCard],
     );
   }

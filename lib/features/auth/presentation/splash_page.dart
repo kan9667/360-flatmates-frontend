@@ -162,7 +162,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                             )
                           : locale.errorUnknown;
                       return Padding(
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.screen + AppSpacing.lg,
                         ),
                         child: Column(
@@ -180,7 +180,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                               label: locale.commonRetry,
                               onPressed: () => ref
                                   .read(bootstrapControllerProvider.notifier)
-                                  .load(),
+                                  .refresh(),
                             ),
                           ],
                         ),
@@ -236,7 +236,7 @@ class _SplashProgress extends StatelessWidget {
           backgroundColor: AppSemanticColors.disabledSurfaceFor(
             Theme.of(context).brightness,
           ),
-          valueColor: AlwaysStoppedAnimation<Color>(AppSemanticColors.accent),
+          valueColor: const AlwaysStoppedAnimation<Color>(AppSemanticColors.accent),
         ),
       ),
     );

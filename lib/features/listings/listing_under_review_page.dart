@@ -236,7 +236,7 @@ class _ListingUnderReviewPageState
                           children: [
                             Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.info_outline,
                                   color: AppSemanticColors.error,
                                   size: 20,
@@ -288,7 +288,7 @@ class _ListingUnderReviewPageState
                         ),
                         child: Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.schedule_outlined,
                               size: 20,
                               color: AppSemanticColors.accent,
@@ -424,7 +424,7 @@ class _ListingUnderReviewPageState
             ],
           );
         },
-        loading: () => const FlatmatesSkeleton.card(),
+        loading: () => const FlatmatesSkeleton.feed(itemCount: 2),
         error: (e, _) =>
             const FlatmatesErrorState(message: 'Could not load review status'),
       ),

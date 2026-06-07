@@ -37,7 +37,7 @@ class MarketInsightCard extends StatelessWidget {
               color: AppSemanticColors.accent.withValues(alpha: 0.14),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.verified_user_outlined,
               color: AppSemanticColors.accent,
               size: 18,
@@ -70,7 +70,7 @@ class MarketInsightCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.xs),
-          Icon(
+          const Icon(
             Icons.chevron_right_rounded,
             color: AppSemanticColors.accent,
             size: 20,
@@ -108,7 +108,7 @@ class PostYourSpaceCard extends StatelessWidget {
               color: AppSemanticColors.accent.withValues(alpha: 0.14),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.add_home_outlined,
               color: AppSemanticColors.accent,
               size: 18,
@@ -141,7 +141,7 @@ class PostYourSpaceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.xs),
-          Icon(
+          const Icon(
             Icons.chevron_right_rounded,
             color: AppSemanticColors.accent,
             size: 20,

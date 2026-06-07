@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/deep_links/deep_link_service.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../shared/presentation/flatmates_toast.dart';
 import '../discover/discover_repository.dart';
 import '../shared/presentation/flatmates_chip.dart';
 import '../shared/presentation/flatmates_price_text.dart';
@@ -169,14 +170,13 @@ class _ShareListingCardState extends ConsumerState<ShareListingCard> {
                     ),
                     child: QrImageView(
                       data: DeepLinkService.listingUrl(l.id),
-                      version: QrVersions.auto,
                       size: 120,
                       backgroundColor: Colors.white,
-                      eyeStyle: QrEyeStyle(
+                      eyeStyle: const QrEyeStyle(
                         eyeShape: QrEyeShape.square,
                         color: AppSemanticColors.accent,
                       ),
-                      dataModuleStyle: QrDataModuleStyle(
+                      dataModuleStyle: const QrDataModuleStyle(
                         dataModuleShape: QrDataModuleShape.square,
                         color: AppSemanticColors.accent,
                       ),
@@ -358,7 +358,7 @@ class _ShareListingCardState extends ConsumerState<ShareListingCard> {
                     ),
                     const Spacer(),
                     // Branding footer
-                    Center(
+                    const Center(
                       child: Text(
                         '360 FLATMATES',
                         style: TextStyle(
@@ -514,14 +514,13 @@ class _ShareListingCardState extends ConsumerState<ShareListingCard> {
                       ),
                       child: QrImageView(
                         data: DeepLinkService.listingUrl(l.id),
-                        version: QrVersions.auto,
                         size: 120,
                         backgroundColor: Colors.white,
-                        eyeStyle: QrEyeStyle(
+                        eyeStyle: const QrEyeStyle(
                           eyeShape: QrEyeShape.square,
                           color: AppSemanticColors.accent,
                         ),
-                        dataModuleStyle: QrDataModuleStyle(
+                        dataModuleStyle: const QrDataModuleStyle(
                           dataModuleShape: QrDataModuleShape.square,
                           color: AppSemanticColors.accent,
                         ),
@@ -617,9 +616,7 @@ class _ShareListingCardState extends ConsumerState<ShareListingCard> {
     } else {
       if (!mounted) return;
       final locale = AppLocalizations.of(context);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(locale.whatsappNotInstalled)));
+      FlatmatesToast.info(context, locale.whatsappNotInstalled);
     }
   }
 }

@@ -251,7 +251,7 @@ class SwipeProfileCard extends StatelessWidget {
                           label: locale.maintenanceRow,
                           value: '₹${maintenance.toStringAsFixed(0)}',
                         ),
-                      Divider(height: 20, color: AppSemanticColors.line),
+                      const Divider(height: 20, color: AppSemanticColors.line),
                       _CompactCostRow(
                         label: locale.estimatedTotalRow,
                         value:
@@ -675,7 +675,7 @@ class _InfoOverlay extends StatelessWidget {
         ],
         // Activity status
         const SizedBox(height: AppSpacing.sm),
-        _ActivityStatus(),
+        const _ActivityStatus(),
       ],
     );
   }
@@ -747,7 +747,7 @@ class _ActivityStatus extends StatelessWidget {
         Container(
           width: 6,
           height: 6,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             shape: BoxShape.circle,
             color: AppSemanticColors.ink4,
           ),
@@ -790,13 +790,12 @@ class _CompactMatchChip extends StatelessWidget {
         borderRadius: AppRadius.pillBorder,
         border: Border.all(
           color: AppSemanticColors.success.withValues(alpha: 0.2),
-          width: 1,
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          const Icon(
             Icons.check_circle_rounded,
             size: 14,
             color: AppSemanticColors.success,

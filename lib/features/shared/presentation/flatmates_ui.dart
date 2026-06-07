@@ -399,7 +399,7 @@ class _FlatmatesButtonState extends State<FlatmatesButton> {
                   ? AppSemanticColors.accent
                   : null,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: AppRadius.mdBorder),
+              shape: const RoundedRectangleBorder(borderRadius: AppRadius.mdBorder),
               elevation: enabled ? 1 : 0,
               shadowColor: enabled && !widget.destructive
                   ? AppSemanticColors.accent.withValues(alpha: 0.18)
@@ -441,7 +441,7 @@ class _FlatmatesButtonState extends State<FlatmatesButton> {
                     : borderColor,
                 width: 1.5,
               ),
-              shape: RoundedRectangleBorder(borderRadius: AppRadius.mdBorder),
+              shape: const RoundedRectangleBorder(borderRadius: AppRadius.mdBorder),
             ),
             child: _buildChild(theme, textColor),
           ),
@@ -476,7 +476,7 @@ class _FlatmatesButtonState extends State<FlatmatesButton> {
         style: IconButton.styleFrom(
           foregroundColor: color,
           backgroundColor: color.withValues(alpha: 0.1),
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.mdBorder),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.mdBorder),
         ),
       ),
     );
@@ -588,7 +588,7 @@ class FlatmatesSectionHeader extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 2),
-                Icon(
+                const Icon(
                   Icons.chevron_right,
                   size: 18,
                   color: AppSemanticColors.accent,
@@ -756,7 +756,7 @@ class _FlatmatesMenuItemState extends State<FlatmatesMenuItem> {
                     ],
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.chevron_right,
                   size: 20,
                   color: AppSemanticColors.ink3,
@@ -883,7 +883,7 @@ class FlatmatesNotificationCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: !isRead
-            ? Border(
+            ? const Border(
                 left: BorderSide(color: AppSemanticColors.accent, width: 3),
               )
             : null,
@@ -935,7 +935,6 @@ class FlatmatesNotificationCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Text(
                       time,
@@ -949,7 +948,7 @@ class FlatmatesNotificationCard extends StatelessWidget {
                       Container(
                         width: 10,
                         height: 10,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: AppSemanticColors.accent,
                           shape: BoxShape.circle,
                         ),

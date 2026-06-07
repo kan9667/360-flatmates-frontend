@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/errors/app_failure.dart';
+import '../../core/errors/l10n_bridge.dart';
 import '../../core/storage/image_upload_service.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../bootstrap/bootstrap_controller.dart';
 import '../bootstrap/catalog_helpers.dart';
 import '../shared/presentation/flatmates_header.dart';
+import '../shared/presentation/flatmates_toast.dart';
 import '../shared/presentation/flatmates_ui.dart';
 import 'presentation/widgets/edit_profile_sections.dart';
 import 'profile_repository.dart';
@@ -92,7 +95,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     String catalogKey,
     List<DropdownMenuItem<String>> fallback,
   ) {
-    final bootstrap = ref.read(bootstrapControllerProvider).valueOrNull;
+    final bootstrap = ref.watch(bootstrapControllerProvider).valueOrNull;
     final catalogOpts = bootstrap?.catalogOptions(catalogKey);
     if (catalogOpts != null && catalogOpts.isNotEmpty) {
       return catalogOpts
@@ -425,14 +428,16 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       }
 
       await ref.read(profileRepositoryProvider).updateProfile(payload: payload);
-      await ref.read(bootstrapControllerProvider.notifier).load();
+      await ref.read(bootstrapControllerProvider.notifier).refresh();
       if (!context.mounted) return;
+      FlatmatesToast.success(context, locale.profileUpdated);
       Navigator.of(context).pop();
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(locale.errorUnknown)));
+      final message = e is AppFailure
+          ? e.userMessage(locale.toUserMessageL10n())
+          : locale.errorUnknown;
+      FlatmatesToast.error(context, message);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
