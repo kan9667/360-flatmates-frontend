@@ -243,7 +243,7 @@ class HomeSearchBar extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
-                'Search by locality or area...',
+                AppLocalizations.of(context).homeSearchHint,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: AppSemanticColors.textSecondaryFor(theme.brightness),
                 ),

@@ -26,7 +26,7 @@ class EnterPhonePage extends ConsumerStatefulWidget {
 class _EnterPhonePageState extends ConsumerState<EnterPhonePage> {
   final _controller = TextEditingController();
   final _smartAuth = SmartAuth.instance;
-  bool _termsAccepted = true;
+  bool _termsAccepted = false;
   bool _isSubmitting = false;
 
   bool get _looksLikeEmail => _controller.text.contains('@');
@@ -59,7 +59,8 @@ class _EnterPhonePageState extends ConsumerState<EnterPhonePage> {
     
     // Normalize phone numbers to include the country code
     if (!identifier.contains('@')) {
-      final digits = identifier.replaceAll(RegExp(r'\D'), '');
+      String digits = identifier.replaceAll(RegExp(r'\D'), '');
+      digits = digits.replaceFirst(RegExp(r'^0+'), '');
       if (digits.length == 10) {
         identifier = '+91$digits';
       }

@@ -40,6 +40,7 @@ class MapViewPage extends ConsumerStatefulWidget {
 class _MapViewPageState extends ConsumerState<MapViewPage> {
   final _locationRadiusDebouncer = ActionDebouncer();
   final ScrollController _cardScrollController = ScrollController();
+  int _scrollAnimGen = 0;
 
   // Bound once the DiscoverMap hands back its controller via onMapReady.
   FlatmatesMapController? _mapController;
@@ -450,6 +451,7 @@ class _MapViewPageState extends ConsumerState<MapViewPage> {
       final minScroll = _cardScrollController.position.minScrollExtent;
       targetOffset = targetOffset.clamp(minScroll, maxScroll);
 
+      final gen = ++_scrollAnimGen;
       ref.read(mapProgrammaticScrollProvider.notifier).state = true;
       _cardScrollController
           .animateTo(
@@ -458,7 +460,7 @@ class _MapViewPageState extends ConsumerState<MapViewPage> {
             curve: AppMotion.easeOutCubic,
           )
           .whenComplete(() {
-            if (mounted) {
+            if (mounted && _scrollAnimGen == gen) {
               ref.read(mapProgrammaticScrollProvider.notifier).state = false;
             }
           });

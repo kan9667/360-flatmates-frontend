@@ -163,6 +163,7 @@ class ChatsRepository {
                 debugPrint(
                   'ChatsRepository.watchMessages: realtime stream error: $e',
                 );
+                unawaited(refetch());
               });
         } catch (e) {
           debugPrint(

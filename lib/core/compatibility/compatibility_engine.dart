@@ -50,40 +50,54 @@ class CompatibilityEngine {
   }) {
     final dimensions = <CompatibilityDimension>[];
 
+    String getVal(Map<String, String> map, String key, String defaultVal) {
+      final val = map[key];
+      if (val == null) return defaultVal;
+      if (key == 'food_habits') {
+        if (val == 'veg') return 'vegetarian';
+        if (val == 'non_veg') return 'non_vegetarian';
+      }
+      if (key == 'smoking_drinking' || key == 'smoking') {
+        if (val == 'no') return 'neither';
+        if (val == 'yes') return 'smoke_outside';
+      }
+      return val;
+    }
+
     dimensions.add(
       _sleepSchedule(
-        user['sleep_schedule'] ?? 'flexible',
-        peer['sleep_schedule'] ?? 'flexible',
+        getVal(user, 'sleep_schedule', 'flexible'),
+        getVal(peer, 'sleep_schedule', 'flexible'),
       ),
     );
     dimensions.add(
       _cleanliness(
-        user['cleanliness'] ?? 'tidy',
-        peer['cleanliness'] ?? 'tidy',
+        getVal(user, 'cleanliness', 'tidy'),
+        getVal(peer, 'cleanliness', 'tidy'),
       ),
     );
     dimensions.add(
       _foodHabits(
-        user['food_habits'] ?? 'no_preference',
-        peer['food_habits'] ?? 'no_preference',
+        getVal(user, 'food_habits', 'no_preference'),
+        getVal(peer, 'food_habits', 'no_preference'),
       ),
     );
     dimensions.add(
       _smokingDrinking(
-        user['smoking_drinking'] ?? 'neither',
-        peer['smoking_drinking'] ?? 'neither',
+        getVal(user, 'smoking_drinking', 'neither'),
+        getVal(peer, 'smoking_drinking', 'neither'),
       ),
     );
     dimensions.add(
       _guestsPolicy(
-        user['guests_policy'] ?? 'occasional_ok',
-        peer['guests_policy'] ?? 'occasional_ok',
+        getVal(user, 'guests_policy', 'occasional_ok'),
+        getVal(peer, 'guests_policy', 'occasional_ok'),
       ),
     );
     dimensions.add(
       _workStyle(
-        user['work_style'] ?? 'hybrid',
-        peer['work_style'] ?? 'hybrid',
+        getVal(user, 'work_style', 'hybrid'),
+        getVal(peer, 'work_style', 'hybrid'),
       ),
     );
 

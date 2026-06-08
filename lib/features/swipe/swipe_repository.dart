@@ -115,11 +115,7 @@ class SwipeProfile {
       id: (json['id'] as num?)?.toInt() ?? 0,
       fullName: json['full_name'] as String?,
       profileImageUrl: json['profile_image_url'] as String?,
-      imageUrls: (json['image_urls'] as List?)
-          ?.map((e) => e.toString())
-          .where((e) => e.isNotEmpty)
-          .toList() ??
-          const [],
+      imageUrls: _parseImageUrls(json['image_urls']),
       mode: json['mode'] as String?,
       city: json['city'] as String?,
       locality: json['locality'] as String?,
@@ -145,6 +141,17 @@ class SwipeProfile {
       age: (json['age'] as num?)?.toInt(),
       profession: json['profession'] as String?,
     );
+  }
+
+  static List<String> _parseImageUrls(dynamic raw) {
+    if (raw is List && raw.isNotEmpty) {
+      if (raw.every((e) => e is String)) {
+        return List<String>.from(raw)
+            .where((url) => url.startsWith('http://') || url.startsWith('https://'))
+            .toList(growable: false);
+      }
+    }
+    return const [];
   }
 }
 

@@ -130,17 +130,18 @@ class AuthController extends Notifier<AuthState> {
       return 'failure:${error.label}';
     }
     if (error is AuthException) {
-      final msg = error.message.toLowerCase();
-      // Supabase OTP errors: expired, invalid, already used, rate limited.
-      if (msg.contains('rate') || msg.contains('limit') || msg.contains('seconds') || msg.contains('security purposes')) {
+      if (error.statusCode == '429' || error.statusCode == 'too_many_requests') {
         return 'failure:rate_limit';
       }
       // Token invalid / expired / already consumed → treat as invalid OTP.
       return 'failure:otp_invalid';
     }
+
     if (error is StateError) {
-      // Typically "Session missing after OTP verification."
-      return 'failure:auth_session_missing';
+      if (error.message.toLowerCase().contains('session')) {
+        return 'failure:auth_session_missing';
+      }
+      return 'failure:unknown';
     }
     debugPrint('AuthController._userSafeMessage: unhandled ${error.runtimeType}: $error');
     return 'failure:unknown';

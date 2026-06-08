@@ -105,18 +105,16 @@ class _HeroCarouselState extends State<HeroCarousel> {
                       fit: StackFit.expand,
                       children: [
                         // Blurred background filling the space
-                        FlatmatesNetworkImage(
-                          imageUrl: widget.images[i],
-                          fit: BoxFit.cover,
-                          fallbackName: widget.name,
-                        ),
-                        ClipRRect(
-                          child: BackdropFilter(
-                            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                            child: Container(
-                              color: Colors.black.withValues(alpha: 0.2),
-                            ),
+                        ImageFiltered(
+                          imageFilter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                          child: FlatmatesNetworkImage(
+                            imageUrl: widget.images[i],
+                            fit: BoxFit.cover,
+                            fallbackName: widget.name,
                           ),
+                        ),
+                        Container(
+                          color: Colors.black.withValues(alpha: 0.2),
                         ),
                         // Sharp uncropped image on top
                         FlatmatesNetworkImage(

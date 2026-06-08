@@ -71,7 +71,7 @@ class _FlatmatesScreenState extends State<FlatmatesScreen>
                 padding: effectivePadding,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight - verticalPadding,
+                    minHeight: (constraints.maxHeight - verticalPadding) > 0 ? (constraints.maxHeight - verticalPadding) : 0.0,
                   ),
                   child: widget.body,
                 ),

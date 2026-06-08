@@ -57,7 +57,7 @@ class AppConfigService {
           'app': 'flatmates',
           'platform': defaultTargetPlatform.name,
           'current_version': packageInfo.version,
-          'build_number': int.tryParse(packageInfo.buildNumber),
+          'build_number': packageInfo.buildNumber,
         },
       );
       final data = response.data;
