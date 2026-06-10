@@ -1221,14 +1221,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeMovingSoon => 'Moving soon';
 
   @override
-  String trendingNeighborhoodsIn(String city) {
-    return 'Trending in $city';
-  }
-
-  @override
-  String get meetPotentialFlatmates => 'Meet potential flatmates';
-
-  @override
   String get vibeAll => 'All';
 
   @override
@@ -1397,7 +1389,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get videoTourLabel => 'Video tour (optional)';
 
   @override
-  String get videoTourHint => '15-30 second vertical video, max 50MB';
+  String get videoTourHint => '15-60 second vertical video, max 50MB';
 
   @override
   String get addVideoCta => 'Add video tour';
@@ -1409,7 +1401,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get videoTooLarge => 'Video must be under 50MB';
 
   @override
-  String get videoTooLong => 'Video must be under 30 seconds';
+  String get videoTooLong => 'Video must be under 60 seconds';
 
   @override
   String get videoTooShort => 'Video must be at least 15 seconds';
@@ -3235,4 +3227,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String andNMore(int count) {
     return '+$count more';
   }
+
+  @override
+  String trendingNeighborhoodsIn(String city) {
+    return 'Trending in $city';
+  }
+
+  @override
+  String get meetPotentialFlatmates => 'Meet potential flatmates';
 }

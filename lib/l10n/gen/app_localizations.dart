@@ -2378,18 +2378,6 @@ abstract class AppLocalizations {
   /// **'Moving soon'**
   String get homeMovingSoon;
 
-  /// No description provided for @trendingNeighborhoodsIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Trending in {city}'**
-  String trendingNeighborhoodsIn(String city);
-
-  /// No description provided for @meetPotentialFlatmates.
-  ///
-  /// In en, this message translates to:
-  /// **'Meet potential flatmates'**
-  String get meetPotentialFlatmates;
-
   /// No description provided for @vibeAll.
   ///
   /// In en, this message translates to:
@@ -2699,7 +2687,7 @@ abstract class AppLocalizations {
   /// No description provided for @videoTourHint.
   ///
   /// In en, this message translates to:
-  /// **'15-30 second vertical video, max 50MB'**
+  /// **'15-60 second vertical video, max 50MB'**
   String get videoTourHint;
 
   /// No description provided for @addVideoCta.
@@ -2723,7 +2711,7 @@ abstract class AppLocalizations {
   /// No description provided for @videoTooLong.
   ///
   /// In en, this message translates to:
-  /// **'Video must be under 30 seconds'**
+  /// **'Video must be under 60 seconds'**
   String get videoTooLong;
 
   /// No description provided for @videoTooShort.
@@ -6079,6 +6067,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'+{count} more'**
   String andNMore(int count);
+
+  /// No description provided for @trendingNeighborhoodsIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending in {city}'**
+  String trendingNeighborhoodsIn(String city);
+
+  /// No description provided for @meetPotentialFlatmates.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet potential flatmates'**
+  String get meetPotentialFlatmates;
 }
 
 class _AppLocalizationsDelegate

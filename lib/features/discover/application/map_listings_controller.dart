@@ -46,8 +46,8 @@ class MapListingsController extends Notifier<MapListingsState> {
   @override
   MapListingsState build() {
     final sharedFilters = ref.watch(discoverFiltersProvider);
-    final merged = sharedFilters != null
-        ? state.filters.copyWith(
+    final initialFilters = sharedFilters != null
+        ? const DiscoverFilters().copyWith(
             query: sharedFilters.query,
             location: sharedFilters.location,
             priceMin: sharedFilters.priceMin,
@@ -61,12 +61,9 @@ class MapListingsController extends Notifier<MapListingsState> {
             vibe: sharedFilters.vibe,
             moveInTimeline: sharedFilters.moveInTimeline,
           )
-        : state.filters;
-    if (merged != state.filters) {
-      state = state.copyWith(filters: merged);
-    }
+        : const DiscoverFilters();
     Future.microtask(() => _autoInjectLocationThenLoad());
-    return const MapListingsState(isLoading: true);
+    return MapListingsState(filters: initialFilters, isLoading: true);
   }
 
   Future<void> _autoInjectLocationThenLoad() async {
