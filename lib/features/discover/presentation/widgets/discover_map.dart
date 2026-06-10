@@ -170,7 +170,9 @@ class _DiscoverMapState extends State<DiscoverMap> {
 
   void _onMapReady() {
     _mapController.attach(_mapImpl);
-    _styleLoaded = true;
+    setState(() {
+      _styleLoaded = true;
+    });
     widget.onMapReady(_mapController);
   }
 
