@@ -13,11 +13,45 @@ import 'swipe_card_components.dart';
 
 /// Single scrollable profile card for the swipe deck.
 ///
-/// Layout: hero carousel → quick stats pills → about → compatibility →
-/// the place → people → costs. All existing data fields are preserved but
-/// reorganized for better visual hierarchy.
+/// Thin wrapper around [SwipeProfileDetailBody] — adds the card chrome
+/// (padding + [FlatmatesCard] + rounded clip) that the swipe stack expects.
 class SwipeProfileCard extends StatelessWidget {
   const SwipeProfileCard({
+    required this.item,
+    required this.compatibility,
+    super.key,
+  });
+
+  final SwipeProfile item;
+  final CompatibilityResult compatibility;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+      child: FlatmatesCard(
+        padding: EdgeInsets.zero,
+        child: ClipRRect(
+          borderRadius: AppRadius.cardBorder,
+          child: SwipeProfileDetailBody(
+            item: item,
+            compatibility: compatibility,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The scrollable rich profile body shared by the swipe card and the
+/// profile sheet.
+///
+/// Layout: hero carousel → quick stats pills → about → compatibility →
+/// the place → people → costs. All existing data fields are preserved but
+/// reorganized for better visual hierarchy. Renders a [ListView] so it
+/// scrolls natively wherever it is hosted.
+class SwipeProfileDetailBody extends StatelessWidget {
+  const SwipeProfileDetailBody({
     required this.item,
     required this.compatibility,
     super.key,
@@ -84,84 +118,75 @@ class SwipeProfileCard extends StatelessWidget {
     final lat = dbl('latitude');
     final lng = dbl('longitude');
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-      child: FlatmatesCard(
-        padding: EdgeInsets.zero,
-        child: ClipRRect(
-          borderRadius: AppRadius.cardBorder,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      children: [
+        HeroCarousel(
+          images: allImages,
+          name: item.fullName,
+          mode: item.mode ?? 'open_to_both',
+          compatibility: compatibility,
+          item: item,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        QuickStatsRow(
+          item: item,
+          roomType: roomType,
+          flatConfig: flatConfig,
+          furnishing: furnishing,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              HeroCarousel(
-                images: allImages,
-                name: item.fullName,
-                mode: item.mode ?? 'open_to_both',
+              const SizedBox(height: AppSpacing.xl),
+              AboutSection(
+                bio: item.bio,
+                videoTourUrl: videoTourUrl,
                 compatibility: compatibility,
-                item: item,
               ),
-              const SizedBox(height: AppSpacing.md),
-              QuickStatsRow(
-                item: item,
+              const SizedBox(height: AppSpacing.xl),
+              SectionHeader(label: locale.compatibilityBreakdown),
+              const SizedBox(height: AppSpacing.sm),
+              CompactCompatibilityBreakdown(result: compatibility),
+              const SizedBox(height: AppSpacing.xl),
+              _PlaceBlock(
+                locality: item.locality,
+                city: item.city,
+                societyName: societyName,
                 roomType: roomType,
                 flatConfig: flatConfig,
-                furnishing: furnishing,
+                floor: floor,
+                societyAmenities: societyAmenities,
+                flatAmenities: flatAmenities,
+                lat: lat,
+                lng: lng,
+                fallbackLabel:
+                    item.locality ??
+                    item.city ??
+                    locale.propertyFallbackLabel,
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: AppSpacing.xl),
-                    AboutSection(
-                      bio: item.bio,
-                      videoTourUrl: videoTourUrl,
-                      compatibility: compatibility,
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    SectionHeader(label: locale.compatibilityBreakdown),
-                    const SizedBox(height: AppSpacing.sm),
-                    CompactCompatibilityBreakdown(result: compatibility),
-                    const SizedBox(height: AppSpacing.xl),
-                    _PlaceBlock(
-                      locality: item.locality,
-                      city: item.city,
-                      societyName: societyName,
-                      roomType: roomType,
-                      flatConfig: flatConfig,
-                      floor: floor,
-                      societyAmenities: societyAmenities,
-                      flatAmenities: flatAmenities,
-                      lat: lat,
-                      lng: lng,
-                      fallbackLabel:
-                          item.locality ??
-                          item.city ??
-                          locale.propertyFallbackLabel,
-                    ),
-                    if (existingFlatmates.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      SectionHeader(label: locale.peopleSectionTitle),
-                      const SizedBox(height: AppSpacing.sm),
-                      ExistingFlatmatesRow(flatmates: existingFlatmates),
-                    ],
-                    if (monthlyRent != null) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      CostsSection(
-                        monthlyRent: monthlyRent,
-                        securityDeposit: securityDeposit,
-                        maintenance: maintenance,
-                      ),
-                    ],
-                    const SizedBox(height: AppSpacing.xl),
-                  ],
+              if (existingFlatmates.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xl),
+                SectionHeader(label: locale.peopleSectionTitle),
+                const SizedBox(height: AppSpacing.sm),
+                ExistingFlatmatesRow(flatmates: existingFlatmates),
+              ],
+              if (monthlyRent != null) ...[
+                const SizedBox(height: AppSpacing.xl),
+                CostsSection(
+                  monthlyRent: monthlyRent,
+                  securityDeposit: securityDeposit,
+                  maintenance: maintenance,
                 ),
-              ),
+              ],
+              const SizedBox(height: AppSpacing.xl),
             ],
           ),
         ),
-      ),
+      ],
     );
   }
 }

@@ -1550,5 +1550,7 @@
       }
     }
   },
-  "meetPotentialFlatmates": "Meet potential flatmates"
+  "meetPotentialFlatmates": "Meet potential flatmates",
+  "lifestyleSectionTitle": "Lifestyle",
+  "dealBreakersSectionTitle": "Deal-breakers"
 }

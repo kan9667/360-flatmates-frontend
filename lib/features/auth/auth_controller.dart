@@ -116,14 +116,21 @@ class AuthController extends Notifier<AuthState> {
   /// Called by [BootstrapController] after bootstrap data is fetched. The
   /// router reads [AuthState.authStage] to route profile-completion and
   /// onboarding screens.
+  ///
+  /// No-ops when the stage and missing fields are unchanged. Riverpod's
+  /// `Notifier` notifies on every assignment regardless of value equality, so
+  /// without this guard a repeated identical stage would re-emit and ripple
+  /// through every auth-state listener on each bootstrap refresh.
   void updateGateStage(
     AuthStage stage, {
     List<String> missingFields = const [],
   }) {
-    state = state.copyWith(
+    final next = state.copyWith(
       authStage: stage,
       missingProfileFields: missingFields,
     );
+    if (next == state) return;
+    state = next;
   }
 
   /// Returns a resolvable key for [resolveAuthError] in the presentation layer.

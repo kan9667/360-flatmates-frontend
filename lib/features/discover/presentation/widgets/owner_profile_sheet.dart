@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/compatibility/compatibility_ring.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/gen/app_localizations.dart';
 import '../../../chats/chats_repository.dart';
 import '../../../shared/presentation/components.dart';
+import '../../../shared/presentation/flatmates_ui.dart';
 
 class OwnerProfileSheet extends ConsumerWidget {
   const OwnerProfileSheet({
@@ -85,16 +87,58 @@ class _OwnerProfileBody extends StatelessWidget {
     final locale = AppLocalizations.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final name = peerData?['full_name'] as String? ?? listingOwnerName;
+    // listingOwnerName is canonical — it's the same owner_name the detail page
+    // renders. peerData['full_name'] can diverge (stale cache, backend drift)
+    // so it must never override it.
+    final name = listingOwnerName;
     final imageUrl = peerData?['profile_image_url'] as String?;
     final mode = peerData?['mode'] as String?;
     final city = peerData?['city'] as String?;
     final age = peerData?['age'];
     final profession = peerData?['profession'] as String?;
+    final bio = peerData?['bio'] as String?;
     final matchPercentage =
         (peerData?['match_percentage'] as num?)?.toDouble() ?? 0;
+    final budgetMin = (peerData?['budget_min'] as num?)?.toDouble();
+    final budgetMax = (peerData?['budget_max'] as num?)?.toDouble();
+    final moveIn = peerData?['move_in_timeline'] as String?;
+    final nonNegotiables = (peerData?['non_negotiables'] as List?)
+            ?.map((e) => e.toString())
+            .where((e) => e.trim().isNotEmpty)
+            .toList() ??
+        const <String>[];
 
     final locationParts = [?peerData?['locality']?.toString(), ?city];
+
+    // Quick-stat chips (budget range, move-in timeline) — only with peer data.
+    final quickStats = <({IconData icon, String label})>[
+      if (peerData != null && _budgetText(budgetMin, budgetMax).isNotEmpty)
+        (
+          icon: Icons.currency_rupee_rounded,
+          label: _budgetText(budgetMin, budgetMax),
+        ),
+      if (moveIn != null && moveIn.trim().isNotEmpty)
+        (icon: Icons.event_outlined, label: humanizeFlatmatesToken(moveIn)),
+    ];
+
+    // Lifestyle chips — one per non-empty lifestyle token, humanized.
+    final lifestyle = <({IconData icon, String label})>[
+      for (final entry in <(String?, IconData)>[
+        (peerData?['food_habits'] as String?, Icons.restaurant_outlined),
+        (peerData?['smoking_drinking'] as String?, Icons.local_bar_outlined),
+        (peerData?['guests_policy'] as String?, Icons.groups_outlined),
+        (
+          peerData?['cleanliness'] as String?,
+          Icons.cleaning_services_outlined,
+        ),
+        (peerData?['sleep_schedule'] as String?, Icons.bedtime_outlined),
+        (peerData?['work_style'] as String?, Icons.work_outline_rounded),
+      ])
+        if (entry.$1 != null && entry.$1!.trim().isNotEmpty)
+          (icon: entry.$2, label: humanizeFlatmatesToken(entry.$1!)),
+    ];
+
+    final hasBio = bio != null && bio.trim().isNotEmpty;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -176,6 +220,83 @@ class _OwnerProfileBody extends StatelessWidget {
             ),
           ),
         ],
+
+        // Quick stats (budget, move-in).
+        if (quickStats.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.lg),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final s in quickStats)
+                FlatmatesChip(
+                  icon: s.icon,
+                  label: s.label,
+                  variant: FlatmatesChipVariant.info,
+                ),
+            ],
+          ),
+        ],
+
+        // About / bio.
+        if (hasBio) ...[
+          const SizedBox(height: AppSpacing.lg),
+          _SectionLabel(label: locale.aboutLabel),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            bio.trim(),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppSemanticColors.textSecondaryFor(
+                isDark ? Brightness.dark : Brightness.light,
+              ),
+            ),
+          ),
+        ],
+
+        // Lifestyle chips.
+        if (lifestyle.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.lg),
+          _SectionLabel(label: locale.lifestyleSectionTitle),
+          const SizedBox(height: AppSpacing.xs),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final l in lifestyle)
+                  FlatmatesChip(
+                    icon: l.icon,
+                    label: l.label,
+                    variant: FlatmatesChipVariant.info,
+                  ),
+              ],
+            ),
+          ),
+        ],
+
+        // Non-negotiables / deal-breakers.
+        if (nonNegotiables.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.lg),
+          _SectionLabel(label: locale.dealBreakersSectionTitle),
+          const SizedBox(height: AppSpacing.xs),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final n in nonNegotiables)
+                  FlatmatesChip(
+                    label: humanizeFlatmatesToken(n),
+                    variant: FlatmatesChipVariant.info,
+                  ),
+              ],
+            ),
+          ),
+        ],
+
         const SizedBox(height: AppSpacing.lg),
 
         // Send message CTA
@@ -229,4 +350,53 @@ class _ModeBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Small accent-bar section header, matching the swipe card's look.
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 3,
+          height: 16,
+          decoration: const BoxDecoration(
+            color: AppSemanticColors.accent,
+            borderRadius: AppRadius.smBorder,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Text(
+          label,
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppSemanticColors.textSecondaryFor(theme.brightness),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Compact budget range, e.g. "₹15k–₹20k/mo". Mirrors the swipe card formatting.
+String _budgetText(double? min, double? max) {
+  if (min != null && max != null) {
+    return '₹${_shortMoney(min)}–₹${_shortMoney(max)}/mo';
+  }
+  if (min != null) return '₹${_shortMoney(min)}/mo+';
+  if (max != null) return 'Up to ₹${_shortMoney(max)}/mo';
+  return '';
+}
+
+String _shortMoney(double v) {
+  if (v >= 100000) return '${(v / 100000).toStringAsFixed(1)}L';
+  if (v >= 1000) return '${(v / 1000).toStringAsFixed(0)}k';
+  return v.toStringAsFixed(0);
 }

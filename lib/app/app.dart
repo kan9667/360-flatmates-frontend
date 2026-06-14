@@ -151,12 +151,19 @@ class _AppState extends ConsumerState<App> {
       });
     }
 
-    ref.listen<AuthState>(authControllerProvider, (_, next) {
-      final bootstrap = ref.read(bootstrapControllerProvider.notifier);
-      final analytics = ref.read(analyticsServiceProvider);
-      if (next.isLoggedIn) {
-        analytics.logLogin();
-        bootstrap.refresh();
+    // React only to the login/logout *transition*, not to every auth-state
+    // emission. Bootstrap fetches /users/me/auth-state and calls
+    // updateGateStage(), which re-emits AuthState — so an unguarded listener
+    // here would re-refresh bootstrap on every fetch and loop infinitely
+    // (each cycle also re-firing logLogin, notification init, and SSE connect).
+    ref.listen<AuthState>(authControllerProvider, (previous, next) {
+      final wasLoggedIn = previous?.isLoggedIn ?? false;
+      final isLoggedIn = next.isLoggedIn;
+      if (isLoggedIn == wasLoggedIn) return;
+
+      if (isLoggedIn) {
+        ref.read(analyticsServiceProvider).logLogin();
+        ref.read(bootstrapControllerProvider.notifier).refresh();
         ref.read(notificationServiceProvider).initialize();
         // Connect SSE stream with a token refresher callback so reconnects
         // always use a fresh JWT.
@@ -168,7 +175,7 @@ class _AppState extends ConsumerState<App> {
       } else {
         ref.read(notificationServiceProvider).dispose();
         ref.read(sseServiceProvider).disconnect();
-        bootstrap.clear();
+        ref.read(bootstrapControllerProvider.notifier).clear();
       }
     });
 

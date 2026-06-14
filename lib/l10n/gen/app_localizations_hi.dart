@@ -3316,4 +3316,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get meetPotentialFlatmates => 'संभावित फ्लैटमेट्स से मिलें';
+
+  @override
+  String get lifestyleSectionTitle => 'जीवनशैली';
+
+  @override
+  String get dealBreakersSectionTitle => 'डील-ब्रेकर्स';
 }

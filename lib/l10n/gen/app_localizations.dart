@@ -6193,6 +6193,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Meet potential flatmates'**
   String get meetPotentialFlatmates;
+
+  /// No description provided for @lifestyleSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifestyle'**
+  String get lifestyleSectionTitle;
+
+  /// No description provided for @dealBreakersSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deal-breakers'**
+  String get dealBreakersSectionTitle;
 }
 
 class _AppLocalizationsDelegate

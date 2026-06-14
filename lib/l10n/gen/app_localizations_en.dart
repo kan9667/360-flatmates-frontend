@@ -3302,4 +3302,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meetPotentialFlatmates => 'Meet potential flatmates';
+
+  @override
+  String get lifestyleSectionTitle => 'Lifestyle';
+
+  @override
+  String get dealBreakersSectionTitle => 'Deal-breakers';
 }

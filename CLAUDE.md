@@ -142,6 +142,7 @@ lib/
 3. `BootstrapController` fetches `/flatmates/bootstrap` for profile + catalogs
 4. If `onboardingCompleted == false`, router redirects to onboarding flow
 5. Missing env vars show `_ConfigErrorApp`; missing Firebase config sets `NotificationService.messagingEnabled = false`
+6. Account deletion: `DeleteAccountPage` → `AuthController.deleteAccount()` → `AuthRepository.deleteAccount()` calls `DELETE /users/me` (the `FlatmatesEndpoints.deleteAccount` constant), then best-effort Supabase `signOut()` + token clear (the backend already hard-deletes the Supabase user), sets state to unauthenticated, and the page navigates to `/enter-phone`.
 
 ### Theme and localization
 

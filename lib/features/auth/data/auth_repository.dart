@@ -526,7 +526,14 @@ final class AuthRepository {
 
   Future<void> deleteAccount() async {
     await _apiClient.delete(FlatmatesEndpoints.deleteAccount);
-    await _supabase.auth.signOut();
+    // The backend hard-deletes the Supabase auth user, so the local sign-out is
+    // best-effort — a failure here must not flip a successful delete into a
+    // user-facing error.
+    try {
+      await _supabase.auth.signOut();
+    } catch (e) {
+      debugPrint('AuthRepository.deleteAccount: supabase signOut failed: $e');
+    }
     await _tokenStorage.clear();
   }
 
