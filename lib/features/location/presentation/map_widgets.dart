@@ -340,8 +340,12 @@ class GetDirectionsButton extends StatelessWidget {
     final uri = Uri.parse(
       'https://www.google.com/maps/dir/?api=1&destination=$latitude,$longitude&travelmode=driving',
     );
-    if (await canLaunchUrl(uri)) {
+    // Not gated on canLaunchUrl(): unreliable on Android 11+ (package
+    // visibility), returns false for https without a <queries> entry.
+    try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('GetDirectionsButton._launchDirections: $e');
     }
   }
 }

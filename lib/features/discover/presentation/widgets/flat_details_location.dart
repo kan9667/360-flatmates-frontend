@@ -16,10 +16,11 @@ Future<void> _openInMaps(double latitude, double longitude) async {
   final uri = Uri.parse(
     'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude',
   );
+  // Note: deliberately not gated on canLaunchUrl() — it is unreliable on
+  // Android 11+ (package visibility) and silently returns false for https
+  // URLs without a matching <queries> entry, making the map tap a no-op.
   try {
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   } catch (e) {
     debugPrint('FlatDetailsLocation._openInMaps: $e');
   }
