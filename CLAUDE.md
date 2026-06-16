@@ -17,6 +17,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 cp .env.example .env          # then fill in SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, API_BASE_URL, GOOGLE_MAPS_API_KEY
 flutter pub get
 
+# VS Code format-on-save (auto-applies dart format on every save)
+# Config lives in .vscode/settings.json — works for VS Code, Cursor, Windsurf, etc.
+
 # Run
 flutter run
 
@@ -26,7 +29,8 @@ npx serve-sim                  # → http://localhost:3200 — stream simulator 
 # Code generation (run after changing freezed/json_serializable models)
 dart run build_runner build --delete-conflicting-outputs
 
-# Quality
+# Quality (run before every commit)
+dart format .
 flutter analyze
 flutter test
 bash scripts/banned_patterns.sh

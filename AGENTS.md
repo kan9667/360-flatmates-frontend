@@ -83,6 +83,7 @@ This repository contains the dedicated Flutter mobile client for 360 FlatMates. 
 - Keep at least one fast local Flutter test in the repo.
 - Maintain a single end-to-end Maestro flow that exercises the real product loop.
 - Update Maestro when route names, button labels, or login flow behavior changes.
+- **Before committing, run `dart format .`** to ensure all files are properly formatted. The CI Quality Gates workflow will fail if any file is unformatted.
 - After making changes, run `dart fix --dry-run lib/` to catch auto-fixable lint issues, then `dart fix --apply lib/` to apply them.
 
 ## Documentation Triggers
