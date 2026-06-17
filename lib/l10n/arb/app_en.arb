@@ -1552,5 +1552,9 @@
   },
   "meetPotentialFlatmates": "Meet potential flatmates",
   "lifestyleSectionTitle": "Lifestyle",
-  "dealBreakersSectionTitle": "Deal-breakers"
+  "dealBreakersSectionTitle": "Deal-breakers",
+  "deleteAccountInProgress": "Deleting…",
+  "deleteAccountDialogBody": "This will permanently delete your account and all associated data. This action cannot be undone.",
+  "notifAllEnabled": "All notifications enabled",
+  "notifAllDisabled": "All notifications disabled"
 }

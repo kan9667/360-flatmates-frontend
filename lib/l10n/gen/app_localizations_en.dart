@@ -3308,4 +3308,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dealBreakersSectionTitle => 'Deal-breakers';
+
+  @override
+  String get deleteAccountInProgress => 'Deleting…';
+
+  @override
+  String get deleteAccountDialogBody =>
+      'This will permanently delete your account and all associated data. This action cannot be undone.';
+
+  @override
+  String get notifAllEnabled => 'All notifications enabled';
+
+  @override
+  String get notifAllDisabled => 'All notifications disabled';
 }

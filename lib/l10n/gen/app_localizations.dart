@@ -6205,6 +6205,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Deal-breakers'**
   String get dealBreakersSectionTitle;
+
+  /// No description provided for @deleteAccountInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting…'**
+  String get deleteAccountInProgress;
+
+  /// No description provided for @deleteAccountDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete your account and all associated data. This action cannot be undone.'**
+  String get deleteAccountDialogBody;
+
+  /// No description provided for @notifAllEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'All notifications enabled'**
+  String get notifAllEnabled;
+
+  /// No description provided for @notifAllDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'All notifications disabled'**
+  String get notifAllDisabled;
 }
 
 class _AppLocalizationsDelegate
