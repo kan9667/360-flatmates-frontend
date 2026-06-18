@@ -6212,6 +6212,7 @@ abstract class AppLocalizations {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   /// No description provided for @likeListingTooltip.
   ///
   /// In en, this message translates to:
@@ -6421,6 +6422,67 @@ abstract class AppLocalizations {
   /// **'Check out this flat on 360 FlatMates: {title} at ₹{rent}/mo in {location}'**
   String shareListingText(String title, String rent, String location);
 >>>>>>> audit/listings
+=======
+  /// No description provided for @couldNotLoadProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load profile'**
+  String get couldNotLoadProfile;
+
+  /// No description provided for @profilePhotoUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not upload photo. Please try again.'**
+  String get profilePhotoUploadFailed;
+
+  /// No description provided for @profileSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get profileSaving;
+
+  /// No description provided for @profilePhotoSemantic.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photo of {name}'**
+  String profilePhotoSemantic(String name);
+
+  /// No description provided for @profileChangePhotoSemantic.
+  ///
+  /// In en, this message translates to:
+  /// **'Change profile photo'**
+  String get profileChangePhotoSemantic;
+
+  /// No description provided for @profilePhotoUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading profile photo'**
+  String get profilePhotoUploading;
+
+  /// No description provided for @unsavedChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get unsavedChangesTitle;
+
+  /// No description provided for @unsavedChangesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved changes. If you leave now, they will be lost.'**
+  String get unsavedChangesMessage;
+
+  /// No description provided for @keepEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get keepEditing;
+
+  /// No description provided for @discardChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get discardChanges;
+>>>>>>> audit/profile
 }
 
 class _AppLocalizationsDelegate
