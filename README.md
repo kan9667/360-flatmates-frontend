@@ -2,6 +2,14 @@
 
 Flutter mobile client for the 360 FlatMates product.
 
+<p align="center">
+  <a href="docs/overview.mp4">
+    <img src="docs/overview-poster.png" alt="360 FlatMates Overview" width="640" />
+  </a>
+  <br />
+  <em>Click to watch the project overview video</em>
+</p>
+
 ## Setup
 
 1. Copy `.env.example` to `.env` and fill the Supabase and backend values.

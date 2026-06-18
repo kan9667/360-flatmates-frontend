@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1280, height=720" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,700;9..144,900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --canvas: #1A1612; --surface: #2A2520; --elevated: #342E28;
+    --accent: #C96442; --accent-soft: rgba(201,100,66,0.12);
+    --paper: #F4F3EE; --ink: #1F1A14; --ink2: #4A463E; --ink3: #8A847A;
+    --success: #5B8C44; --warning: #B57828; --error: #B4452C;
+    --teal: #5A9DA8; --blue: #5B88B5; --purple: #8B7BB8; --pink: #C28098;
+    --line: rgba(244,243,238,0.08);
+  }
+  html, body { width: 1280px; height: 720px; overflow: hidden; background: var(--canvas); font-family: 'Inter', sans-serif; color: var(--paper); }
+  .scene { position: absolute; inset: 0; display: none; flex-direction: column; padding: 48px 56px; }
+  .scene.active { display: flex; }
+
+  /* Header */
+  .hdr { position: absolute; top: 0; left: 0; right: 0; height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; border-bottom: 1px solid var(--line); z-index: 10; }
+  .hdr .logo { font-family: 'Fraunces', serif; font-weight: 900; font-size: 18px; color: var(--accent); letter-spacing: -0.5px; }
+  .hdr .logo span { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-left: 4px; }
+  .hdr .counter { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink3); }
+
+  /* Progress bar */
+  .progress { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--surface); }
+  .progress-fill { height: 100%; background: var(--accent); width: 0%; }
+
+  /* Typography */
+  h1 { font-family: 'Fraunces', serif; font-weight: 400; font-size: 42px; line-height: 1.1; letter-spacing: -1.5px; color: var(--paper); }
+  h2 { font-family: 'Fraunces', serif; font-weight: 400; font-size: 32px; line-height: 1.15; letter-spacing: -1px; color: var(--paper); }
+  h3 { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 18px; color: var(--paper); }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .body { font-size: 16px; line-height: 1.6; color: rgba(244,243,238,0.7); max-width: 640px; }
+  .body-sm { font-size: 14px; line-height: 1.5; color: rgba(244,243,238,0.5); }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .card-accent { border-left: 3px solid var(--accent); }
+
+  /* Bars */
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .bar-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: rgba(244,243,238,0.6); width: 100px; text-align: right; }
+  .bar-track { flex: 1; height: 20px; background: var(--surface); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; width: 0%; }
+  .bar-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--paper); width: 60px; }
+
+  /* Grid */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+
+  /* Chips */
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .chip-accent { background: var(--accent-soft); color: var(--accent); }
+  .chip-surface { background: var(--elevated); color: rgba(244,243,238,0.7); }
+
+  /* Code block */
+  .code-block { background: #0D0B09; border: 1px solid var(--line); border-radius: 8px; padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7; color: rgba(244,243,238,0.8); overflow: hidden; }
+  .code-block .kw { color: var(--accent); }
+  .code-block .type { color: var(--teal); }
+  .code-block .str { color: var(--success); }
+  .code-block .comment { color: var(--ink3); font-style: italic; }
+  .code-block .fn { color: var(--purple); }
+
+  /* Diagram boxes */
+  .diag-box { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; text-align: center; font-size: 13px; font-weight: 500; }
+  .diag-box.active { border-color: var(--accent); background: var(--accent-soft); }
+  .diag-arrow { display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 20px; }
+
+  /* Metric */
+  .metric { text-align: center; }
+  .metric .val { font-family: 'Fraunces', serif; font-size: 48px; font-weight: 700; color: var(--paper); letter-spacing: -2px; }
+  .metric .label { font-size: 13px; color: var(--ink3); margin-top: 4px; }
+
+  /* Color swatch */
+  .swatch { width: 48px; height: 48px; border-radius: 10px; border: 1px solid var(--line); }
+  .swatch-row { display: flex; gap: 8px; align-items: center; }
+  .swatch-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink3); }
+</style>
+</head>
+<body>
+<div data-composition-id="main" data-width="1280" data-height="720" data-start="0" style="width:1280px;height:720px;overflow:hidden;background:var(--canvas);position:relative;">
+
+<div class="hdr">
+  <div class="logo">36 <span>FLATMATES</span></div>
+  <div class="counter" id="sceneCounter">01 / 11</div>
+</div>
+<div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+
+<!-- SCENE 1: Hook -->
+<div class="scene" id="s1" style="justify-content: center; align-items: center; text-align: center;">
+  <div class="eyebrow" style="margin-bottom: 24px;">FIND. CONNECT. LIVE TOGETHER.</div>
+  <h1 style="font-size: 52px; max-width: 800px;">What does it take to find<br>the right <span style="color: var(--accent);">flatmate</span>?</h1>
+  <div class="body" style="text-align: center; margin-top: 24px;">A structured, human approach to an<br>otherwise chaotic process.</div>
+</div>
+
+<!-- SCENE 2: Purpose + Features Grid -->
+<div class="scene" id="s2">
+  <div class="eyebrow" style="margin-bottom: 16px;">THE PRODUCT</div>
+  <h2 style="margin-bottom: 8px;">360 FlatMates</h2>
+  <div class="body" style="margin-bottom: 28px;">A Flutter mobile client that turns flatmate-finding into something structured and human.</div>
+  <div class="grid4" style="gap: 12px;">
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 28px; margin-bottom: 8px;">🏠</div>
+      <div style="font-size: 13px; font-weight: 600;">Browse Listings</div>
+      <div class="body-sm" style="font-size: 11px; margin-top: 4px;">Search, filter, map view</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 28px; margin-bottom: 8px;">💫</div>
+      <div style="font-size: 13px; font-weight: 600;">Swipe & Match</div>
+      <div class="body-sm" style="font-size: 11px; margin-top: 4px;">Lifestyle compatibility</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 28px; margin-bottom: 8px;">💬</div>
+      <div style="font-size: 13px; font-weight: 600;">Realtime Chat</div>
+      <div class="body-sm" style="font-size: 11px; margin-top: 4px;">Supabase realtime + SSE</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div style="font-size: 28px; margin-bottom: 8px;">📅</div>
+      <div style="font-size: 13px; font-weight: 600;">Schedule Visits</div>
+      <div class="body-sm" style="font-size: 11px; margin-top: 4px;">Calendar + time slots</div>
+    </div>
+  </div>
+  <div style="display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap;">
+    <div class="chip chip-accent">Flutter 3.35</div>
+    <div class="chip chip-accent">Riverpod</div>
+    <div class="chip chip-accent">GoRouter</div>
+    <div class="chip chip-accent">Supabase</div>
+    <div class="chip chip-accent">FastAPI Backend</div>
+    <div class="chip chip-surface">Material 3</div>
+    <div class="chip chip-surface">Freezed</div>
+    <div class="chip chip-surface">Dio</div>
+  </div>
+</div>
+
+<!-- SCENE 3: Architecture Layers -->
+<div class="scene" id="s3" style="padding-top: 68px;">
+  <div class="eyebrow" style="margin-bottom: 16px;">ARCHITECTURE</div>
+  <h2 style="margin-bottom: 24px;">Four distinct layers</h2>
+  <div style="display: flex; gap: 16px; flex: 1;">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+      <div class="card" style="flex: 1; border-left: 3px solid var(--accent);">
+        <h3 style="font-size: 14px; color: var(--accent); margin-bottom: 8px;">Presentation</h3>
+        <div class="body-sm">Page widgets, shared components, UI state via StateProvider</div>
+        <div class="mono" style="font-size: 11px; color: var(--ink3); margin-top: 8px;">lib/features/*/presentation/</div>
+      </div>
+      <div class="card" style="flex: 1; border-left: 3px solid var(--teal);">
+        <h3 style="font-size: 14px; color: var(--teal); margin-bottom: 8px;">State Management</h3>
+        <div class="body-sm">Controllers: Notifier, AsyncNotifier, FamilyNotifier</div>
+        <div class="mono" style="font-size: 11px; color: var(--ink3); margin-top: 8px;">lib/features/*/application/</div>
+      </div>
+      <div class="card" style="flex: 1; border-left: 3px solid var(--purple);">
+        <h3 style="font-size: 14px; color: var(--purple); margin-bottom: 8px;">Data</h3>
+        <div class="body-sm">Repositories, DTOs, API calls through ApiClient</div>
+        <div class="mono" style="font-size: 11px; color: var(--ink3); margin-top: 8px;">lib/features/*/data/</div>
+      </div>
+      <div class="card" style="flex: 1; border-left: 3px solid var(--warning);">
+        <h3 style="font-size: 14px; color: var(--warning); margin-bottom: 8px;">Infrastructure</h3>
+        <div class="body-sm">Dio client, interceptors, storage, theme, errors</div>
+        <div class="mono" style="font-size: 11px; color: var(--ink3); margin-top: 8px;">lib/core/</div>
+      </div>
+    </div>
+    <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
+      <div class="code-block" style="font-size: 12px; width: 100%;">
+        <div><span class="comment">// Data flows top-down</span></div>
+        <div>Pages <span style="color:var(--accent);">→</span> Controllers</div>
+        <div>Controllers <span style="color:var(--teal);">→</span> Repositories</div>
+        <div>Repositories <span style="color:var(--purple);">→</span> ApiClient</div>
+        <div>ApiClient <span style="color:var(--warning);">→</span> Dio + Interceptors</div>
+        <div style="margin-top: 12px; color: var(--ink3);">│</div>
+        <div style="color: var(--ink3);">├─ AuthInterceptor</div>
+        <div style="color: var(--ink3);">│  └─ Bearer token attach</div>
+        <div style="color: var(--ink3);">├─ ErrorInterceptor</div>
+        <div style="color: var(--ink3);">│  └─ DioException → AppFailure</div>
+        <div style="color: var(--ink3);">└─ Supabase Auth</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 4: Startup Flow -->
+<div class="scene" id="s4" style="padding-top: 68px;">
+  <div class="eyebrow" style="margin-bottom: 16px;">STARTUP FLOW</div>
+  <h2 style="margin-bottom: 24px;">What happens on launch</h2>
+  <div style="display: flex; gap: 12px; align-items: stretch; flex: 1;">
+    <div class="card" style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+      <div class="mono" style="font-size: 11px; color: var(--accent); margin-bottom: 6px;">main.dart</div>
+      <div style="font-size: 13px; font-weight: 600;">ProviderScope</div>
+      <div class="body-sm" style="font-size: 11px;">3 overrides injected</div>
+    </div>
+    <div class="diag-arrow">→</div>
+    <div class="card" style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+      <div class="mono" style="font-size: 11px; color: var(--teal); margin-bottom: 6px;">bootstrap.dart</div>
+      <div style="font-size: 13px; font-weight: 600;">Firebase + Supabase</div>
+      <div class="body-sm" style="font-size: 11px;">Env vars loaded</div>
+    </div>
+    <div class="diag-arrow">→</div>
+    <div class="card" style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+      <div class="mono" style="font-size: 11px; color: var(--purple); margin-bottom: 6px;">app_router.dart</div>
+      <div style="font-size: 13px; font-weight: 600;">Auth Check</div>
+      <div class="body-sm" style="font-size: 11px;">GoRouter redirect chain</div>
+    </div>
+    <div class="diag-arrow">→</div>
+    <div class="card" style="flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+      <div class="mono" style="font-size: 11px; color: var(--warning); margin-bottom: 6px;">app_shell.dart</div>
+      <div style="font-size: 13px; font-weight: 600;">Bottom Nav</div>
+      <div class="body-sm" style="font-size: 11px;">5 of 7 tabs, mode-dependent</div>
+    </div>
+  </div>
+  <div style="margin-top: 20px; display: flex; gap: 12px;">
+    <div class="card card-accent" style="flex: 1;">
+      <div style="font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 6px;">Unauthenticated</div>
+      <div class="body-sm" style="font-size: 12px;">→ /enter-phone → OTP or password login</div>
+    </div>
+    <div class="card card-accent" style="flex: 1;">
+      <div style="font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 6px;">Onboarding incomplete</div>
+      <div class="body-sm" style="font-size: 12px;">→ /onboarding → multi-step state machine</div>
+    </div>
+    <div class="card card-accent" style="flex: 1;">
+      <div style="font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 6px;">Ready</div>
+      <div class="body-sm" style="font-size: 12px;">→ /discover → home feed with listings</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 5: Code Excerpt - Riverpod Pattern -->
+<div class="scene" id="s5" style="padding-top: 68px;">
+  <div class="eyebrow" style="margin-bottom: 16px;">STATE MANAGEMENT</div>
+  <h2 style="margin-bottom: 20px;">Riverpod controllers, not widgets</h2>
+  <div style="display: flex; gap: 16px; flex: 1;">
+    <div class="code-block" style="flex: 1.2; font-size: 12px;">
+      <div><span class="comment">// DiscoverFeedController</span></div>
+      <div><span class="kw">@riverpod</span></div>
+      <div><span class="kw">class</span> <span class="type">DiscoverFeedController</span></div>
+      <div>  <span class="kw">extends</span> <span class="type">Notifier</span>&lt;<span class="type">PagedState</span>&lt;<span class="type">PropertyListing</span>&gt;&gt; {</div>
+      <div style="margin-top: 8px;">  <span class="kw">@override</span></div>
+      <div>  <span class="type">PagedState</span>&lt;<span class="type">PropertyListing</span>&gt; <span class="fn">build</span>() {</div>
+      <div>    <span class="kw">return</span> <span class="type">PagedState</span>.empty();</div>
+      <div>  }</div>
+      <div style="margin-top: 8px;">  <span class="type">Future</span>&lt;<span class="kw">void</span>&gt; <span class="fn">refresh</span>() <span class="kw">async</span> {</div>
+      <div>    state = state.copyWith(isLoading: <span class="kw">true</span>);</div>
+      <div>    <span class="kw">final</span> data = <span class="kw">await</span> ref</div>
+      <div>      .read(discoverRepoProvider)</div>
+      <div>      .<span class="fn">fetchPage</span>(page: 1);</div>
+      <div>    state = <span class="type">PagedState</span>(items: data);</div>
+      <div>  }</div>
+      <div>}</div>
+    </div>
+    <div style="flex: 0.8; display: flex; flex-direction: column; gap: 12px;">
+      <div class="card">
+        <h3 style="font-size: 14px; margin-bottom: 6px;">Controllers in application/</h3>
+        <div class="body-sm" style="font-size: 12px;">Named methods like refresh(), loadMore(), toggleFilter(). Widgets call ref.read(controller.notifier).method().</div>
+      </div>
+      <div class="card">
+        <h3 style="font-size: 14px; margin-bottom: 6px;">StateProvider for UI state</h3>
+        <div class="body-sm" style="font-size: 12px;">No setState() in ConsumerStatefulWidget. Local UI state uses file-level StateProvider.</div>
+      </div>
+      <div class="card">
+        <h3 style="font-size: 14px; margin-bottom: 6px;">PagedState&lt;T&gt;</h3>
+        <div class="body-sm" style="font-size: 12px;">Paginated data with initial/refresh/load-more loading states built in.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 6: Realtime Chat Flow -->
+<div class="scene" id="s6" style="padding-top: 68px;">
+  <div class="eyebrow" style="margin-bottom: 16px;">REALTIME INFRASTRUCTURE</div>
+  <h2 style="margin-bottom: 20px;">Chat with live message delivery</h2>
+  <div style="display: flex; gap: 16px; flex: 1;">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <div class="diag-box" style="flex: 1;">User A sends message</div>
+        <div class="diag-arrow">→</div>
+        <div class="diag-box active" style="flex: 1;">POST /messages</div>
+        <div class="diag-arrow">→</div>
+        <div class="diag-box" style="flex: 1;">Optimistic UI update</div>
+      </div>
+      <div style="text-align: center; color: var(--accent); font-size: 18px; margin: 4px 0;">↓</div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <div class="diag-box" style="flex: 1;">Supabase Realtime</div>
+        <div class="diag-arrow">→</div>
+        <div class="diag-box active" style="flex: 1;">messagesStreamProvider</div>
+        <div class="diag-arrow">→</div>
+        <div class="diag-box" style="flex: 1;">User B sees message</div>
+      </div>
+      <div style="text-align: center; color: var(--ink3); font-size: 14px; margin: 8px 0;">SSE fallback when realtime drops</div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <div class="diag-box" style="flex: 1;">SSE Service</div>
+        <div class="diag-arrow">→</div>
+        <div class="diag-box" style="flex: 1;">Event Router</div>
+        <div class="diag-arrow">→</div>
+        <div class="diag-box" style="flex: 1;">Provider invalidation</div>
+      </div>
+    </div>
+    <div style="flex: 0.6; display: flex; flex-direction: column; gap: 10px;">
+      <div class="card">
+        <div style="font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 4px;">FamilyNotifier</div>
+        <div class="body-sm" style="font-size: 11px;">MessagesController is parameterized per conversation_id</div>
+      </div>
+      <div class="card">
+        <div style="font-size: 12px; font-weight: 600; color: var(--teal); margin-bottom: 4px;">Optimistic send</div>
+        <div class="body-sm" style="font-size: 11px;">Negative temp IDs, merge with stream, HTTP refetch after</div>
+      </div>
+      <div class="card">
+        <div style="font-size: 12px; font-weight: 600; color: var(--purple); margin-bottom: 4px;">No HTTP polling</div>
+        <div class="body-sm" style="font-size: 11px;">Realtime + SSE event-driven. No polling loops.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 7: Feature Modules Grid -->
+<div class="scene" id="s7" style="padding-top: 68px;">
+  <div class="eyebrow" style="margin-bottom: 16px;">FEATURE-FIRST STRUCTURE</div>
+  <h2 style="margin-bottom: 20px;">14 feature modules under lib/features/</h2>
+  <div class="grid4" style="gap: 10px;">
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600; color: var(--accent);">discover</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">10,534 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">Feed, map, search, filters</div>
+    </div>
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600; color: var(--teal);">shared</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">6,682 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">18 reusable widgets</div>
+    </div>
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600; color: var(--purple);">chats</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">5,565 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">Realtime messaging</div>
+    </div>
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600; color: var(--warning);">listings</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">5,075 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">7-step wizard</div>
+    </div>
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600;">auth</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">4,200 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">Phone/OTP/OAuth</div>
+    </div>
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600;">onboarding</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">3,782 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">State machine</div>
+    </div>
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600;">swipe</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">3,677 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">Card deck + matching</div>
+    </div>
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600;">profile</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">2,236 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">View, edit, safety</div>
+    </div>
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600;">settings</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">1,863 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">Theme, locale, privacy</div>
+    </div>
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600;">location</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">1,563 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">Geolocation, cities</div>
+    </div>
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600;">bootstrap</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">1,429 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">Profile + catalogs</div>
+    </div>
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600;">visits</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">1,103 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">Schedule, confirm</div>
+    </div>
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600;">feedback</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">821 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">Bug reports, requests</div>
+    </div>
+    <div class="card" style="padding: 14px;">
+      <div style="font-size: 12px; font-weight: 600;">notifications</div>
+      <div class="mono" style="font-size: 10px; color: var(--ink3);">339 lines</div>
+      <div class="body-sm" style="font-size: 10px; margin-top: 4px;">Notification list</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 8: Design System -->
+<div class="scene" id="s8" style="padding-top: 68px;">
+  <div class="eyebrow" style="margin-bottom: 16px;">DESIGN SYSTEM</div>
+  <h2 style="margin-bottom: 20px;">Warm-editorial palette with three theme modes</h2>
+  <div style="display: flex; gap: 16px; flex: 1;">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+      <h3 style="font-size: 14px; margin-bottom: 4px;">Primary Palette</h3>
+      <div style="display: flex; gap: 8px;">
+        <div style="text-align: center;">
+          <div class="swatch" style="background: #C96442;"></div>
+          <div class="swatch-label" style="margin-top: 4px;">#C96442</div>
+          <div class="swatch-label">Terracotta</div>
+        </div>
+        <div style="text-align: center;">
+          <div class="swatch" style="background: #F4F3EE;"></div>
+          <div class="swatch-label" style="margin-top: 4px;">#F4F3EE</div>
+          <div class="swatch-label">Paper</div>
+        </div>
+        <div style="text-align: center;">
+          <div class="swatch" style="background: #1F1A14;"></div>
+          <div class="swatch-label" style="margin-top: 4px;">#1F1A14</div>
+          <div class="swatch-label">Ink</div>
+        </div>
+        <div style="text-align: center;">
+          <div class="swatch" style="background: #5B8C44;"></div>
+          <div class="swatch-label" style="margin-top: 4px;">#5B8C44</div>
+          <div class="swatch-label">Success</div>
+        </div>
+      </div>
+      <h3 style="font-size: 14px; margin-bottom: 4px; margin-top: 8px;">Typography</h3>
+      <div class="card" style="padding: 14px;">
+        <div style="font-family: 'Fraunces', serif; font-size: 20px; font-weight: 400; margin-bottom: 4px;">Fraunces — Headlines</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 16px; margin-bottom: 4px;">Inter — Body text</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 14px;">JetBrains Mono — Labels</div>
+      </div>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+      <h3 style="font-size: 14px; margin-bottom: 4px;">Categorical Pastels</h3>
+      <div class="grid2" style="gap: 8px;">
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <div class="swatch" style="width: 32px; height: 32px; background: #E1EAF4; border-radius: 8px;"></div>
+          <div><div class="swatch-label">Blue</div></div>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <div class="swatch" style="width: 32px; height: 32px; background: #E7DDF1; border-radius: 8px;"></div>
+          <div><div class="swatch-label">Purple</div></div>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <div class="swatch" style="width: 32px; height: 32px; background: #DCEAD4; border-radius: 8px;"></div>
+          <div><div class="swatch-label">Green</div></div>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <div class="swatch" style="width: 32px; height: 32px; background: #F5E8B8; border-radius: 8px;"></div>
+          <div><div class="swatch-label">Yellow</div></div>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <div class="swatch" style="width: 32px; height: 32px; background: #CFE4DF; border-radius: 8px;"></div>
+          <div><div class="swatch-label">Teal</div></div>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <div class="swatch" style="width: 32px; height: 32px; background: #F6DDE3; border-radius: 8px;"></div>
+          <div><div class="swatch-label">Pink</div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top: auto;">
+        <h3 style="font-size: 14px; margin-bottom: 6px;">3 Palette Options</h3>
+        <div style="display: flex; gap: 12px;">
+          <div style="display: flex; gap: 4px; align-items: center;">
+            <div style="width: 16px; height: 16px; background: #C96442; border-radius: 4px;"></div>
+            <span class="body-sm" style="font-size: 11px;">Terracotta</span>
+          </div>
+          <div style="display: flex; gap: 4px; align-items: center;">
+            <div style="width: 16px; height: 16px; background: #5B88B5; border-radius: 4px;"></div>
+            <span class="body-sm" style="font-size: 11px;">Indigo</span>
+          </div>
+          <div style="display: flex; gap: 4px; align-items: center;">
+            <div style="width: 16px; height: 16px; background: #5A9DA8; border-radius: 4px;"></div>
+            <span class="body-sm" style="font-size: 11px;">Teal</span>
+          </div>
+        </div>
+        <div class="body-sm" style="font-size: 11px; margin-top: 8px;">Light / Dark / System theme modes</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 9: Error Handling -->
+<div class="scene" id="s9" style="padding-top: 68px;">
+  <div class="eyebrow" style="margin-bottom: 16px;">ERROR HANDLING</div>
+  <h2 style="margin-bottom: 20px;">Typed failures, not error.toString()</h2>
+  <div style="display: flex; gap: 16px; flex: 1;">
+    <div style="flex: 1;">
+      <div class="code-block" style="font-size: 12px;">
+        <div><span class="comment">// AppFailure sealed class hierarchy</span></div>
+        <div><span class="kw">sealed class</span> <span class="type">AppFailure</span> {</div>
+        <div>  <span class="type">String</span> <span class="fn">userMessage</span>();</div>
+        <div>}</div>
+        <div style="margin-top: 6px;"><span class="kw">class</span> <span class="type">NetworkFailure</span> <span class="kw">extends</span> <span class="type">AppFailure</span> {}</div>
+        <div><span class="kw">class</span> <span class="type">AuthExpiredFailure</span> <span class="kw">extends</span> <span class="type">AppFailure</span> {}</div>
+        <div><span class="kw">class</span> <span class="type">ServerFailure</span> <span class="kw">extends</span> <span class="type">AppFailure</span> {}</div>
+        <div><span class="kw">class</span> <span class="type">ValidationFailure</span> <span class="kw">extends</span> <span class="type">AppFailure</span> {}</div>
+        <div><span class="kw">class</span> <span class="type">RateLimitFailure</span> <span class="kw">extends</span> <span class="type">AppFailure</span> {}</div>
+        <div><span class="kw">class</span> <span class="type">UploadFailure</span> <span class="kw">extends</span> <span class="type">AppFailure</span> {}</div>
+        <div style="margin-top: 8px; color: var(--ink3);">// + 4 more subclasses</div>
+      </div>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+      <div class="card">
+        <h3 style="font-size: 14px; margin-bottom: 6px;">ErrorPresenter.fromDio()</h3>
+        <div class="body-sm" style="font-size: 12px;">Maps DioException to typed AppFailure, including field-level 422 parsing</div>
+      </div>
+      <div class="card">
+        <h3 style="font-size: 14px; margin-bottom: 6px;">FlatmatesAsyncView</h3>
+        <div class="body-sm" style="font-size: 12px;">Renders AsyncValue into loading/data/empty/error states with user-friendly messages</div>
+      </div>
+      <div class="card">
+        <h3 style="font-size: 14px; margin-bottom: 6px;">Banned patterns</h3>
+        <div class="body-sm" style="font-size: 12px;">error.toString() banned in pages. No empty catch blocks. All enforced by scripts/banned_patterns.sh</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 10: By the Numbers -->
+<div class="scene" id="s10" style="padding-top: 68px;">
+  <div class="eyebrow" style="margin-bottom: 16px;">BY THE NUMBERS</div>
+  <h2 style="margin-bottom: 20px;">Codebase at a glance</h2>
+  <div style="display: flex; gap: 16px; flex: 1;">
+    <div style="flex: 1;">
+      <h3 style="font-size: 14px; margin-bottom: 16px;">Lines of code by area</h3>
+      <div class="bar-row">
+        <div class="bar-label">Features</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 100%; background: var(--accent);"></div></div>
+        <div class="bar-val">49,257</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Localization</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 27%; background: var(--teal);"></div></div>
+        <div class="bar-val">13,440</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Core</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 11%; background: var(--purple);"></div></div>
+        <div class="bar-val">5,581</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Tests</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 10%; background: var(--success);"></div></div>
+        <div class="bar-val">4,960</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">App shell</div>
+        <div class="bar-track"><div class="bar-fill" style="width: 2%; background: var(--warning);"></div></div>
+        <div class="bar-val">985</div>
+      </div>
+    </div>
+    <div style="flex: 0.6; display: flex; flex-direction: column; gap: 16px;">
+      <div class="metric">
+        <div class="val" style="color: var(--accent);">69,407</div>
+        <div class="label">Total Dart lines</div>
+      </div>
+      <div class="metric">
+        <div class="val">259</div>
+        <div class="label">Source files</div>
+      </div>
+      <div class="metric">
+        <div class="val">36</div>
+        <div class="label">Dependencies</div>
+      </div>
+      <div class="metric">
+        <div class="val" style="color: var(--success);">2</div>
+        <div class="label">Languages (EN + HI)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 11: Recap -->
+<div class="scene" id="s11" style="justify-content: center; align-items: center; text-align: center;">
+  <div class="eyebrow" style="margin-bottom: 24px;">360 FLATMATES</div>
+  <h1 style="font-size: 46px; max-width: 700px;">Flutter + Riverpod + Supabase</h1>
+  <div class="body" style="text-align: center; margin-top: 16px; max-width: 560px;">14 feature modules, 18 shared widgets, realtime chat, compatibility scoring, and a warm-editorial design system.</div>
+  <div style="display: flex; gap: 8px; margin-top: 28px; flex-wrap: wrap; justify-content: center;">
+    <div class="chip chip-accent">com.the360ghar.flatmates</div>
+    <div class="chip chip-surface">Flutter 3.35</div>
+    <div class="chip chip-surface">Riverpod</div>
+    <div class="chip chip-surface">Supabase</div>
+    <div class="chip chip-surface">FastAPI</div>
+  </div>
+  <div class="body-sm" style="margin-top: 24px; font-size: 12px;">Full documentation available in the project wiki.</div>
+</div>
+
+<script>
+  window.__timelines = window.__timelines || {};
+
+  var _scenes = [
+    { id: "s1", start: 0, end: 9 },
+    { id: "s2", start: 9, end: 28 },
+    { id: "s3", start: 28, end: 45 },
+    { id: "s4", start: 45, end: 65 },
+    { id: "s5", start: 65, end: 82 },
+    { id: "s6", start: 82, end: 100 },
+    { id: "s7", start: 100, end: 115 },
+    { id: "s8", start: 115, end: 128 },
+    { id: "s9", start: 128, end: 136 },
+    { id: "s10", start: 136, end: 142 },
+    { id: "s11", start: 142, end: 143 }
+  ];
+
+  var _activeScene = null;
+
+  function _render(time) {
+    var active = null;
+    for (var i = 0; i < _scenes.length; i++) {
+      if (time >= _scenes[i].start && time < _scenes[i].end) {
+        active = _scenes[i];
+        break;
+      }
+    }
+    if (!active) active = _scenes[_scenes.length - 1];
+    if (active === _activeScene) return;
+    _activeScene = active;
+    var idx = _scenes.indexOf(active);
+    for (var i = 0; i < _scenes.length; i++) {
+      var el = document.getElementById(_scenes[i].id);
+      if (el) {
+        el.style.display = (_scenes[i] === active) ? "flex" : "none";
+      }
+    }
+    var counter = document.getElementById("sceneCounter");
+    if (counter) counter.textContent = (idx < 9 ? "0" : "") + (idx + 1) + " / " + _scenes.length;
+    var fill = document.getElementById("progressFill");
+    if (fill) fill.style.width = ((time / 143) * 100) + "%";
+  }
+
+  // Register as a timeline-like object with duration() method
+  window.__timelines["main"] = {
+    duration: function() { return 143; },
+    time: function(t) { if (t !== undefined) _render(t); return 0; },
+    seek: function(t) { _render(t); },
+    totalDuration: function() { return 143; },
+    pause: function() {},
+    play: function() {}
+  };
+
+  // Show first scene initially
+  _render(0);
+</script>
+
+</div>
+</body>
+</html>

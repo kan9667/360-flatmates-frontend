@@ -1,0 +1,114 @@
+name: Sync Wiki
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .wiki/**
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone wiki
+        run: |
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git wiki
+
+      - name: Flatten and copy
+        run: |
+          # Remove old wiki content (keep .git)
+          cd wiki
+          find . -maxdepth 1 -not -name '.git' -not -name '.' -exec rm -rf {} +
+          cd ..
+
+          # Flatten .wiki/ structure for GitHub Wiki
+          python3 -c "
+          import os, re
+          wiki_dir = '.wiki'
+          out_dir = 'wiki'
+          for root, dirs, files in os.walk(wiki_dir):
+              for f in files:
+                  if not f.endswith('.md') or f == '.wiki-meta.json':
+                      continue
+                  rel = os.path.relpath(os.path.join(root, f), wiki_dir)
+                  flat_name = rel.replace('/', '--')
+                  src = os.path.join(root, f)
+                  dst = os.path.join(out_dir, flat_name)
+                  # Directory prefix for resolving relative links
+                  prefix = rel.rsplit('/', 1)[0] + '--' if '/' in rel else ''
+                  with open(src) as fh:
+                      content = fh.read()
+                  def rewrite_link(m):
+                      text = m.group(1)
+                      path = m.group(2)
+                      if path.endswith('.md') and not path.startswith('http') and '/' not in path:
+                          return '[' + text + '](' + prefix + path + ')'
+                      elif path.endswith('.md') and not path.startswith('http'):
+                          return '[' + text + '](' + path.replace('/', '--') + ')'
+                      return m.group(0)
+                  content = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', rewrite_link, content)
+                  with open(dst, 'w') as fh:
+                      fh.write(content)
+          "
+
+          # Generate Home.md from overview
+          cp .wiki/overview/index.md wiki/Home.md
+
+          # Generate _Sidebar.md
+          python3 -c "
+          sidebar = '# Navigation\n\n'
+          sidebar += '* [[Overview|overview--index]]\n'
+          sidebar += '* [[Architecture|overview--architecture]]\n'
+          sidebar += '* [[Getting Started|overview--getting-started]]\n'
+          sidebar += '* [[Glossary|overview--glossary]]\n'
+          sidebar += '* [[By the Numbers|by-the-numbers]]\n'
+          sidebar += '* [[Lore|lore]]\n'
+          sidebar += '---\n'
+          sidebar += '* [[Contributing|how-to-contribute--index]]\n'
+          sidebar += '---\n'
+          sidebar += '## Features\n'
+          sidebar += '* [[Auth|features--auth]]\n'
+          sidebar += '* [[Bootstrap|features--bootstrap]]\n'
+          sidebar += '* [[Onboarding|features--onboarding]]\n'
+          sidebar += '* [[Discover|features--discover]]\n'
+          sidebar += '* [[Swipe|features--swipe]]\n'
+          sidebar += '* [[Chats|features--chats]]\n'
+          sidebar += '* [[Listings|features--listings]]\n'
+          sidebar += '* [[Visits|features--visits]]\n'
+          sidebar += '* [[Notifications|features--notifications]]\n'
+          sidebar += '* [[Profile|features--profile]]\n'
+          sidebar += '* [[Settings|features--settings]]\n'
+          sidebar += '* [[Shared Components|features--shared-components]]\n'
+          sidebar += '* [[Location|features--location]]\n'
+          sidebar += '* [[Feedback|features--feedback]]\n'
+          sidebar += '---\n'
+          sidebar += '## Systems\n'
+          sidebar += '* [[Networking|systems--networking]]\n'
+          sidebar += '* [[Realtime|systems--realtime]]\n'
+          sidebar += '* [[Routing|systems--routing]]\n'
+          sidebar += '* [[Theme & Design|systems--theme-and-design]]\n'
+          sidebar += '* [[Error Handling|systems--error-handling]]\n'
+          sidebar += '* [[Compatibility|systems--compatibility]]\n'
+          sidebar += '* [[Analytics & Storage|systems--analytics-and-storage]]\n'
+          sidebar += '* [[Push & Deep Links|systems--push-and-deep-links]]\n'
+          sidebar += '---\n'
+          sidebar += '## Reference\n'
+          sidebar += '* [[Configuration|reference--configuration]]\n'
+          sidebar += '* [[Dependencies|reference--dependencies]]\n'
+          with open('wiki/_Sidebar.md', 'w') as fh:
+              fh.write(sidebar)
+          "
+
+      - name: Commit and push
+        run: |
+          cd wiki
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+
+          git add .
+          git commit -m "Sync wiki from .wiki/" || exit 0
+          git push
