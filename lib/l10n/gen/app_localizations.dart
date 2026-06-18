@@ -6209,6 +6209,7 @@ abstract class AppLocalizations {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   /// No description provided for @likeListingTooltip.
   ///
   /// In en, this message translates to:
@@ -6307,6 +6308,25 @@ abstract class AppLocalizations {
   /// **'You'**
   String get matchSelfFallbackName;
 >>>>>>> audit/swipe
+=======
+  /// No description provided for @onboardingProgressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile setup'**
+  String get onboardingProgressTitle;
+
+  /// No description provided for @onboardingBudgetRangeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum budget must be less than maximum'**
+  String get onboardingBudgetRangeError;
+
+  /// No description provided for @onboardingSubmitError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t complete onboarding. Please try again.'**
+  String get onboardingSubmitError;
+>>>>>>> audit/onboarding
 }
 
 class _AppLocalizationsDelegate

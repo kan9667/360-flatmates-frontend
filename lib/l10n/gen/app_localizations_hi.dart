@@ -3327,6 +3327,7 @@ class AppLocalizationsHi extends AppLocalizations {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   String get likeListingTooltip => 'अपनी पसंद में जोड़ें';
 
   @override
@@ -3374,4 +3375,15 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get matchSelfFallbackName => 'आप';
 >>>>>>> audit/swipe
+=======
+  String get onboardingProgressTitle => 'प्रोफ़ाइल सेटअप';
+
+  @override
+  String get onboardingBudgetRangeError =>
+      'न्यूनतम बजट अधिकतम से कम होना चाहिए';
+
+  @override
+  String get onboardingSubmitError =>
+      'ऑनबोर्डिंग पूरी नहीं हो सकी। कृपया पुनः प्रयास करें।';
+>>>>>>> audit/onboarding
 }

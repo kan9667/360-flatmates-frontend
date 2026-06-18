@@ -3313,6 +3313,7 @@ class AppLocalizationsEn extends AppLocalizations {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   String get likeListingTooltip => 'Add to your likes';
 
   @override
@@ -3360,4 +3361,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get matchSelfFallbackName => 'You';
 >>>>>>> audit/swipe
+=======
+  String get onboardingProgressTitle => 'Profile setup';
+
+  @override
+  String get onboardingBudgetRangeError =>
+      'Minimum budget must be less than maximum';
+
+  @override
+  String get onboardingSubmitError =>
+      'Couldn\'t complete onboarding. Please try again.';
+>>>>>>> audit/onboarding
 }
