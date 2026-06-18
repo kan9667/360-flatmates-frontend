@@ -19,7 +19,7 @@ This guide covers setting up the 360 FlatMates Flutter project for local develop
 
 ```bash
 git clone <repo-url>
-cd 360-flatmates
+cd 360-flatmates-app
 cp .env.example .env
 ```
 
