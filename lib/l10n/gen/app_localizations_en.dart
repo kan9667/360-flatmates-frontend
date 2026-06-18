@@ -3312,6 +3312,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   String get likeListingTooltip => 'Add to your likes';
 
   @override
@@ -3344,4 +3345,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get visitScheduleNoConversation =>
       'We couldn\'t load this conversation. Please try again from chat.';
 >>>>>>> audit/visits
+=======
+  String get swipeLikeAction => 'Like';
+
+  @override
+  String get swipeSkipAction => 'Skip';
+
+  @override
+  String get swipeUndoAction => 'Undo';
+
+  @override
+  String get matchPeerFallbackName => 'Flatmate';
+
+  @override
+  String get matchSelfFallbackName => 'You';
+>>>>>>> audit/swipe
 }

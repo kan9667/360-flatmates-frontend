@@ -3326,6 +3326,7 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   String get likeListingTooltip => 'अपनी पसंद में जोड़ें';
 
   @override
@@ -3358,4 +3359,19 @@ class AppLocalizationsHi extends AppLocalizations {
   String get visitScheduleNoConversation =>
       'हम यह बातचीत लोड नहीं कर सके। कृपया चैट से दोबारा प्रयास करें।';
 >>>>>>> audit/visits
+=======
+  String get swipeLikeAction => 'पसंद';
+
+  @override
+  String get swipeSkipAction => 'छोड़ें';
+
+  @override
+  String get swipeUndoAction => 'पूर्ववत करें';
+
+  @override
+  String get matchPeerFallbackName => 'फ्लैटमेट';
+
+  @override
+  String get matchSelfFallbackName => 'आप';
+>>>>>>> audit/swipe
 }

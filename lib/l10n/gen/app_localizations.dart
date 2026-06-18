@@ -6208,6 +6208,7 @@ abstract class AppLocalizations {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   /// No description provided for @likeListingTooltip.
   ///
   /// In en, this message translates to:
@@ -6275,6 +6276,37 @@ abstract class AppLocalizations {
   /// **'We couldn\'t load this conversation. Please try again from chat.'**
   String get visitScheduleNoConversation;
 >>>>>>> audit/visits
+=======
+  /// No description provided for @swipeLikeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get swipeLikeAction;
+
+  /// No description provided for @swipeSkipAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get swipeSkipAction;
+
+  /// No description provided for @swipeUndoAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get swipeUndoAction;
+
+  /// No description provided for @matchPeerFallbackName.
+  ///
+  /// In en, this message translates to:
+  /// **'Flatmate'**
+  String get matchPeerFallbackName;
+
+  /// No description provided for @matchSelfFallbackName.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get matchSelfFallbackName;
+>>>>>>> audit/swipe
 }
 
 class _AppLocalizationsDelegate
