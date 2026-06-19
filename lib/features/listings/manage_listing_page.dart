@@ -9,10 +9,12 @@ import '../../core/errors/app_failure.dart';
 import '../../core/errors/l10n_bridge.dart';
 import '../../core/theme/theme.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../chats/application/cursor_list_controller.dart';
 import '../discover/domain/property_listing.dart';
 import '../shared/presentation/components.dart';
 import 'domain/listing_status.dart';
 import 'listings_repository.dart';
+import 'my_listings_controller.dart';
 import 'presentation/widgets/manage_listing_card.dart';
 import 'presentation/widgets/manage_stats_widgets.dart';
 
@@ -22,17 +24,57 @@ final _manageTabProvider = StateProvider<String>(
 final _pausedListingIdsProvider = StateProvider<Set<int>>((ref) => <int>{});
 final _pausingListingIdsProvider = StateProvider<Set<int>>((ref) => <int>{});
 
-class ManageListingPage extends ConsumerWidget {
+class ManageListingPage extends ConsumerStatefulWidget {
   const ManageListingPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final listings = ref.watch(myListingsProvider);
+  ConsumerState<ManageListingPage> createState() => _ManageListingPageState();
+}
+
+class _ManageListingPageState extends ConsumerState<ManageListingPage> {
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(myListingsListControllerProvider.notifier).load();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Triggers a load-more when the user scrolls near the bottom of the
+  /// listing list. Backed by cursor pagination in
+  /// [MyListingsController].
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 240) {
+      Future.microtask(() {
+        if (!mounted) return;
+        ref.read(myListingsListControllerProvider.notifier).loadMore();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final listingsState = ref.watch(myListingsListControllerProvider);
     final status = ref.watch(_manageTabProvider);
     final pausedListingIds = ref.watch(_pausedListingIdsProvider);
     final pausingListingIds = ref.watch(_pausingListingIdsProvider);
     final locale = AppLocalizations.of(context);
     final theme = Theme.of(context);
+
+    final items = listingsState.valueOrNull?.items ?? const <PropertyListing>[];
 
     return FlatmatesScreen(
       appBar: FlatmatesHeader.logo(
@@ -99,17 +141,17 @@ class ManageListingPage extends ConsumerWidget {
                   segments: [
                     (
                       'active',
-                      '${locale.activeListingsLabel} (${_countForTab(listings.valueOrNull ?? const [], 'active')})',
+                      '${locale.activeListingsLabel} (${_countForTab(items, 'active')})',
                       null,
                     ),
                     (
                       'draft',
-                      '${locale.draftsLabel} (${_countForTab(listings.valueOrNull ?? const [], 'draft')})',
+                      '${locale.draftsLabel} (${_countForTab(items, 'draft')})',
                       null,
                     ),
                     (
                       'expired',
-                      '${locale.expiredLabel} (${_countForTab(listings.valueOrNull ?? const [], 'expired')})',
+                      '${locale.expiredLabel} (${_countForTab(items, 'expired')})',
                       null,
                     ),
                   ],
@@ -122,9 +164,9 @@ class ManageListingPage extends ConsumerWidget {
 
               // Listings content
               Expanded(
-                child: listings.when(
-                  data: (items) {
-                    if (items.isEmpty) {
+                child: listingsState.when(
+                  data: (state) {
+                    if (items.isEmpty && !state.hasMore) {
                       return FlatmatesEmptyState(
                         icon: Icons.add_home_outlined,
                         title: locale.emptyListings,
@@ -150,9 +192,12 @@ class ManageListingPage extends ConsumerWidget {
 
                     return RefreshIndicator(
                       onRefresh: () async {
-                        ref.invalidate(myListingsProvider);
+                        await ref
+                            .read(myListingsListControllerProvider.notifier)
+                            .refresh();
                       },
-                      child: ListView(
+                      child: ListView.builder(
+                        controller: _scrollController,
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(
                           AppSpacing.screen,
@@ -160,7 +205,38 @@ class ManageListingPage extends ConsumerWidget {
                           AppSpacing.screen,
                           AppSpacing.xl + AppSpacing.md,
                         ),
-                        children: myListings.map((listing) {
+                        itemCount: myListings.length + (state.hasMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index >= myListings.length) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSpacing.lg,
+                              ),
+                              child: Center(
+                                child: state.isLoadingMore
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : TextButton.icon(
+                                        onPressed: () => ref
+                                            .read(
+                                              myListingsListControllerProvider
+                                                  .notifier,
+                                            )
+                                            .loadMore(),
+                                        icon: const Icon(
+                                          Icons.expand_more_rounded,
+                                        ),
+                                        label: Text(locale.loadMoreCta),
+                                      ),
+                              ),
+                            );
+                          }
+                          final listing = myListings[index];
                           return Padding(
                             padding: const EdgeInsets.only(
                               bottom: AppSpacing.md,
@@ -197,14 +273,16 @@ class ManageListingPage extends ConsumerWidget {
                               locale: locale,
                             ),
                           );
-                        }).toList(),
+                        },
                       ),
                     );
                   },
                   loading: () => const FlatmatesSkeleton.manageListings(),
                   error: (e, _) => FlatmatesErrorState(
                     message: locale.couldNotLoadListings,
-                    onRetry: () => ref.invalidate(myListingsProvider),
+                    onRetry: () => ref
+                        .read(myListingsListControllerProvider.notifier)
+                        .refresh(),
                   ),
                 ),
               ),
@@ -299,6 +377,7 @@ class ManageListingPage extends ConsumerWidget {
       ref.read(_pausedListingIdsProvider.notifier).state = currentlyPaused
           ? ({...pausedIds}..remove(listingId))
           : {...pausedIds, listingId};
+      ref.invalidate(myListingsListControllerProvider);
       ref.invalidate(myListingsProvider);
       final locale = AppLocalizations.of(context);
       FlatmatesToast.success(
