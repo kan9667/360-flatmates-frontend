@@ -205,7 +205,7 @@ class _SwipeDeckPageState extends ConsumerState<SwipeDeckPage>
     _recordProfileView();
     final locale = AppLocalizations.of(context);
 
-    final profiles = ref.read(swipeDeckControllerProvider).valueOrNull ?? [];
+    final profiles = ref.read(swipeDeckControllerProvider).profiles;
     final bootstrap = ref.read(bootstrapControllerProvider).valueOrNull;
     final userProfile = bootstrap?.profile;
     final visible = profiles.where((i) => i.id != userProfile?.id).toList();
@@ -367,7 +367,8 @@ class _SwipeDeckPageState extends ConsumerState<SwipeDeckPage>
       });
     });
 
-    final profiles = ref.watch(swipeDeckControllerProvider);
+    final deckState = ref.watch(swipeDeckControllerProvider);
+    final profiles = deckState.profiles;
     final userProfile = ref.watch(
       bootstrapControllerProvider.select((s) => s.valueOrNull?.profile),
     );
@@ -378,110 +379,131 @@ class _SwipeDeckPageState extends ConsumerState<SwipeDeckPage>
     // rather than "no profiles ever loaded".
     final hasSwiped = ref.read(swipeDeckControllerProvider.notifier).hasSwiped;
 
-    return profiles.when(
-      data: (items) {
-        if (items.isEmpty) {
-          return _scaffoldWithHeader(
-            SwipeEmptyState(
-              reason: hasSwiped
-                  ? SwipeEmptyReason.endOfDeck
-                  : SwipeEmptyReason.noProfiles,
-              onRefresh: _refreshProfiles,
-            ),
-          );
-        }
-
-        final visible = items.where((i) => i.id != userProfile?.id).toList();
-
-        if (visible.isEmpty) {
-          return _scaffoldWithHeader(
-            SwipeEmptyState(
-              reason: hasSwiped
-                  ? SwipeEmptyReason.endOfDeck
-                  : SwipeEmptyReason.allFiltered,
-              onRefresh: _refreshProfiles,
-            ),
-          );
-        }
-
-        if (_currentIndex >= visible.length) {
-          return _scaffoldWithHeader(
-            SwipeEmptyState(
-              reason: SwipeEmptyReason.endOfDeck,
-              onRefresh: _refreshProfiles,
-            ),
-          );
-        }
-
-        final item = visible[_currentIndex];
-
-        // Start view tracking for current card
-        if (_trackedProfileId != item.id) {
-          _recordProfileView();
-          _trackedProfileId = item.id;
-          _profileViewTracker.start(item.id);
-        }
-
-        final compatibility = _compatibilityCache.resultFor(userProfile, item);
-
-        final hasNextCard = _currentIndex + 1 < visible.length;
-        final nextItem = hasNextCard ? visible[_currentIndex + 1] : null;
-        final nextCompatibility = hasNextCard && nextItem != null
-            ? _compatibilityCache.resultFor(userProfile, nextItem)
-            : null;
-
-        final hasThirdCard = _currentIndex + 2 < visible.length;
-        final thirdItem = hasThirdCard ? visible[_currentIndex + 2] : null;
-        final thirdCompatibility = hasThirdCard && thirdItem != null
-            ? _compatibilityCache.resultFor(userProfile, thirdItem)
-            : null;
-
-        final screenWidth = MediaQuery.of(context).size.width;
-        final rotation = calculateRotation(_dragOffset, screenWidth);
-        final progress = calculateDragProgress(_dragOffset, screenWidth);
-
-        return _scaffoldWithHeader(
-          Column(
-            children: [
-              Expanded(
-                child: SwipeCardStack(
-                  item: item,
-                  compatibility: compatibility,
-                  nextItem: nextItem,
-                  nextCompatibility: nextCompatibility,
-                  thirdItem: thirdItem,
-                  thirdCompatibility: thirdCompatibility,
-                  dragOffset: _dragOffset,
-                  dragProgress: progress,
-                  currentRotation: rotation,
-                  cardScaleAnimation: _cardScaleAnimation,
-                  isDragging: _isDragging,
-                  onHorizontalDragStart: _onHorizontalDragStart,
-                  onHorizontalDragUpdate: _onHorizontalDragUpdate,
-                  onHorizontalDragEnd: _onHorizontalDragEnd,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              SwipeActionBar(
-                onSkip: () => _triggerButtonSwipe(-1),
-                onLike: () => _triggerButtonSwipe(1),
-                onUndo: _undoLastSwipe,
-                canUndo: _lastSwipedProfile != null,
-                enabled: !_isAnimating && !_isDragging,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-            ],
-          ),
-        );
-      },
-      loading: () =>
-          const Scaffold(body: Center(child: FlatmatesSkeleton.card())),
-      error: (e, _) => Scaffold(
+    if (deckState.isLoading && profiles.isEmpty) {
+      return const Scaffold(body: Center(child: FlatmatesSkeleton.card()));
+    }
+    if (deckState.hasError && profiles.isEmpty) {
+      return Scaffold(
         body: FlatmatesErrorState(
           message: locale.failedToLoadProfiles,
           onRetry: () =>
               ref.read(swipeDeckControllerProvider.notifier).refresh(),
         ),
+      );
+    }
+
+    if (profiles.isEmpty) {
+      return _scaffoldWithHeader(
+        SwipeEmptyState(
+          reason: hasSwiped
+              ? SwipeEmptyReason.endOfDeck
+              : SwipeEmptyReason.noProfiles,
+          onRefresh: _refreshProfiles,
+        ),
+      );
+    }
+
+    final visible = profiles.where((i) => i.id != userProfile?.id).toList();
+
+    if (visible.isEmpty) {
+      return _scaffoldWithHeader(
+        SwipeEmptyState(
+          reason: hasSwiped
+              ? SwipeEmptyReason.endOfDeck
+              : SwipeEmptyReason.allFiltered,
+          onRefresh: _refreshProfiles,
+        ),
+      );
+    }
+
+    if (_currentIndex >= visible.length) {
+      return _scaffoldWithHeader(
+        SwipeEmptyState(
+          reason: SwipeEmptyReason.endOfDeck,
+          onRefresh: _refreshProfiles,
+        ),
+      );
+    }
+
+    final item = visible[_currentIndex];
+
+    // Start view tracking for current card
+    if (_trackedProfileId != item.id) {
+      _recordProfileView();
+      _trackedProfileId = item.id;
+      _profileViewTracker.start(item.id);
+    }
+
+    final compatibility = _compatibilityCache.resultFor(userProfile, item);
+
+    final hasNextCard = _currentIndex + 1 < visible.length;
+    final nextItem = hasNextCard ? visible[_currentIndex + 1] : null;
+    final nextCompatibility = hasNextCard && nextItem != null
+        ? _compatibilityCache.resultFor(userProfile, nextItem)
+        : null;
+
+    final hasThirdCard = _currentIndex + 2 < visible.length;
+    final thirdItem = hasThirdCard ? visible[_currentIndex + 2] : null;
+    final thirdCompatibility = hasThirdCard && thirdItem != null
+        ? _compatibilityCache.resultFor(userProfile, thirdItem)
+        : null;
+
+    // Auto-load more profiles when the user gets close to the end of the
+    // current deck. Cursor pagination in [SwipeDeckController] keeps the
+    // user in flow without an explicit "load more" button.
+    final nearEnd = _currentIndex >= visible.length - 3;
+    if (nearEnd && deckState.hasMore && !deckState.isLoadingMore) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
+        ref.read(swipeDeckControllerProvider.notifier).loadMore();
+      });
+    }
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final rotation = calculateRotation(_dragOffset, screenWidth);
+    final progress = calculateDragProgress(_dragOffset, screenWidth);
+
+    return _scaffoldWithHeader(
+      Column(
+        children: [
+          Expanded(
+            child: SwipeCardStack(
+              item: item,
+              compatibility: compatibility,
+              nextItem: nextItem,
+              nextCompatibility: nextCompatibility,
+              thirdItem: thirdItem,
+              thirdCompatibility: thirdCompatibility,
+              dragOffset: _dragOffset,
+              dragProgress: progress,
+              currentRotation: rotation,
+              cardScaleAnimation: _cardScaleAnimation,
+              isDragging: _isDragging,
+              onHorizontalDragStart: _onHorizontalDragStart,
+              onHorizontalDragUpdate: _onHorizontalDragUpdate,
+              onHorizontalDragEnd: _onHorizontalDragEnd,
+            ),
+          ),
+          if (deckState.isLoadingMore)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          const SizedBox(height: AppSpacing.md),
+          SwipeActionBar(
+            onSkip: () => _triggerButtonSwipe(-1),
+            onLike: () => _triggerButtonSwipe(1),
+            onUndo: _undoLastSwipe,
+            canUndo: _lastSwipedProfile != null,
+            enabled: !_isAnimating && !_isDragging,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ],
       ),
     );
   }
