@@ -3,12 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/errors/app_failure.dart';
 import '../../core/providers.dart';
+import '../../core/storage/app_preferences.dart';
 import '../../core/storage/onboarding_draft_storage.dart';
 import '../bootstrap/bootstrap_controller.dart';
 import '../profile/profile_repository.dart';
 import 'domain/onboarding_state.dart';
 
 export 'domain/onboarding_state.dart';
+
+final flatmatesOnboardingCompletedOverrideProvider = StateProvider<bool>(
+  (ref) => false,
+);
 
 class OnboardingController extends Notifier<OnboardingState> {
   @override
@@ -192,16 +197,19 @@ class OnboardingController extends Notifier<OnboardingState> {
       final lifestyleAnswers = state.lifestyleAnswers;
       final preferences = state.preferences;
       final normalizedPreferences = _normalizePreferences(preferences);
+      final profileLifestyleAnswers = _profileLifestyleAnswers(
+        lifestyleAnswers,
+      );
       final payload = <String, dynamic>{
         'mode': state.mode,
         'full_name': state.fullName,
         'age': state.age,
+        'profession': state.profession,
         'city': state.city,
         'locality': state.locality,
         'budget_min': state.budgetMin,
         'budget_max': state.budgetMax,
         'move_in_timeline': state.moveInTimeline,
-        'onboarding_completed': true,
         'preferences': {
           'profession': state.profession,
           'photo_urls': state.photoUrls,
@@ -210,12 +218,24 @@ class OnboardingController extends Notifier<OnboardingState> {
           ...normalizedPreferences,
         },
       };
+      payload.addAll(profileLifestyleAnswers);
 
       if (state.photoUrls.isNotEmpty) {
         payload['profile_image_url'] = state.photoUrls.first;
       }
 
-      await ref.read(profileRepositoryProvider).updateProfile(payload: payload);
+      final updatedProfile = await ref
+          .read(profileRepositoryProvider)
+          .updateProfile(payload: payload);
+      await ref.read(profileRepositoryProvider).completeFlatmatesOnboarding();
+      await ref
+          .read(appPreferencesProvider)
+          .setString(
+            PrefKeys.flatmatesOnboardingCompletedUserId,
+            updatedProfile.id.toString(),
+          );
+      ref.read(flatmatesOnboardingCompletedOverrideProvider.notifier).state =
+          true;
       await ref.read(bootstrapControllerProvider.notifier).refresh();
       state = state.copyWith(isSubmitting: false, isComplete: true);
       await _clearSavedState();
@@ -276,6 +296,85 @@ class OnboardingController extends Notifier<OnboardingState> {
 
     return normalized;
   }
+
+  static Map<String, String> _profileLifestyleAnswers(
+    Map<String, String> answers,
+  ) {
+    final result = <String, String>{};
+    for (final entry in answers.entries) {
+      final value = _normalizeProfileLifestyleAnswer(entry.key, entry.value);
+      if (value != null) {
+        result[entry.key] = value;
+      }
+    }
+    return result;
+  }
+
+  static String? _normalizeProfileLifestyleAnswer(String key, String value) {
+    final allowedValues = _profileLifestyleValues[key];
+    if (allowedValues == null) return null;
+
+    final normalizedValue =
+        _legacyProfileLifestyleAliases[key]?[value] ?? value;
+    if (allowedValues.contains(normalizedValue)) {
+      return normalizedValue;
+    }
+
+    debugPrint(
+      '[OnboardingController] Dropping invalid lifestyle value '
+      '$key=$value from top-level profile payload',
+    );
+    return null;
+  }
+
+  static const _profileLifestyleValues = <String, Set<String>>{
+    'sleep_schedule': {'early_bird', 'flexible', 'night_owl'},
+    'cleanliness': {'minimal', 'tidy', 'spotless'},
+    'food_habits': {
+      'vegetarian',
+      'vegan',
+      'non_vegetarian',
+      'eggetarian',
+      'no_preference',
+    },
+    'smoking_drinking': {
+      'neither',
+      'smoke_outside',
+      'drink_occasionally',
+      'both_fine',
+    },
+    'guests_policy': {'no_overnight_guests', 'occasional_ok', 'open_house'},
+    'work_style': {'wfh', 'office', 'hybrid'},
+  };
+
+  static const _legacyProfileLifestyleAliases = <String, Map<String, String>>{
+    'cleanliness': {
+      'very_clean': 'spotless',
+      'clean': 'tidy',
+      'messy': 'minimal',
+    },
+    'food_habits': {
+      'veg': 'vegetarian',
+      'non_veg': 'non_vegetarian',
+      'any': 'no_preference',
+    },
+    'smoking_drinking': {
+      'none': 'neither',
+      'no': 'neither',
+      'smoking': 'smoke_outside',
+      'drinking': 'drink_occasionally',
+    },
+    'guests_policy': {
+      'occasionally': 'occasional_ok',
+      'occasional': 'occasional_ok',
+      'no_guests': 'no_overnight_guests',
+    },
+    'work_style': {
+      'remote': 'wfh',
+      'work_from_home': 'wfh',
+      'on_site': 'office',
+    },
+  };
 }
 
 final onboardingControllerProvider =

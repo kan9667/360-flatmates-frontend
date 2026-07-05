@@ -4,7 +4,6 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_semantic_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/gen/app_localizations.dart';
-import '../../../shared/presentation/flatmates_availability_pill.dart';
 import '../../../shared/presentation/flatmates_card.dart';
 import '../../../shared/presentation/flatmates_listing_meta_chips.dart';
 import '../../../shared/presentation/flatmates_network_image.dart';
@@ -16,16 +15,20 @@ class DiscoverListingCard extends StatelessWidget {
     required this.item,
     required this.onLike,
     super.key,
+    this.cardKey,
     this.badgeLabel,
     this.onTap,
     this.isSelected = false,
+    this.compact = false,
   });
 
   final PropertyListing item;
   final VoidCallback onLike;
+  final Key? cardKey;
   final String? badgeLabel;
   final VoidCallback? onTap;
   final bool isSelected;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +84,7 @@ class DiscoverListingCard extends StatelessWidget {
     final isLiked = item.liked ?? false;
 
     return FlatmatesCard(
-      key: Key('discover_listing_card_${item.id}'),
+      key: cardKey ?? Key('discover_listing_card_${item.id}'),
       padding: EdgeInsets.zero,
       onTap: onTap,
       elevation: isSelected ? 8 : null,
@@ -99,7 +102,7 @@ class DiscoverListingCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             AspectRatio(
-              aspectRatio: 16 / 10,
+              aspectRatio: compact ? 16 / 9 : 16 / 10,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -112,7 +115,10 @@ class DiscoverListingCard extends StatelessWidget {
                             imageUrl: item.effectiveMainImageUrl!,
                             fit: BoxFit.cover,
                           )
-                        : _CardImageFallback(title: item.title),
+                        : _CardImageFallback(
+                            title: item.title,
+                            compact: compact,
+                          ),
                   ),
                   Positioned.fill(
                     child: DecoratedBox(
@@ -128,24 +134,6 @@ class DiscoverListingCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ),
-                  // Availability pill — surfaces move-in readiness at a glance.
-                  Builder(
-                    builder: (context) {
-                      final pill = AvailabilityPill.resolve(
-                        context: context,
-                        status: item.status,
-                        availableFrom: item.availableFrom,
-                        isAvailable: item.isAvailable,
-                        style: AvailabilityPillStyle.onImage,
-                      );
-                      if (pill == null) return const SizedBox.shrink();
-                      return Positioned(
-                        bottom: AppSpacing.sm,
-                        left: AppSpacing.sm,
-                        child: pill,
-                      );
-                    },
                   ),
                   if (badgeLabel != null)
                     Positioned(
@@ -234,7 +222,12 @@ class DiscoverListingCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.sm),
+              padding: EdgeInsets.fromLTRB(
+                compact ? AppSpacing.xs : AppSpacing.sm,
+                compact ? AppSpacing.xs : AppSpacing.sm,
+                compact ? AppSpacing.xs : AppSpacing.sm,
+                AppSpacing.xs,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -244,19 +237,22 @@ class DiscoverListingCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      Text(
-                        _formatRent(item.monthlyRent.round()),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: AppSemanticColors.textPrimaryFor(
-                            theme.brightness,
+                      Flexible(
+                        child: Text(
+                          _formatRent(item.monthlyRent.round()),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: AppSemanticColors.textPrimaryFor(
+                              theme.brightness,
+                            ),
+                            fontWeight: FontWeight.w800,
+                            height: 1.15,
                           ),
-                          fontWeight: FontWeight.w800,
-                          height: 1.15,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      if (item.securityDeposit != null &&
+                      if (!compact &&
+                          item.securityDeposit != null &&
                           item.securityDeposit! > 0) ...[
                         const SizedBox(width: AppSpacing.xs),
                         Flexible(
@@ -316,7 +312,7 @@ class DiscoverListingCard extends StatelessWidget {
                       ],
                     ),
                   ],
-                  if (metaItems.isNotEmpty) ...[
+                  if (!compact && metaItems.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.xs),
                     FlatmatesListingMetaChips(items: metaItems),
                   ],
@@ -341,9 +337,10 @@ class DiscoverListingCard extends StatelessWidget {
 }
 
 class _CardImageFallback extends StatelessWidget {
-  const _CardImageFallback({required this.title});
+  const _CardImageFallback({required this.title, required this.compact});
 
   final String title;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -359,21 +356,25 @@ class _CardImageFallback extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        AppSpacing.md,
+      padding: EdgeInsets.fromLTRB(
+        compact ? AppSpacing.sm : AppSpacing.md,
+        compact ? AppSpacing.xs : AppSpacing.sm,
+        compact ? AppSpacing.sm : AppSpacing.md,
+        compact ? AppSpacing.sm : AppSpacing.md,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.apartment_rounded, color: Colors.white, size: 18),
-          const SizedBox(height: AppSpacing.xs),
+          Icon(
+            Icons.apartment_rounded,
+            color: Colors.white,
+            size: compact ? 16 : 18,
+          ),
+          SizedBox(height: compact ? 2 : AppSpacing.xs),
           Text(
             title,
-            maxLines: 2,
+            maxLines: compact ? 1 : 2,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.labelSmall?.copyWith(color: Colors.white),
           ),

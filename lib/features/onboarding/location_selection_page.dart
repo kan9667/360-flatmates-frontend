@@ -38,6 +38,10 @@ class _LocationSelectionPageState extends ConsumerState<LocationSelectionPage> {
   bool _locating = false;
   bool _selectingPlace = false;
 
+  String get _typedCity => _searchController.text.trim();
+
+  bool get _canContinue => _selectedCity != null || _typedCity.isNotEmpty;
+
   @override
   void initState() {
     super.initState();
@@ -206,23 +210,68 @@ class _LocationSelectionPageState extends ConsumerState<LocationSelectionPage> {
     }
   }
 
+  List<CatalogOption> _catalogCities() {
+    final bootstrap = ref.watch(bootstrapControllerProvider).valueOrNull;
+    final catalogCities =
+        bootstrap?.catalogOptions('flatmates_popular_cities') ?? const [];
+    return resolveCities(catalogCities);
+  }
+
+  void _onCityTap(CatalogOption city) {
+    if (city.comingSoon) return;
+    setState(() {
+      _selectedCity = city;
+      _searchController.text = city.label;
+    });
+    ref.read(locationSearchProvider.notifier).clear();
+  }
+
+  Widget _citySection(String label, List<CatalogOption> cities) {
+    if (cities.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: AppSemanticColors.textSecondaryFor(theme.brightness),
+            letterSpacing: 1.1,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...cities.map(
+          (city) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: LocationCityRow(
+              key: Key('popular_city_${city.id}'),
+              city: city,
+              selected: _selectedCity?.id == city.id,
+              onTap: () => _onCityTap(city),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final locale = AppLocalizations.of(context);
-    final bootstrap = ref.watch(bootstrapControllerProvider).valueOrNull;
-    final catalogCities =
-        bootstrap?.catalogOptions('flatmates_popular_cities') ?? const [];
-    final cities = resolveCities(catalogCities);
-    final query = _searchController.text.trim().toLowerCase();
-    final visibleCities = query.isEmpty
-        ? cities
-        : cities
-              .where((c) => cityMatchesQuery(c, query))
-              .toList(growable: false);
     final searchState = ref.watch(locationSearchProvider);
     final hasPlacesResults = searchState.suggestions.isNotEmpty;
     final isPlacesLoading = searchState.isLoading || _selectingPlace;
+    final typedCity = _typedCity;
+    final catalogCities = _catalogCities();
+    final popularCities = catalogCities.where((c) => c.isPopular).toList();
+    final moreCities = catalogCities
+        .where((c) => !c.isPopular && !c.comingSoon)
+        .toList();
+    final matchingCities = typedCity.isEmpty
+        ? const <CatalogOption>[]
+        : catalogCities.where((c) => cityMatchesQuery(c, typedCity)).toList();
 
     return Scaffold(
       body: SafeArea(
@@ -253,7 +302,14 @@ class _LocationSelectionPageState extends ConsumerState<LocationSelectionPage> {
             FlatmatesSearchBar(
               controller: _searchController,
               hint: locale.searchCityOrAreaHint,
-              onChanged: (_) => setState(() {}),
+              onChanged: (value) {
+                final selectedCity = _selectedCity;
+                if (selectedCity != null &&
+                    value.trim() != selectedCity.label) {
+                  _selectedCity = null;
+                }
+                setState(() {});
+              },
             ),
             const SizedBox(height: 18),
             LocationActionRow(
@@ -266,74 +322,62 @@ class _LocationSelectionPageState extends ConsumerState<LocationSelectionPage> {
             ),
             const SizedBox(height: 18),
             const Divider(color: AppSemanticColors.line),
-            if (isPlacesLoading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              ),
-            if (hasPlacesResults) ...[
-              const SizedBox(height: 12),
-              Text(
-                locale.suggestionsLabel,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: AppSemanticColors.textSecondaryFor(theme.brightness),
-                  letterSpacing: 1.1,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...searchState.suggestions.map(
-                (suggestion) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                  child: LocationSuggestionRow(
-                    suggestion: suggestion,
-                    onTap: _selectingPlace
-                        ? null
-                        : () => _selectPlace(suggestion),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-            const SizedBox(height: 16),
-            Text(
-              locale.popularCitiesLabel,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: AppSemanticColors.textSecondaryFor(theme.brightness),
-                letterSpacing: 1.1,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 12),
             Expanded(
-              child: visibleCities.isEmpty
-                  ? Center(
-                      child: Text(
-                        locale.noLocationsAvailable,
-                        style: theme.textTheme.bodyMedium,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (typedCity.isEmpty) ...[
+                      _citySection(locale.popularCitiesLabel, popularCities),
+                      if (popularCities.isNotEmpty && moreCities.isNotEmpty)
+                        const SizedBox(height: AppSpacing.md),
+                      _citySection(locale.moreCitiesLabel, moreCities),
+                    ] else if (matchingCities.isNotEmpty) ...[
+                      _citySection(locale.matchingCitiesLabel, matchingCities),
+                      const SizedBox(height: AppSpacing.sm),
+                    ],
+                    if (isPlacesLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        child: Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
                       ),
-                    )
-                  : ListView.separated(
-                      itemCount: visibleCities.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final city = visibleCities[index];
-                        final selected = _selectedCity?.id == city.id;
-                        return LocationCityRow(
-                          city: city,
-                          selected: selected,
-                          onTap: city.comingSoon
-                              ? null
-                              : () => setState(() => _selectedCity = city),
-                        );
-                      },
-                    ),
+                    if (hasPlacesResults) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        locale.suggestionsLabel,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: AppSemanticColors.textSecondaryFor(
+                            theme.brightness,
+                          ),
+                          letterSpacing: 1.1,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...searchState.suggestions.map(
+                        (suggestion) => Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.xs,
+                          ),
+                          child: LocationSuggestionRow(
+                            suggestion: suggestion,
+                            onTap: _selectingPlace
+                                ? null
+                                : () => _selectPlace(suggestion),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ],
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.only(
@@ -343,10 +387,10 @@ class _LocationSelectionPageState extends ConsumerState<LocationSelectionPage> {
               child: FlatmatesButton(
                 label: locale.modeContinue,
                 fullWidth: true,
-                onPressed: _selectedCity == null
+                onPressed: !_canContinue
                     ? null
                     : () => widget.onLocationSelected({
-                        'city': _selectedCity!.label,
+                        'city': _selectedCity?.label ?? _typedCity,
                         'locality': null,
                       }),
               ),

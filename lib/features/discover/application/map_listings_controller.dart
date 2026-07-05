@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../bootstrap/bootstrap_controller.dart';
+import '../../chats/application/cursor_list_controller.dart';
 import '../../chats/chats_repository.dart';
 import '../../location/application/location_controller.dart';
 import '../discover_repository.dart';
@@ -63,6 +66,9 @@ class MapListingsController extends Notifier<MapListingsState> {
             smoking: sharedFilters.smoking,
             vibe: sharedFilters.vibe,
             moveInTimeline: sharedFilters.moveInTimeline,
+            latitude: sharedFilters.latitude,
+            longitude: sharedFilters.longitude,
+            radiusKm: sharedFilters.radiusKm,
           )
         : const DiscoverFilters();
     Future.microtask(() => _autoInjectLocationThenLoad());
@@ -70,7 +76,7 @@ class MapListingsController extends Notifier<MapListingsState> {
   }
 
   Future<void> _autoInjectLocationThenLoad() async {
-    if (!state.filters.hasGeoLocation) {
+    if (!state.filters.hasGeoLocation && !_hasTextLocation(state.filters)) {
       final selectedLocation = ref
           .read(locationControllerProvider)
           .selectedLocation;
@@ -138,6 +144,10 @@ class MapListingsController extends Notifier<MapListingsState> {
           .read(discoverRepositoryProvider)
           .setLiked(propertyId, liked);
       ref.invalidate(conversationsProvider);
+      // The ConversationsPage Chats tab watches the cursor controller, not the
+      // legacy FutureProvider above — refresh it too or the tab stays stale
+      // until a manual pull-to-refresh.
+      ref.invalidate(conversationsListControllerProvider);
       return conversationId;
     } catch (e) {
       debugPrint('MapListingsController.setLiked failed: $e');
@@ -156,20 +166,56 @@ class MapListingsController extends Notifier<MapListingsState> {
         ? radiusKm
         : defaultLocationRadiusKm;
     state = state.copyWith(
+      listings: const [],
+      isLoading: true,
+      clearError: true,
       filters: state.filters.copyWith(
         latitude: latitude,
         longitude: longitude,
         radiusKm: normalizedRadiusKm,
+        clearLocation: true,
       ),
     );
     _filterVersion++;
-    load();
+    unawaited(load());
+  }
+
+  void updateTextLocationFilter({required String location}) {
+    final normalizedLocation = location.trim();
+    if (normalizedLocation.isEmpty) return;
+    state = state.copyWith(
+      listings: const [],
+      isLoading: true,
+      clearError: true,
+      filters: state.filters.copyWith(
+        location: normalizedLocation,
+        clearLatitude: true,
+        clearLongitude: true,
+        clearRadiusKm: true,
+      ),
+    );
+    _filterVersion++;
+    unawaited(load());
   }
 
   void clearLocationFilter() {
-    state = state.copyWith(filters: const DiscoverFilters());
+    state = state.copyWith(
+      listings: const [],
+      isLoading: true,
+      clearError: true,
+      filters: state.filters.copyWith(
+        clearLocation: true,
+        clearLatitude: true,
+        clearLongitude: true,
+        clearRadiusKm: true,
+      ),
+    );
     _filterVersion++;
-    load();
+    unawaited(load());
+  }
+
+  bool _hasTextLocation(DiscoverFilters filters) {
+    return filters.location?.trim().isNotEmpty ?? false;
   }
 }
 

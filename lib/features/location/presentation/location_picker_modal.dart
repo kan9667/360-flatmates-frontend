@@ -16,7 +16,9 @@ import '../../shared/presentation/components.dart';
 import '../../../l10n/gen/app_localizations.dart';
 import '../../bootstrap/bootstrap_controller.dart';
 import '../../bootstrap/catalog_helpers.dart';
+import '../application/location_controller.dart';
 import '../application/location_search_provider.dart';
+import 'location_picker_rows.dart';
 
 class LocationPickerModal extends ConsumerStatefulWidget {
   final String? currentLocationName;
@@ -42,6 +44,8 @@ class _LocationPickerModalState extends ConsumerState<LocationPickerModal> {
   double _radius = 10.0;
   bool _isDetectingLocation = false;
   bool _isResolvingPlace = false;
+
+  String get _typedLocation => _searchController.text.trim();
 
   @override
   void initState() {
@@ -167,14 +171,34 @@ class _LocationPickerModalState extends ConsumerState<LocationPickerModal> {
     }
   }
 
-  void _selectCatalogCity(CatalogOption city) {
-    final meta = city.meta;
-    final lat = (meta['latitude'] as num?)?.toDouble() ?? 0.0;
-    final lng = (meta['longitude'] as num?)?.toDouble() ?? 0.0;
-    widget.onLocationSelected(
-      LocationData(name: city.label, latitude: lat, longitude: lng),
-    );
-    Navigator.of(context).pop();
+  Future<void> _selectTypedLocation() async {
+    final location = _typedLocation;
+    if (_isResolvingPlace || location.isEmpty) return;
+
+    setState(() => _isResolvingPlace = true);
+    final locale = AppLocalizations.of(context);
+    try {
+      final resolved = await ref
+          .read(locationControllerProvider.notifier)
+          .resolveLocationName(location);
+      if (!mounted) return;
+      if (resolved == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(locale.locationDetailsFailed)));
+        return;
+      }
+
+      widget.onLocationSelected(resolved);
+      Navigator.of(context).pop();
+    } catch (e) {
+      debugPrint('LocationPickerModal._selectTypedLocation failed: $e');
+      if (mounted) {
+        FlatmatesToast.error(context, locale.errorUnknown);
+      }
+    } finally {
+      if (mounted) setState(() => _isResolvingPlace = false);
+    }
   }
 
   Future<void> _onSuggestionTap(PlaceSuggestion suggestion) async {
@@ -230,6 +254,52 @@ class _LocationPickerModalState extends ConsumerState<LocationPickerModal> {
     }
   }
 
+  void _onCityTap(CatalogOption city) {
+    if (city.comingSoon) return;
+    final lat = (city.meta['latitude'] as num?)?.toDouble() ?? 0.0;
+    final lng = (city.meta['longitude'] as num?)?.toDouble() ?? 0.0;
+    widget.onLocationSelected(
+      LocationData(name: city.label, latitude: lat, longitude: lng),
+    );
+    Navigator.of(context).pop();
+  }
+
+  bool _isCurrentCity(CatalogOption city) {
+    final current = widget.currentLocationName;
+    if (current == null || current.isEmpty) return false;
+    return current.toLowerCase() == city.label.toLowerCase();
+  }
+
+  Widget _citySection(String label, List<CatalogOption> cities) {
+    if (cities.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: AppSemanticColors.textSecondaryFor(theme.brightness),
+            letterSpacing: 1.1,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        ...cities.map(
+          (city) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: LocationCityRow(
+              key: Key('popular_city_${city.id}'),
+              city: city,
+              selected: _isCurrentCity(city),
+              onTap: _isResolvingPlace ? null : () => _onCityTap(city),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -238,15 +308,19 @@ class _LocationPickerModalState extends ConsumerState<LocationPickerModal> {
     final searchState = ref.watch(locationSearchProvider);
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
-    final catalogCities = _getCatalogCities();
-    final query = _searchController.text.trim().toLowerCase();
-    final filteredCities = query.isEmpty
-        ? catalogCities
-        : catalogCities
-              .where((c) => cityMatchesQuery(c, query))
-              .toList(growable: false);
     final hasPlacesResults = searchState.suggestions.isNotEmpty;
     final isLoading = searchState.isLoading || _isResolvingPlace;
+    final typedLocation = _typedLocation;
+    final catalogCities = _getCatalogCities();
+    final popularCities = catalogCities.where((c) => c.isPopular).toList();
+    final moreCities = catalogCities
+        .where((c) => !c.isPopular && !c.comingSoon)
+        .toList();
+    final matchingCities = typedLocation.isEmpty
+        ? const <CatalogOption>[]
+        : catalogCities
+              .where((c) => cityMatchesQuery(c, typedLocation))
+              .toList();
 
     return ClipRRect(
       borderRadius: AppRadius.sheetTopBorder,
@@ -336,6 +410,21 @@ class _LocationPickerModalState extends ConsumerState<LocationPickerModal> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (typedLocation.isEmpty) ...[
+                          _citySection(
+                            locale.popularCitiesLabel,
+                            popularCities,
+                          ),
+                          if (popularCities.isNotEmpty && moreCities.isNotEmpty)
+                            const SizedBox(height: AppSpacing.md),
+                          _citySection(locale.moreCitiesLabel, moreCities),
+                        ] else if (matchingCities.isNotEmpty) ...[
+                          _citySection(
+                            locale.matchingCitiesLabel,
+                            matchingCities,
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                        ],
                         if (hasPlacesResults) ...[
                           Text(
                             locale.suggestionsLabel,
@@ -360,41 +449,10 @@ class _LocationPickerModalState extends ConsumerState<LocationPickerModal> {
                           const Divider(color: AppSemanticColors.line),
                           const SizedBox(height: AppSpacing.sm),
                         ],
-                        Text(
-                          query.isEmpty
-                              ? locale.popularCitiesLabel
-                              : locale.matchingCitiesLabel,
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: AppSemanticColors.textSecondaryFor(
-                              theme.brightness,
-                            ),
-                            letterSpacing: 1.1,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        if (filteredCities.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.lg,
-                            ),
-                            child: Center(
-                              child: Text(
-                                locale.noCitiesFound,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: AppSemanticColors.ink3,
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          ...filteredCities.map(
-                            (city) => _CityTile(
-                              city: city,
-                              onTap: city.comingSoon
-                                  ? null
-                                  : () => _selectCatalogCity(city),
-                            ),
+                        if (_typedLocation.isNotEmpty)
+                          _TypedLocationTile(
+                            location: _typedLocation,
+                            onTap: _selectTypedLocation,
                           ),
                       ],
                     ),
@@ -418,133 +476,78 @@ class _PlaceSuggestionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      leading: const Icon(
-        Icons.location_on_outlined,
-        size: 20,
-        color: AppSemanticColors.accent,
-      ),
-      title: Text(
-        suggestion.mainText,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w500,
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
         ),
+        leading: const Icon(
+          Icons.location_on_outlined,
+          size: 20,
+          color: AppSemanticColors.accent,
+        ),
+        title: Text(
+          suggestion.mainText,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: suggestion.secondaryText.isNotEmpty
+            ? Text(
+                suggestion.secondaryText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppSemanticColors.ink3,
+                ),
+              )
+            : null,
+        onTap: onTap,
       ),
-      subtitle: suggestion.secondaryText.isNotEmpty
-          ? Text(
-              suggestion.secondaryText,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppSemanticColors.ink3,
-              ),
-            )
-          : null,
-      onTap: onTap,
     );
   }
 }
 
-class _CityTile extends StatelessWidget {
-  final CatalogOption city;
-  final VoidCallback? onTap;
+class _TypedLocationTile extends StatelessWidget {
+  const _TypedLocationTile({required this.location, required this.onTap});
 
-  const _CityTile({required this.city, required this.onTap});
+  final String location;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final locale = AppLocalizations.of(context);
-    final state = (city.meta['state'] as String?) ?? '';
-    if (city.comingSoon) {
-      return Opacity(
-        opacity: 0.6,
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.xs,
-          ),
-          leading: Icon(
-            Icons.location_city_rounded,
-            size: 20,
-            color: AppSemanticColors.textTertiaryFor(theme.brightness),
-          ),
-          title: Text(
-            city.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: AppSemanticColors.textTertiaryFor(theme.brightness),
-            ),
-          ),
-          subtitle: state.isNotEmpty
-              ? Text(
-                  state,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppSemanticColors.textTertiaryFor(theme.brightness),
-                  ),
-                )
-              : null,
-          trailing: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppSemanticColors.paper2,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              locale.comingSoon,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: AppSemanticColors.textTertiaryFor(theme.brightness),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        leading: const Icon(
+          Icons.location_city_rounded,
+          size: 20,
+          color: AppSemanticColors.accent,
+        ),
+        title: Text(
+          location,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
           ),
         ),
-      );
-    }
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      leading: const Icon(
-        Icons.location_city_rounded,
-        size: 20,
-        color: AppSemanticColors.ink3,
-      ),
-      title: Text(
-        city.label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w500,
+        trailing: const Icon(
+          Icons.chevron_right,
+          size: 18,
+          color: AppSemanticColors.line,
         ),
+        onTap: onTap,
       ),
-      subtitle: state.isNotEmpty
-          ? Text(
-              state,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppSemanticColors.ink3,
-              ),
-            )
-          : null,
-      trailing: const Icon(
-        Icons.chevron_right,
-        size: 18,
-        color: AppSemanticColors.line,
-      ),
-      onTap: onTap,
     );
   }
 }

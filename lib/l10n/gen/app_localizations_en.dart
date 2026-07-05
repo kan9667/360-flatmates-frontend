@@ -2942,6 +2942,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noCitiesFound => 'No cities found';
 
   @override
+  String get moreCitiesLabel => 'MORE CITIES';
+
+  @override
   String get searchRadiusLabel => 'Search Radius';
 
   @override
@@ -3207,7 +3210,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shortlisted => 'Liked';
 
   @override
-  String get shortlistRemoved => 'Removed';
+  String get shortlistRemoved => 'Like removed';
 
   @override
   String get contactRequestSentToast => 'Contact request sent';

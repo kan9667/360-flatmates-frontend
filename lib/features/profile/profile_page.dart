@@ -37,7 +37,6 @@ class ProfilePage extends ConsumerWidget {
             return const FlatmatesSkeleton.card();
           }
           final profileStrength = _profileStrengthPercent(profile);
-          final identityPills = buildIdentityPills(profile, locale);
           return ListView(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.xl,
@@ -116,6 +115,7 @@ class ProfilePage extends ConsumerWidget {
                       children: [
                         Text(
                           profile.fullName ?? locale.profileFallbackName,
+                          key: const Key('profile_name_text'),
                           style: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -175,26 +175,6 @@ class ProfilePage extends ConsumerWidget {
                                 ),
                               ),
                             ],
-                          ),
-                        ],
-
-                        // Scannable identity pills — mirrors what the swipe
-                        // card shows others about this user (mode, budget,
-                        // move-in). Keeps the profile a scannable identity
-                        // card rather than just a menu hub.
-                        if (identityPills.isNotEmpty) ...[
-                          const SizedBox(height: AppSpacing.sm),
-                          Wrap(
-                            spacing: AppSpacing.xs,
-                            runSpacing: AppSpacing.xs,
-                            children: identityPills
-                                .map(
-                                  (p) => IdentityPill(
-                                    item: p,
-                                    brightness: theme.brightness,
-                                  ),
-                                )
-                                .toList(),
                           ),
                         ],
                       ],
@@ -312,6 +292,7 @@ class ProfilePage extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 FlatmatesMenuItem(
+                  key: const Key('profile_settings_menu_item'),
                   icon: Icons.settings_outlined,
                   label: locale.settingsTitle,
                   onTap: () => context.push('/profile/settings'),
@@ -322,6 +303,7 @@ class ProfilePage extends ConsumerWidget {
                   endIndent: AppSpacing.lg,
                 ),
                 FlatmatesMenuItem(
+                  key: const Key('profile_help_safety_menu_item'),
                   icon: Icons.help_outline,
                   label: locale.helpSafetyTitle,
                   onTap: () => context.push('/help-safety'),

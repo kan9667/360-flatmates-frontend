@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../bootstrap/bootstrap_controller.dart';
+import '../../chats/application/cursor_list_controller.dart';
 import '../../chats/chats_repository.dart';
 import '../discover_repository.dart';
 import 'move_in_filter.dart';
@@ -171,6 +172,10 @@ class DiscoverFeedController extends Notifier<DiscoverFeedState> {
       // Invalidate on both like and unlike so the conversation list stays
       // in sync (unliking may remove a pending conversation/like entry).
       ref.invalidate(conversationsProvider);
+      // The ConversationsPage Chats tab watches the cursor controller, not the
+      // legacy FutureProvider above — refresh it too or the tab stays stale
+      // until a manual pull-to-refresh.
+      ref.invalidate(conversationsListControllerProvider);
       return conversationId;
     } catch (e) {
       debugPrint('DiscoverFeedController.toggleLike failed: $e');
@@ -237,7 +242,25 @@ class DiscoverFeedController extends Notifier<DiscoverFeedState> {
         latitude: latitude,
         longitude: longitude,
         radiusKm: normalizedRadiusKm,
+        clearLocation: true,
       ),
+      restartListings: true,
+    );
+    load();
+  }
+
+  void updateTextLocationFilter({required String location}) {
+    final normalizedLocation = location.trim();
+    if (normalizedLocation.isEmpty) return;
+
+    _setFilters(
+      state.filters.copyWith(
+        location: normalizedLocation,
+        clearLatitude: true,
+        clearLongitude: true,
+        clearRadiusKm: true,
+      ),
+      restartListings: true,
     );
     load();
   }
@@ -323,9 +346,18 @@ class DiscoverFeedController extends Notifier<DiscoverFeedState> {
     return filters.location?.trim().isNotEmpty ?? false;
   }
 
-  void _setFilters(DiscoverFilters filters) {
+  void _setFilters(DiscoverFilters filters, {bool restartListings = false}) {
     _filterVersion++;
-    state = state.copyWith(filters: filters);
+    state = state.copyWith(
+      listings: restartListings ? const [] : null,
+      setNextCursorNull: restartListings,
+      isLoading: restartListings ? true : null,
+      isRefreshing: restartListings ? false : null,
+      isLoadingMore: restartListings ? false : null,
+      hasMore: restartListings ? true : null,
+      clearError: restartListings,
+      filters: filters,
+    );
     ref.read(discoverFiltersProvider.notifier).state = filters.isEmpty
         ? null
         : filters;
