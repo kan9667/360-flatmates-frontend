@@ -216,11 +216,9 @@ class _LocationSearchPageState extends ConsumerState<LocationSearchPage> {
               ),
               child: Row(
                 children: [
-                  IconButton(
+                  FlatmatesChromeIconButton(
                     onPressed: () => context.pop(),
-                    icon: const Icon(Icons.arrow_back),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    icon: Icons.arrow_back_rounded,
                     tooltip: locale.backCta,
                   ),
                   const SizedBox(width: AppSpacing.md),

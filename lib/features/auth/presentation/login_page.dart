@@ -78,7 +78,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final theme = Theme.of(context);
 
     return FlatmatesScreen(
-      appBar: AppBar(),
+      appBar: const FlatmatesHeader.backTitle(title: ''),
       scrollable: true,
       body: AutofillGroup(
         child: Column(

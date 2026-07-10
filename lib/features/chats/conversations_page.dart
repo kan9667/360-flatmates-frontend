@@ -40,23 +40,12 @@ class _ConversationsPageState extends ConsumerState<ConversationsPage> {
   static const double _kBottomNavOffset = 120;
 
   @override
-  void initState() {
-    super.initState();
-    // Prime each tab's controller so the first paint already has data and
-    // switching tabs is instant.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref.read(conversationsListControllerProvider.notifier).load();
-      ref.read(incomingLikesListControllerProvider.notifier).load();
-      ref.read(outgoingLikesListControllerProvider.notifier).load();
-    });
-  }
-
-  @override
   void didUpdateWidget(ConversationsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.initialTab != oldWidget.initialTab) {
       // Deferred: provider writes are not allowed while the tree is building.
+      // Clearing the override re-selects the route tab; the matching list
+      // controller is watched in build() and auto-loads on first create.
       Future.microtask(() {
         if (!mounted) return;
         ref.read(_conversationsTabOverrideProvider.notifier).state = null;
@@ -65,16 +54,19 @@ class _ConversationsPageState extends ConsumerState<ConversationsPage> {
   }
 
   Future<void> _refresh() async {
-    await Future.wait([
-      ref.read(conversationsListControllerProvider.notifier).refresh(),
-      ref.read(incomingLikesListControllerProvider.notifier).refresh(),
-      ref.read(outgoingLikesListControllerProvider.notifier).refresh(),
-    ]);
-    // Keep the legacy providers in sync for any listener still on the old
-    // FutureProvider surface (e.g. third-party widgets).
-    ref.invalidate(conversationsProvider);
-    ref.invalidate(incomingLikesProvider);
-    ref.invalidate(outgoingLikesProvider);
+    final tab =
+        ref.read(_conversationsTabOverrideProvider) ?? widget.initialTab;
+    // Refresh only the active tab — matches lazy watch policy below.
+    if (tab == 'likes') {
+      await ref.read(incomingLikesListControllerProvider.notifier).refresh();
+      ref.invalidate(incomingLikesProvider);
+    } else if (tab == 'liked') {
+      await ref.read(outgoingLikesListControllerProvider.notifier).refresh();
+      ref.invalidate(outgoingLikesProvider);
+    } else {
+      await ref.read(conversationsListControllerProvider.notifier).refresh();
+      ref.invalidate(conversationsProvider);
+    }
   }
 
   Future<void> _onPropertyLike(OutgoingLikeModel like) async {
@@ -151,14 +143,48 @@ class _ConversationsPageState extends ConsumerState<ConversationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final conversations = ref.watch(conversationsListControllerProvider);
-    final incomingLikes = ref.watch(incomingLikesListControllerProvider);
-    final outgoingLikes = ref.watch(outgoingLikesListControllerProvider);
+    // Watch only the active tab's list controller. Watching all three would
+    // create each Notifier and auto-load() every inbox open (CursorListController
+    // primes itself in build()).
     final tab =
         ref.watch(_conversationsTabOverrideProvider) ?? widget.initialTab;
     final matchingLikeIds = ref.watch(_matchingLikeIdsProvider);
     final locale = AppLocalizations.of(context);
     final theme = Theme.of(context);
+
+    final Widget tabBody;
+    if (tab == 'likes') {
+      final incomingLikes = ref.watch(incomingLikesListControllerProvider);
+      tabBody = _LikesTab(
+        likes: incomingLikes,
+        matchingLikeIds: matchingLikeIds,
+        onRetry: () =>
+            ref.read(incomingLikesListControllerProvider.notifier).refresh(),
+        onLoadMore: () =>
+            ref.read(incomingLikesListControllerProvider.notifier).loadMore(),
+        onMatchTap: _matchIncomingLike,
+      );
+    } else if (tab == 'liked') {
+      final outgoingLikes = ref.watch(outgoingLikesListControllerProvider);
+      tabBody = _LikedTab(
+        likes: outgoingLikes,
+        onRetry: () =>
+            ref.read(outgoingLikesListControllerProvider.notifier).refresh(),
+        onLoadMore: () =>
+            ref.read(outgoingLikesListControllerProvider.notifier).loadMore(),
+        onPropertyLike: _onPropertyLike,
+      );
+    } else {
+      final conversations = ref.watch(conversationsListControllerProvider);
+      tabBody = _ChatsTab(
+        conversations: conversations,
+        onRetry: () =>
+            ref.read(conversationsListControllerProvider.notifier).refresh(),
+        onLoadMore: () =>
+            ref.read(conversationsListControllerProvider.notifier).loadMore(),
+        loading: const FlatmatesSkeleton.conversationList(),
+      );
+    }
 
     return FlatmatesScreen(
       body: RefreshIndicator(
@@ -193,40 +219,7 @@ class _ConversationsPageState extends ConsumerState<ConversationsPage> {
                       v,
             ),
             const SizedBox(height: AppSpacing.xl),
-            if (tab == 'likes')
-              _LikesTab(
-                likes: incomingLikes,
-                matchingLikeIds: matchingLikeIds,
-                onRetry: () => ref
-                    .read(incomingLikesListControllerProvider.notifier)
-                    .refresh(),
-                onLoadMore: () => ref
-                    .read(incomingLikesListControllerProvider.notifier)
-                    .loadMore(),
-                onMatchTap: _matchIncomingLike,
-              )
-            else if (tab == 'liked')
-              _LikedTab(
-                likes: outgoingLikes,
-                onRetry: () => ref
-                    .read(outgoingLikesListControllerProvider.notifier)
-                    .refresh(),
-                onLoadMore: () => ref
-                    .read(outgoingLikesListControllerProvider.notifier)
-                    .loadMore(),
-                onPropertyLike: _onPropertyLike,
-              )
-            else
-              _ChatsTab(
-                conversations: conversations,
-                onRetry: () => ref
-                    .read(conversationsListControllerProvider.notifier)
-                    .refresh(),
-                onLoadMore: () => ref
-                    .read(conversationsListControllerProvider.notifier)
-                    .loadMore(),
-                loading: const FlatmatesSkeleton.conversationList(),
-              ),
+            tabBody,
             const SizedBox(height: AppSpacing.md),
             _buildSafetyBanner(context, theme, locale),
           ],

@@ -73,6 +73,10 @@ flutter:
   uses-material-design: true
 
   assets:
+    # Local .env is optional for developer machines (see EnvLoader.isOptional).
+    # Release/CI builds must inject config via --dart-define (never ship secrets
+    # as bundled assets). Keep .env listed only for local convenience; the file
+    # is gitignored and absent from CI checkouts.
     - .env
     - assets/illustrations/
     - assets/legal/

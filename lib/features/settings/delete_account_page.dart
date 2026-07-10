@@ -48,10 +48,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
     final isConfirmed = ref.watch(_confirmedProvider);
 
     return FlatmatesScreen(
-      appBar: FlatmatesHeader.backTitle(
-        title: locale.deleteAccountTitle,
-        centerTitle: true,
-      ),
+      appBar: FlatmatesHeader.backTitle(title: locale.deleteAccountTitle),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.xl),
         children: [

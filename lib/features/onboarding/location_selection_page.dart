@@ -284,12 +284,13 @@ class _LocationSelectionPageState extends ConsumerState<LocationSelectionPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            IconButton(
-              onPressed: widget.onBack ?? () => context.pop(),
-              icon: const Icon(Icons.arrow_back),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              tooltip: locale.backCta,
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FlatmatesChromeIconButton(
+                onPressed: widget.onBack ?? () => context.pop(),
+                icon: Icons.arrow_back_rounded,
+                tooltip: locale.backCta,
+              ),
             ),
             const SizedBox(height: 28),
             const FlatmatesStepProgress.dots(currentStep: 1, totalSteps: 4),

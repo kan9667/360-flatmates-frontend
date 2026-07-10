@@ -187,7 +187,7 @@ class _AddPhonePageState extends ConsumerState<AddPhonePage>
     final canSubmit = !isBusy && (codeSent ? otpComplete : _phoneLooksValid);
 
     return FlatmatesScreen(
-      appBar: AppBar(),
+      appBar: const FlatmatesHeader.backTitle(title: ''),
       scrollable: true,
       body: AutofillGroup(
         child: Column(

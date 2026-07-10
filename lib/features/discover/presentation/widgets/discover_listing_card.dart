@@ -113,10 +113,13 @@ class DiscoverListingCard extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: AppRadius.cardBorder,
+                      // FlatmatesNetworkImage uses LayoutBuilder to size
+                      // Cloudinary delivery + mem decode for this slot.
                       child: hasImage
                           ? FlatmatesNetworkImage(
                               imageUrl: item.effectiveMainImageUrl!,
                               fit: BoxFit.cover,
+                              fallbackName: item.title,
                             )
                           : _CardImageFallback(
                               title: item.title,

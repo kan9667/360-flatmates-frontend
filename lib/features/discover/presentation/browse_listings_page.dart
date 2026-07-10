@@ -30,11 +30,15 @@ class BrowseListingsPage extends ConsumerStatefulWidget {
 }
 
 class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
+  static const double _loadMoreThreshold = 500;
+
   final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     final filters = ref.read(discoverFeedControllerProvider).filters;
     _searchController.text = filters.query ?? '';
     if (_searchController.text.isNotEmpty) {
@@ -42,8 +46,19 @@ class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
     }
   }
 
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - _loadMoreThreshold) {
+      ref.read(discoverFeedControllerProvider.notifier).loadMore();
+    }
+  }
+
   @override
   void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -56,14 +71,9 @@ class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
     final isSearchActive = ref.watch(_isSearchActiveProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back_rounded),
-          tooltip: locale.backCta,
-        ),
-        titleSpacing: 0,
-        title: isSearchActive
+      appBar: FlatmatesHeader.backTitle(
+        title: isSearchActive ? null : locale.homePickedForYou,
+        titleWidget: isSearchActive
             ? Padding(
                 padding: const EdgeInsets.only(right: AppSpacing.sm),
                 child: FlatmatesSearchBar(
@@ -86,10 +96,11 @@ class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
                   autofocus: _searchController.text.isEmpty,
                 ),
               )
-            : Text(locale.homePickedForYou),
+            : null,
+        onBack: () => context.pop(),
         actions: [
           if (isSearchActive)
-            IconButton(
+            FlatmatesChromeIconButton(
               key: const Key('browse_search_close'),
               tooltip: locale.closeSearch,
               onPressed: () {
@@ -99,23 +110,22 @@ class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
                     .updateSearchQuery(null);
                 ref.read(_isSearchActiveProvider.notifier).state = false;
               },
-              icon: const Icon(Icons.close_rounded),
+              icon: Icons.close_rounded,
             )
           else
-            IconButton(
+            FlatmatesChromeIconButton(
               key: const Key('browse_search_open'),
               tooltip: locale.searchCityOrAreaHint,
               onPressed: () =>
                   ref.read(_isSearchActiveProvider.notifier).state = true,
-              icon: const Icon(AppIcons.search),
+              icon: AppIcons.search,
             ),
-          IconButton(
+          FlatmatesChromeIconButton(
             key: const Key('browse_filter_tune'),
             tooltip: locale.searchFiltersTitle,
             onPressed: () => showFiltersSheet(context),
-            icon: const Icon(AppIcons.filter),
+            icon: AppIcons.filter,
           ),
-          const SizedBox(width: AppSpacing.xs),
         ],
       ),
       body: feedState.isLoading && filtered.isEmpty
@@ -133,15 +143,33 @@ class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
               icon: Icons.search_off_rounded,
             )
           : ListView.separated(
+              controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.lg,
                 AppSpacing.md,
                 AppSpacing.lg,
                 120,
               ),
-              itemCount: filtered.length,
+              // +1 footer row when more pages may still load.
+              itemCount: filtered.length + (feedState.hasMore ? 1 : 0),
               separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
               itemBuilder: (context, index) {
+                if (index >= filtered.length) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.lg,
+                    ),
+                    child: Center(
+                      child: feedState.isLoadingMore
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const SizedBox(height: 24),
+                    ),
+                  );
+                }
                 return _BrowseListingsCard(item: filtered[index], index: index);
               },
             ),

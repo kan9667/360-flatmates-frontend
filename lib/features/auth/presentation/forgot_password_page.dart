@@ -49,7 +49,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
     final isSubmitting = resetState.step == PasswordResetStep.sendingOtp;
 
     return FlatmatesScreen(
-      appBar: AppBar(),
+      appBar: const FlatmatesHeader.backTitle(title: ''),
       scrollable: true,
       body: AutofillGroup(
         child: Column(

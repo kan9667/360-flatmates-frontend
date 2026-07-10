@@ -10,8 +10,21 @@ import '../../../shared/presentation/flatmates_card.dart';
 import '../../../shared/presentation/flatmates_network_image.dart';
 import '../../../shared/presentation/flatmates_ui.dart';
 import '../../discover_repository.dart';
-import '../../../swipe/application/swipe_deck_controller.dart';
+import '../../../swipe/swipe_repository.dart';
 import 'flatmate_profile_sheet.dart';
+
+/// Lightweight home-rail profiles. Intentionally separate from
+/// [swipeDeckControllerProvider] so opening Discover does not prime the full
+/// swipe deck (and its 20-profile page load).
+final homeMeetProfilesProvider = FutureProvider.autoDispose<List<SwipeProfile>>(
+  (ref) async {
+    final filters = ref.watch(discoverFiltersProvider);
+    final page = await ref
+        .read(swipeRepositoryProvider)
+        .fetchSwipeProfilesPage(filters: filters, limit: 10);
+    return page.items;
+  },
+);
 
 class NewInCitySection extends StatelessWidget {
   const NewInCitySection({
@@ -150,6 +163,8 @@ class MovingSoonSection extends StatelessWidget {
                             borderRadius: BorderRadius.circular(AppRadius.md),
                             child: FlatmatesNetworkImage(
                               imageUrl: item.effectiveMainImageUrl!,
+                              width: 120,
+                              height: 140,
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -305,13 +320,10 @@ class MeetFlatmatesSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final deckState = ref.watch(swipeDeckControllerProvider);
-    final profiles = deckState.profiles;
+    final profilesAsync = ref.watch(homeMeetProfilesProvider);
+    final displayProfiles = profilesAsync.valueOrNull ?? const <SwipeProfile>[];
 
-    if (profiles.isEmpty) return const SizedBox.shrink();
-
-    // Show up to 10 profiles on the home feed
-    final displayProfiles = profiles.take(10).toList();
+    if (displayProfiles.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

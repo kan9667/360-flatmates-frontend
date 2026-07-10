@@ -79,19 +79,15 @@ class _ManageListingPageState extends ConsumerState<ManageListingPage> {
       appBar: FlatmatesHeader.logo(
         onBack: () => context.pop(),
         actions: [
-          _InteractivePressScale(
-            child: IconButton(
-              onPressed: () => context.push('/notifications'),
-              icon: const Icon(Icons.notifications_outlined),
-              tooltip: locale.notificationsTooltip,
-            ),
+          FlatmatesChromeIconButton(
+            onPressed: () => context.push('/notifications'),
+            icon: Icons.notifications_outlined,
+            tooltip: locale.notificationsTooltip,
           ),
-          _InteractivePressScale(
-            child: IconButton(
-              onPressed: () => context.go('/chats'),
-              icon: const Icon(Icons.chat_bubble_outline),
-              tooltip: locale.chatTooltip,
-            ),
+          FlatmatesChromeIconButton(
+            onPressed: () => context.go('/chats'),
+            icon: Icons.chat_bubble_outline,
+            tooltip: locale.chatTooltip,
           ),
         ],
       ),

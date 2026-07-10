@@ -17,10 +17,7 @@ class SettingsPage extends ConsumerWidget {
     final locale = AppLocalizations.of(context);
 
     return FlatmatesScreen(
-      appBar: FlatmatesHeader.backTitle(
-        title: locale.settingsTitle,
-        centerTitle: true,
-      ),
+      appBar: FlatmatesHeader.backTitle(title: locale.settingsTitle),
       body: Column(
         children: [
           // Scrollable content

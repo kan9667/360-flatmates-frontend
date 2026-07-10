@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flatmates_app/core/theme/app_semantic_colors.dart';
 
+import '../../../../core/theme/app_motion.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../shared/presentation/flatmates_ui.dart';
 
 class DiscoverHeader extends StatelessWidget {
@@ -24,6 +27,9 @@ class DiscoverHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final brightness = theme.brightness;
+    final primary = AppSemanticColors.textPrimaryFor(brightness);
+    final secondary = AppSemanticColors.textSecondaryFor(brightness);
 
     return Row(
       children: [
@@ -34,15 +40,18 @@ class DiscoverHeader extends StatelessWidget {
             children: [
               Text(
                 greeting,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: AppSemanticColors.textPrimaryFor(theme.brightness),
-                  fontWeight: FontWeight.w800,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: primary,
+                  fontSize: AppTypography.titleMdSize,
+                  fontWeight: AppTypography.titleMdWeight,
+                  height: AppTypography.titleMdHeight,
+                  letterSpacing: AppTypography.titleMdLetterSpacing,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               if (location.isNotEmpty) ...[
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.xxs),
                 _InteractivePressScale(
                   onTap: onLocationTap,
                   child: Row(
@@ -51,31 +60,26 @@ class DiscoverHeader extends StatelessWidget {
                       Icon(
                         Icons.location_on_outlined,
                         size: 14,
-                        color: AppSemanticColors.textPrimaryFor(
-                          theme.brightness,
-                        ),
+                        color: secondary,
                       ),
-                      const SizedBox(width: 2),
+                      const SizedBox(width: AppSpacing.xxs),
                       Flexible(
                         child: Text(
                           location,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppSemanticColors.textPrimaryFor(
-                              theme.brightness,
-                            ),
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
+                            color: secondary,
+                            fontWeight: AppTypography.captionWeight,
+                            fontSize: AppTypography.captionSmSize,
+                            height: AppTypography.captionSmHeight,
                           ),
                         ),
                       ),
                       Icon(
                         Icons.keyboard_arrow_down_rounded,
-                        size: 14,
-                        color: AppSemanticColors.textPrimaryFor(
-                          theme.brightness,
-                        ),
+                        size: 16,
+                        color: secondary,
                       ),
                     ],
                   ),
@@ -84,7 +88,7 @@ class DiscoverHeader extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.sm),
         _InteractivePressScale(
           onTap: onAvatarTap,
           child: FlatmatesAvatar(name: userName, imageUrl: avatarUrl, size: 36),
@@ -120,8 +124,8 @@ class _InteractivePressScaleState extends State<_InteractivePressScale> {
         onTap: widget.onTap,
         child: AnimatedScale(
           scale: _scale,
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOutCubic,
+          duration: AppMotion.buttonPress,
+          curve: AppMotion.easeOutCubic,
           child: widget.child,
         ),
       ),

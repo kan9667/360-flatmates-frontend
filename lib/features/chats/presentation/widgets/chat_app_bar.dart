@@ -8,6 +8,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../l10n/gen/app_localizations.dart';
 import '../../../shared/presentation/flatmates_bottom_sheet.dart';
+import '../../../shared/presentation/flatmates_chrome_icon_button.dart';
 import '../../../shared/presentation/flatmates_ui.dart';
 import '../../chats_repository.dart';
 import '../../domain/chat_report_reason.dart';
@@ -36,8 +37,10 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onScheduleVisit;
   final VoidCallback? onPeerTap;
 
+  static const double toolbarHeight = 56;
+
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(toolbarHeight);
 
   double? _computeCompatibilityScore() {
     final peer = conversation?.peer;
@@ -93,15 +96,22 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final locale = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final brightness = theme.brightness;
     final score = _computeCompatibilityScore();
+    final hairline = AppSemanticColors.hairlineFor(brightness);
 
     return AppBar(
+      toolbarHeight: toolbarHeight,
       titleSpacing: 0,
-      leadingWidth: 40,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, size: 22),
-        onPressed: () => context.pop(),
-        tooltip: 'Back',
+      leadingWidth: 56,
+      automaticallyImplyLeading: false,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: AppSpacing.sm),
+        child: FlatmatesChromeIconButton(
+          icon: Icons.arrow_back_rounded,
+          onPressed: () => context.pop(),
+          tooltip: locale.backCta,
+        ),
       ),
       title: GestureDetector(
         key: const Key('chat_peer_header'),
@@ -112,12 +122,13 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             FlatmatesAvatar(
               name: conversation?.peer.fullName,
               imageUrl: conversation?.peer.profileImageUrl,
-              size: 40,
+              size: 36,
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     children: [
@@ -125,9 +136,12 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                         child: Text(
                           conversation?.peer.fullName ?? locale.chatsTitle,
                           style: theme.textTheme.titleMedium?.copyWith(
+                            fontSize: AppTypography.titleMdSize,
                             fontWeight: AppTypography.titleMdWeight,
+                            height: AppTypography.titleMdHeight,
                           ),
                           overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
                       const SizedBox(width: AppSpacing.xs),
@@ -177,38 +191,28 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
-        IconButton(
+        FlatmatesChromeIconButton(
           key: const Key('chat_call_button'),
           onPressed: onCall,
-          icon: Icon(
-            Icons.call_outlined,
-            color: AppSemanticColors.textSecondaryFor(theme.brightness),
-            size: 20,
-          ),
-          tooltip: 'Call',
+          icon: Icons.call_outlined,
+          tooltip: locale.callCta,
         ),
         if (conversation?.contextProperty != null)
-          IconButton(
+          FlatmatesChromeIconButton(
             key: const Key('chat_schedule_visit_button'),
             onPressed: onScheduleVisit,
-            icon: Icon(
-              Icons.event_available_outlined,
-              color: AppSemanticColors.textSecondaryFor(theme.brightness),
-              size: 20,
-            ),
-            tooltip: 'Schedule visit',
+            icon: Icons.event_available_outlined,
+            tooltip: locale.scheduleVisitCta,
           ),
-        IconButton(
+        FlatmatesChromeIconButton(
           key: const Key('chat_more_button'),
           onPressed: () => _showChatMenu(context),
-          icon: Icon(
-            Icons.more_vert_rounded,
-            color: AppSemanticColors.textSecondaryFor(theme.brightness),
-            size: 20,
-          ),
-          tooltip: 'More options',
+          icon: Icons.more_vert_rounded,
+          tooltip: MaterialLocalizations.of(context).moreButtonTooltip,
         ),
+        const SizedBox(width: AppSpacing.sm),
       ],
+      shape: Border(bottom: BorderSide(color: hairline)),
     );
   }
 }

@@ -148,7 +148,7 @@ class _OtpPageState extends ConsumerState<OtpPage>
         otpComplete && auth.status != AuthStatus.submitting && !isSuccess;
 
     return FlatmatesScreen(
-      appBar: AppBar(),
+      appBar: const FlatmatesHeader.backTitle(title: ''),
       scrollable: true,
       body: AutofillGroup(
         child: Column(

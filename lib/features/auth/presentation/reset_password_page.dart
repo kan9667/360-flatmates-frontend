@@ -214,7 +214,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage>
         !isVerifying;
 
     return FlatmatesScreen(
-      appBar: AppBar(),
+      appBar: const FlatmatesHeader.backTitle(title: ''),
       scrollable: true,
       body: AutofillGroup(
         child: Column(

@@ -109,6 +109,8 @@ class _FlatmatesAvatarState extends State<FlatmatesAvatar>
                 ? ClipOval(
                     child: FlatmatesNetworkImage(
                       imageUrl: widget.imageUrl!,
+                      width: widget.size,
+                      height: widget.size,
                       fit: BoxFit.cover,
                     ),
                   )
@@ -116,6 +118,8 @@ class _FlatmatesAvatarState extends State<FlatmatesAvatar>
                     borderRadius: resolvedRadius!,
                     child: FlatmatesNetworkImage(
                       imageUrl: widget.imageUrl!,
+                      width: widget.size,
+                      height: widget.size,
                       fit: BoxFit.cover,
                     ),
                   ))
@@ -252,14 +256,52 @@ class _AvatarFallback extends StatelessWidget {
 /// represents the "0" in "360", making the logo read as "360 FLATMATES".
 /// Do NOT change "36" to "360" or replace the icon with a literal "0".
 class FlatmatesLogo extends StatelessWidget {
-  const FlatmatesLogo({super.key, this.compact = false, this.centered = false});
+  const FlatmatesLogo({
+    super.key,
+    this.compact = false,
+    this.centered = false,
+    this.toolbar = false,
+  });
 
   final bool compact;
   final bool centered;
 
+  /// Single-line mark sized for a 56px app bar (number + icon only).
+  final bool toolbar;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final ink = AppSemanticColors.textPrimaryFor(theme.brightness);
+
+    if (toolbar) {
+      return RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: '36',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -1.2,
+                color: ink,
+                height: 1,
+              ),
+            ),
+            const WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Icon(
+                Icons.rotate_right_rounded,
+                color: AppSemanticColors.primary,
+                size: 24,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final numberSize = compact ? 28.0 : 38.0;
     final labelSize = compact ? 13.0 : 15.0;
 
@@ -278,7 +320,9 @@ class FlatmatesLogo extends StatelessWidget {
                   fontSize: numberSize,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -1.4,
-                  color: AppSemanticColors.ink,
+                  color: isDark
+                      ? AppSemanticColors.darkInk
+                      : AppSemanticColors.ink,
                 ),
               ),
               WidgetSpan(
@@ -1189,6 +1233,8 @@ class _FlatmatesProfileGridCardState extends State<FlatmatesProfileGridCard>
                         sigmaX: widget.blurImage ? 7 : 0,
                         sigmaY: widget.blurImage ? 7 : 0,
                       ),
+                      // LayoutBuilder inside FlatmatesNetworkImage sizes the
+                      // Cloudinary delivery + mem cache to this expanded slot.
                       child: FlatmatesNetworkImage(
                         imageUrl: widget.imageUrl!,
                         fit: BoxFit.cover,

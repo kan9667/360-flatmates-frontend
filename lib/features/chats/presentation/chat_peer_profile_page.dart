@@ -75,13 +75,9 @@ class ChatPeerProfilePage extends ConsumerWidget {
     ];
 
     return FlatmatesScreen(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, size: 22),
-          onPressed: () => context.pop(),
-          tooltip: locale.backCta,
-        ),
-        title: Text(name),
+      appBar: FlatmatesHeader.backTitle(
+        title: name,
+        onBack: () => context.pop(),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(

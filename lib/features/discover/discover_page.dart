@@ -38,17 +38,17 @@ class DiscoverPage extends ConsumerStatefulWidget {
 }
 
 class _DiscoverPageState extends ConsumerState<DiscoverPage> {
-  static const double _loadMoreThreshold = 500;
+  /// Home only previews this many "Picked for you" cards. Full feed lives on
+  /// `/discover/browse-listings` with a virtualized ListView.
+  static const int _homeFeedPreviewCount = 8;
   static const double _kBottomNavOffset = 120.0;
 
-  final _scrollController = ScrollController();
   final _likeDebouncer = ActionDebouncer();
   final _locationRadiusDebouncer = ActionDebouncer();
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _autoDetectLocation();
     });
@@ -106,13 +106,6 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         );
   }
 
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - _loadMoreThreshold) {
-      ref.read(discoverFeedControllerProvider.notifier).loadMore();
-    }
-  }
-
   /// Toggles the like for [item].
   ///
   /// The optimistic UI update, network call, and `conversationsProvider`
@@ -150,7 +143,6 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
     _likeDebouncer.dispose();
     _locationRadiusDebouncer.dispose();
     super.dispose();
@@ -242,103 +234,125 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     final mode = profile?.mode ?? 'co_hunter';
     final isSeeker = mode != 'room_poster';
 
+    final preview = filtered.take(_homeFeedPreviewCount).toList();
+    final showSeeAll =
+        filtered.length > 2 ||
+        feedState.hasMore ||
+        filtered.length > preview.length;
+
     return FlatmatesScreen(
       body: feedState.isLoading && filtered.isEmpty
           ? const FlatmatesSkeleton.discoverFeed()
           : RefreshIndicator(
               onRefresh: () =>
                   ref.read(discoverFeedControllerProvider.notifier).refresh(),
-              child: ListView(
-                controller: _scrollController,
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.xl,
-                  AppSpacing.sm,
-                  AppSpacing.xl,
-                  _kBottomNavOffset,
-                ),
-                children: [
-                  DiscoverHeader(
-                    greeting: _timeBasedGreeting(locale, displayName),
-                    location: currentLocation,
-                    avatarUrl: profile?.profileImageUrl,
-                    userName: profile?.fullName,
-                    onAvatarTap: () => context.push('/profile'),
-                    onLocationTap: () => _showLocationPicker(
-                      context,
-                      currentLocation: currentLocation,
-                      currentRadiusKm: currentRadiusKm,
+              // CustomScrollView + slivers: header sections are adapters;
+              // listing cards are a lazy SliverList (no nested shrinkWrap).
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.xl,
+                      AppSpacing.sm,
+                      AppSpacing.xl,
+                      0,
+                    ),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        DiscoverHeader(
+                          greeting: _timeBasedGreeting(locale, displayName),
+                          location: currentLocation,
+                          avatarUrl: profile?.profileImageUrl,
+                          userName: profile?.fullName,
+                          onAvatarTap: () => context.push('/profile'),
+                          onLocationTap: () => _showLocationPicker(
+                            context,
+                            currentLocation: currentLocation,
+                            currentRadiusKm: currentRadiusKm,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        HomeSearchBar(onTap: () => showFiltersSheet(context)),
+                        const SizedBox(height: AppSpacing.sm),
+                        if (!isSeeker) ...[
+                          PostYourSpaceCard(
+                            onTap: () => context.push('/post/new'),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                        ],
+                        if (city != null) ...[
+                          TrendingNeighborhoodsSection(city: city),
+                          const SizedBox(height: AppSpacing.sm),
+                        ],
+                        const MeetFlatmatesSection(),
+                        const SizedBox(height: AppSpacing.sm),
+                        MovingSoonSection(items: filtered),
+                        const SizedBox(height: AppSpacing.sm),
+                        HomeSectionHeader(
+                          title: locale.homePickedForYou,
+                          actionLabel: showSeeAll ? locale.seeAllCta : null,
+                          actionKey: const Key('home_picked_for_you_see_all'),
+                          onActionTap: () =>
+                              context.push('/discover/browse-listings'),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        if (filtered.isEmpty && !feedState.isLoading)
+                          FlatmatesEmptyState(
+                            title: locale.homeNoResults,
+                            subtitle: locale.homeNoResultsSubtitle,
+                            icon: Icons.search_off_rounded,
+                          ),
+                      ]),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  HomeSearchBar(onTap: () => showFiltersSheet(context)),
-                  const SizedBox(height: AppSpacing.sm),
-                  /*
-                  if (isSeeker && city != null) ...[
-                    HomeSectionHeader(title: locale.homeNewInCity(city)),
-                    const SizedBox(height: AppSpacing.sm),
-                    NewInCitySection(
-                      items: filtered,
-                      onExplore: () => context.go('/tab2'),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                  ] else */
-                  if (!isSeeker) ...[
-                    PostYourSpaceCard(onTap: () => context.push('/post/new')),
-                    const SizedBox(height: AppSpacing.sm),
-                  ],
-                  if (city != null) ...[
-                    TrendingNeighborhoodsSection(city: city),
-                    const SizedBox(height: AppSpacing.sm),
-                  ],
-                  const MeetFlatmatesSection(),
-                  const SizedBox(height: AppSpacing.sm),
-                  MovingSoonSection(items: filtered),
-                  const SizedBox(height: AppSpacing.sm),
-                  HomeSectionHeader(
-                    title: locale.homePickedForYou,
-                    actionLabel: filtered.length > 2 ? locale.seeAllCta : null,
-                    actionKey: const Key('home_picked_for_you_see_all'),
-                    onActionTap: () =>
-                        context.push('/discover/browse-listings'),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  if (filtered.isEmpty && !feedState.isLoading)
-                    FlatmatesEmptyState(
-                      title: locale.homeNoResults,
-                      subtitle: locale.homeNoResultsSubtitle,
-                      icon: Icons.search_off_rounded,
+                  if (preview.isNotEmpty)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.xl,
+                        0,
+                        AppSpacing.xl,
+                        _kBottomNavOffset,
+                      ),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            // Separator + card pairs so we avoid nested ListView.
+                            if (index.isOdd) {
+                              return const SizedBox(height: AppSpacing.md);
+                            }
+                            final itemIndex = index ~/ 2;
+                            final item = preview[itemIndex];
+                            final badgeLabel = switch (itemIndex) {
+                              0 => locale.badgeNew,
+                              1 => locale.badgePopular,
+                              _ => null,
+                            };
+                            return StaggeredCardAppear(
+                              index: itemIndex,
+                              child: DiscoverListingCard(
+                                cardKey: itemIndex == 0
+                                    ? const Key('discover_feed_card_0')
+                                    : null,
+                                item: item,
+                                badgeLabel: badgeLabel,
+                                onTap: () =>
+                                    context.push('/flat-details/${item.id}'),
+                                onLike: () =>
+                                    _likeDebouncer.run(() => _handleLike(item)),
+                              ),
+                            );
+                          },
+                          childCount: preview.isEmpty
+                              ? 0
+                              : preview.length * 2 - 1,
+                        ),
+                      ),
                     )
                   else
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(height: AppSpacing.md),
-                      itemBuilder: (context, index) {
-                        final item = filtered[index];
-                        final badgeLabel = switch (index) {
-                          0 => locale.badgeNew,
-                          1 => locale.badgePopular,
-                          _ => null,
-                        };
-                        return StaggeredCardAppear(
-                          index: index,
-                          child: DiscoverListingCard(
-                            cardKey: index == 0
-                                ? const Key('discover_feed_card_0')
-                                : null,
-                            item: item,
-                            badgeLabel: badgeLabel,
-                            onTap: () =>
-                                context.push('/flat-details/${item.id}'),
-                            onLike: () =>
-                                _likeDebouncer.run(() => _handleLike(item)),
-                          ),
-                        );
-                      },
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: _kBottomNavOffset),
                     ),
-                  // The moved sections used to be here
                 ],
               ),
             ),

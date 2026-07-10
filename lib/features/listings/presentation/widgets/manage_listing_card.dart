@@ -69,6 +69,7 @@ class ManageListingCard extends StatelessWidget {
                   width: double.infinity,
                   child: FlatmatesNetworkImage(
                     imageUrl: listing.effectiveMainImageUrl!,
+                    height: 160,
                     fit: BoxFit.cover,
                   ),
                 )

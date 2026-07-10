@@ -232,8 +232,8 @@ class _EnterPhonePageState extends ConsumerState<EnterPhonePage> {
         auth.status == AuthStatus.submitting ||
         ref.watch(_isSubmittingProvider);
 
+    // Root auth entry — no top chrome; title lives in the body.
     return FlatmatesScreen(
-      appBar: AppBar(),
       scrollable: true,
       body: AutofillGroup(
         child: Column(
