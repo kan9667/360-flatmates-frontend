@@ -136,18 +136,20 @@ class ChatsRepository {
     return ConversationSummaryModel.fromJson(data);
   }
 
-  /// Fetches a single page of messages from a conversation using cursor
-  /// pagination. Pass the previous response's [MessageListResponse.nextCursor]
-  /// to fetch older messages; the backend wraps every list endpoint in
-  /// `{ items, next_cursor, has_more, limit }`.
+  /// Fetches a page of messages (newest first page when [beforeId] is null).
+  ///
+  /// Backend contract (not CursorPage):
+  /// `GET .../messages?limit=&before_id=` →
+  /// `{ messages, total, has_more }`. Pass the previous page's
+  /// [MessageListResponse.nextBeforeId] to load older history.
   Future<MessageListResponse> fetchMessages(
     int conversationId, {
-    String? cursor,
-    int limit = 30,
+    int? beforeId,
+    int limit = 50,
   }) async {
     final queryParameters = <String, dynamic>{'limit': limit};
-    if (cursor != null && cursor.isNotEmpty) {
-      queryParameters['cursor'] = cursor;
+    if (beforeId != null && beforeId > 0) {
+      queryParameters['before_id'] = beforeId;
     }
     final response = await _ref
         .read(apiClientProvider)
@@ -156,16 +158,21 @@ class ChatsRepository {
           queryParameters: queryParameters,
         );
     final data = Map<String, dynamic>.from(response.data as Map? ?? const {});
-    final page = parsePagedEnvelope(
-      data,
+    final messages = safeJsonList(
+      data['messages'] as List?,
       ChatMessage.fromJson,
       label: 'messages',
     );
+    final hasMore = data['has_more'] as bool? ?? false;
+    // Chronological page: index 0 is oldest — use as next before_id.
+    final nextBeforeId = hasMore && messages.isNotEmpty
+        ? messages.first.id
+        : null;
     return MessageListResponse(
-      messages: page.items,
-      hasMore: page.hasMore,
-      nextCursor: page.nextCursor,
-      limit: (data['limit'] as num?)?.toInt() ?? limit,
+      messages: messages,
+      hasMore: hasMore,
+      nextBeforeId: nextBeforeId,
+      total: (data['total'] as num?)?.toInt(),
     );
   }
 

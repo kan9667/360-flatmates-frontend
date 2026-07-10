@@ -15,7 +15,7 @@ class MessagesState {
     this.isLoadingOlder = false,
     this.isSending = false,
     this.hasMoreOlder = true,
-    this.oldestCursor,
+    this.oldestBeforeId,
     this.error,
   });
 
@@ -29,7 +29,10 @@ class MessagesState {
   final bool isLoadingOlder;
   final bool isSending;
   final bool hasMoreOlder;
-  final String? oldestCursor;
+
+  /// Keyset cursor: pass as `before_id` to load older pages. Null until the
+  /// first page is seeded or when no older messages remain.
+  final int? oldestBeforeId;
   final Object? error;
 
   bool get hasError => error != null;
@@ -44,8 +47,8 @@ class MessagesState {
     bool? isLoadingOlder,
     bool? isSending,
     bool? hasMoreOlder,
-    String? oldestCursor,
-    bool clearOldestCursor = false,
+    int? oldestBeforeId,
+    bool clearOldestBeforeId = false,
     Object? error,
     bool clearError = false,
   }) {
@@ -56,9 +59,9 @@ class MessagesState {
       isLoadingOlder: isLoadingOlder ?? this.isLoadingOlder,
       isSending: isSending ?? this.isSending,
       hasMoreOlder: hasMoreOlder ?? this.hasMoreOlder,
-      oldestCursor: clearOldestCursor
+      oldestBeforeId: clearOldestBeforeId
           ? null
-          : (oldestCursor ?? this.oldestCursor),
+          : (oldestBeforeId ?? this.oldestBeforeId),
       error: clearError ? null : (error ?? this.error),
     );
   }
@@ -168,39 +171,34 @@ class MessagesController extends AutoDisposeFamilyNotifier<MessagesState, int> {
 
   bool _seedingCursor = false;
 
-  /// Fetches the first page of messages to seed [MessagesState.oldestCursor]
+  /// Fetches the first page of messages to seed [MessagesState.oldestBeforeId]
   /// so the first [loadOlder] call actually paginates backward. No-op if the
   /// cursor is already seeded or a seed is in flight.
   Future<void> _seedOldestCursor(int conversationId) async {
-    if (_seedingCursor || state.oldestCursor != null) return;
+    if (_seedingCursor || state.oldestBeforeId != null) return;
     _seedingCursor = true;
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final response = await ref
           .read(chatsRepositoryProvider)
           .fetchMessages(conversationId);
-      if (state.messages.isEmpty) {
-        state = state.copyWith(
-          messages: response.messages,
-          pendingMessages: pruneConfirmedPending(
-            response.messages,
-            state.pendingMessages,
-          ),
-          hasMoreOlder: response.hasMore,
-          oldestCursor: response.nextCursor,
-          isLoading: false,
-          clearError: true,
-        );
-      } else {
-        // History already arrived via the realtime refetch; just record the
-        // pagination cursor and stop spinning the loader.
-        state = state.copyWith(
-          hasMoreOlder: response.hasMore,
-          oldestCursor: response.nextCursor,
-          isLoading: false,
-          clearError: true,
-        );
-      }
+      // Merge so a rich realtime snapshot is not replaced by a thinner HTTP
+      // first page (and empty stream races never wipe loaded history).
+      final merged = mergeMessages(state.messages, response.messages);
+      // Prefer the oldest *loaded* positive id so loadOlder does not
+      // re-request rows already present from the stream.
+      final oldestLoaded = _oldestPositiveId(merged);
+      state = state.copyWith(
+        messages: merged,
+        pendingMessages: pruneConfirmedPending(
+          merged,
+          state.pendingMessages,
+        ),
+        hasMoreOlder: response.hasMore,
+        oldestBeforeId: response.hasMore ? oldestLoaded : null,
+        isLoading: false,
+        clearError: true,
+      );
     } catch (e) {
       debugPrint(
         'MessagesController._seedOldestCursor failed for conversation '
@@ -216,29 +214,62 @@ class MessagesController extends AutoDisposeFamilyNotifier<MessagesState, int> {
     }
   }
 
-  /// Loads older messages using cursor pagination. Concatenates the older
-  /// page in front of the current messages so the user can scroll back
-  /// through history. A no-op when a load is already in flight or the
+  /// Authoritative HTTP refetch for the newest page (Broadcast live updates,
+  /// post-send confirmation). Merges by id so concurrent realtime rows are
+  /// not dropped.
+  Future<void> refetchLatest() async {
+    final conversationId = arg;
+    try {
+      final response = await ref
+          .read(chatsRepositoryProvider)
+          .fetchMessages(conversationId);
+      final merged = mergeMessages(state.messages, response.messages);
+      // Do not clobber deeper history pagination when only refreshing the
+      // newest page after send / Broadcast.
+      final seededOlderCursor = state.oldestBeforeId != null;
+      state = state.copyWith(
+        messages: merged,
+        pendingMessages: pruneConfirmedPending(merged, state.pendingMessages),
+        hasMoreOlder: seededOlderCursor
+            ? state.hasMoreOlder
+            : response.hasMore,
+        oldestBeforeId: state.oldestBeforeId ?? response.nextBeforeId,
+        isLoading: false,
+        clearError: true,
+      );
+    } catch (e) {
+      debugPrint(
+        'MessagesController.refetchLatest failed for conversation '
+        '$conversationId: $e',
+      );
+    }
+  }
+
+  /// Loads older messages using `before_id` keyset pagination. Concatenates
+  /// the older page in front of the current messages so the user can scroll
+  /// back through history. A no-op when a load is already in flight or the
   /// server already returned the end of the thread.
   Future<void> loadOlder() async {
     final conversationId = arg;
     if (state.isLoadingOlder || !state.hasMoreOlder) return;
-    if (state.oldestCursor == null) {
+    if (state.oldestBeforeId == null) {
       await _seedOldestCursor(conversationId);
       if (state.isLoadingOlder || !state.hasMoreOlder) return;
+      if (state.oldestBeforeId == null) return;
     }
     state = state.copyWith(isLoadingOlder: true, clearError: true);
     try {
       final response = await ref
           .read(chatsRepositoryProvider)
-          .fetchMessages(conversationId, cursor: state.oldestCursor);
+          .fetchMessages(conversationId, beforeId: state.oldestBeforeId);
       // Newer realtime arrivals may have appeared during the request; merge
       // by id so we never drop or duplicate a message.
       final merged = mergeMessages(response.messages, state.messages);
       state = state.copyWith(
         messages: merged,
         hasMoreOlder: response.hasMore,
-        oldestCursor: response.nextCursor,
+        oldestBeforeId:
+            response.hasMore ? _oldestPositiveId(merged) : null,
         isLoadingOlder: false,
       );
     } catch (e) {
@@ -297,35 +328,31 @@ class MessagesController extends AutoDisposeFamilyNotifier<MessagesState, int> {
     ref.invalidate(conversationsListControllerProvider);
 
     // The POST succeeded; keep the optimistic bubble even if this refetch
-    // fails — the realtime stream or a later refetch will confirm it.
-    try {
-      final response = await repo.fetchMessages(conversationId);
-      final merged = mergeMessages(state.messages, response.messages);
-      state = state.copyWith(
-        messages: merged,
-        pendingMessages: pruneConfirmedPending(merged, state.pendingMessages),
-        hasMoreOlder: response.hasMore,
-        oldestCursor: response.nextCursor ?? state.oldestCursor,
-        isLoading: false,
-        clearError: true,
-      );
-    } catch (e) {
-      debugPrint(
-        'MessagesController.sendMessage: refetch failed for conversation '
-        '$conversationId: $e',
-      );
-    }
+    // fails — Broadcast or a later refetch will confirm it.
+    await refetchLatest();
   }
 
   Future<void> markAsRead() async {
     try {
       await ref.read(chatsRepositoryProvider).markMessagesAsRead(arg);
+      // Refresh list unread badges without waiting for Broadcast.
+      ref.invalidate(conversationsProvider);
+      ref.invalidate(conversationsListControllerProvider);
     } catch (e) {
       debugPrint(
         'MessagesController.markAsRead failed for conversation $arg: $e',
       );
     }
   }
+}
+
+int? _oldestPositiveId(List<ChatMessage> messages) {
+  int? oldest;
+  for (final message in messages) {
+    if (message.id <= 0) continue;
+    if (oldest == null || message.id < oldest) oldest = message.id;
+  }
+  return oldest;
 }
 
 final messagesControllerProvider = NotifierProvider.family

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_semantic_colors.dart';
+import '../../../../core/theme/app_typography.dart';
 
 /// Floating, speech-bubble tooltip that surfaces the peer's full mode/intent
 /// text (e.g. "Looking for room + flatmate") anchored beneath the header
@@ -35,7 +36,10 @@ class ModeTooltipBubble extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+              style: const TextStyle(
+                color: AppSemanticColors.onPrimary,
+                fontSize: AppTypography.captionSmSize,
+              ),
             ),
           ),
         ),

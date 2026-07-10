@@ -119,6 +119,35 @@ void main() {
       );
     });
 
+    test('new_message event invalidates messages seed for conversation',
+        () async {
+      await container.read(conversationsProvider.future);
+      await container.read(messagesProvider(42).future);
+      final messagesBefore = adapter.count(
+        'GET',
+        FlatmatesEndpoints.conversationMessages(42),
+      );
+
+      _route(
+        container,
+        const FlatmatesRealtimeEvent(
+          type: 'new_message',
+          data: {'conversation_id': 42, 'message_id': 99},
+        ),
+      );
+      await container.pump();
+
+      await container.read(messagesProvider(42).future);
+      expect(
+        adapter.count('GET', FlatmatesEndpoints.conversationMessages(42)),
+        greaterThan(messagesBefore),
+      );
+      expect(
+        adapter.count('GET', FlatmatesEndpoints.conversations),
+        greaterThan(1),
+      );
+    });
+
     test('new_match events refresh conversations and like tabs', () async {
       await container.read(conversationsProvider.future);
       await container.read(incomingLikesProvider.future);
@@ -217,7 +246,7 @@ class _CountingAdapter implements HttpClientAdapter {
   Object _bodyFor(String path) {
     if (path == FlatmatesEndpoints.conversationMessages(42)) {
       return {
-        'items': [
+        'messages': [
           {
             'id': 1,
             'conversation_id': 42,
@@ -227,9 +256,8 @@ class _CountingAdapter implements HttpClientAdapter {
             'created_at': '2026-06-30T08:00:00Z',
           },
         ],
-        'next_cursor': null,
+        'total': 1,
         'has_more': false,
-        'limit': 30,
       };
     }
     return {

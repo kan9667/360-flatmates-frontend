@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/errors/app_failure.dart';
 import '../../core/errors/l10n_bridge.dart';
 import '../../core/providers.dart';
+import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/debouncer.dart';
 import '../../core/utils/profanity_filter.dart';
@@ -144,14 +145,16 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
   /// floating bubble doesn't fight the entrance transition. It shows on every
   /// fresh open of the chat (per-instance state, never persisted).
   void _scheduleModeTooltip() {
-    Future.delayed(const Duration(milliseconds: 450), () {
-      if (!mounted || _modeTooltipDismissed || _modeTooltipEntry != null) {
-        return;
-      }
-      final label = _peerModeLabel();
-      if (label.isEmpty) return;
-      _insertModeTooltip(label);
-    });
+    unawaited(
+      Future.delayed(AppMotion.modeTooltipShowDelay, () {
+        if (!mounted || _modeTooltipDismissed || _modeTooltipEntry != null) {
+          return;
+        }
+        final label = _peerModeLabel();
+        if (label.isEmpty) return;
+        _insertModeTooltip(label);
+      }),
+    );
   }
 
   void _insertModeTooltip(String label) {
@@ -179,7 +182,10 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
     );
     overlay.insert(_modeTooltipEntry!);
     // Auto-dismiss after a few seconds unless the user taps the bubble.
-    _modeTooltipTimer = Timer(const Duration(seconds: 5), _removeModeTooltip);
+    _modeTooltipTimer = Timer(
+      AppMotion.modeTooltipAutoDismiss,
+      _removeModeTooltip,
+    );
   }
 
   void _keepModeTooltipOpen() => _modeTooltipTimer?.cancel();
@@ -189,9 +195,8 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
     _modeTooltipTimer = null;
     _modeTooltipEntry?.remove();
     _modeTooltipEntry = null;
-    if (mounted) {
-      setState(() => _modeTooltipDismissed = true);
-    }
+    // Flag only; not read in build() — avoid a useless setState rebuild.
+    _modeTooltipDismissed = true;
   }
 
   @override
@@ -245,36 +250,6 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
       }
     }
   }
-
-  // TODO: re-enable file upload later. The paperclip/attachment button was
-  // removed from the chat input bar for now. The picker + backend upload
-  // logic (ImageUploadService.pickImages / uploadChatPhoto) is intentionally
-  // kept so re-enabling is just rewiring onAttachment -> _sendPhoto below.
-  //
-  // Future<void> _sendPhoto() async {
-  //   final service = ref.read(imageUploadServiceProvider);
-  //   final locale = AppLocalizations.of(context);
-  //   final files = await service.pickImages(limit: 1);
-  //   if (files.isEmpty) return;
-  //   try {
-  //     final result = await service.uploadChatPhoto(files.first);
-  //     if (result is! UploadSuccess) {
-  //       if (mounted) FlatmatesToast.error(context, locale.failedToSendPhoto);
-  //       return;
-  //     }
-  //     await ref
-  //         .read(messagesControllerProvider(widget.conversationId).notifier)
-  //         .sendMessage(attachmentUrl: result.url, messageType: 'image');
-  //   } catch (e) {
-  //     debugPrint('ChatThreadPage._sendPhoto failed: $e');
-  //     if (mounted) {
-  //       final msg = e is AppFailure
-  //           ? e.userMessage(locale.toUserMessageL10n())
-  //           : locale.failedToSendPhoto;
-  //       FlatmatesToast.error(context, msg);
-  //     }
-  //   }
-  // }
 
   Future<void> _blockUser() async {
     final peerId = _conversation?.peer.id;
@@ -359,11 +334,22 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
   void _toggleEmojiPicker() {
     final showEmoji = ref.read(_showEmojiPickerProvider);
     if (showEmoji) {
+      // Hide panel first so the scaffold is not both keyboard-inset and
+      // growing by the emoji panel height during the keyboard animation.
+      ref.read(_showEmojiPickerProvider.notifier).state = false;
       _messageFocus.requestFocus();
-    } else {
-      _messageFocus.unfocus();
+      return;
     }
-    ref.read(_showEmojiPickerProvider.notifier).state = !showEmoji;
+    _messageFocus.unfocus();
+    unawaited(
+      Future.delayed(AppMotion.standard, () {
+        if (!mounted) return;
+        // User may have toggled again while the keyboard was settling.
+        if (ref.read(_showEmojiPickerProvider)) return;
+        if (_messageFocus.hasFocus) return;
+        ref.read(_showEmojiPickerProvider.notifier).state = true;
+      }),
+    );
   }
 
   @override
@@ -484,7 +470,11 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
             onToggleEmoji: _toggleEmojiPicker,
             onSend: _sendMessage,
           ),
-          if (showEmoji) EmojiPicker(textEditingController: _messageController),
+          if (showEmoji)
+            SafeArea(
+              top: false,
+              child: EmojiPicker(textEditingController: _messageController),
+            ),
         ],
       ),
     );

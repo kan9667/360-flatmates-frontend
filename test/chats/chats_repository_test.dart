@@ -24,7 +24,62 @@ void main() {
       expect(source, contains("'messages'"));
     });
 
-    test('watchMessages emits the REST seed page', () async {
+    test('fetchMessages uses before_id and MessageListResponse envelope',
+        () async {
+      final adapter = _CapturingAdapter(
+        responseBody: {
+          'messages': [
+            {
+              'id': 8,
+              'conversation_id': 42,
+              'sender_id': 44,
+              'body': 'older',
+              'message_type': 'text',
+              'created_at': '2026-06-30T07:00:00Z',
+            },
+            {
+              'id': 9,
+              'conversation_id': 42,
+              'sender_id': 44,
+              'body': 'hello',
+              'message_type': 'text',
+              'created_at': '2026-06-30T08:00:00Z',
+            },
+          ],
+          'total': 2,
+          'has_more': true,
+        },
+      );
+      final apiClient = ApiClient(
+        baseUrl: 'https://api.test.example.com',
+        tokenProvider: FakeAuthTokenProvider(),
+      );
+      apiClient.dio.httpClientAdapter = adapter;
+      final container = ProviderContainer(
+        overrides: [apiClientProvider.overrideWithValue(apiClient)],
+      );
+      addTearDown(container.dispose);
+
+      final page = await container
+          .read(chatsRepositoryProvider)
+          .fetchMessages(42, beforeId: 20);
+
+      expect(
+        adapter.lastRequest?.path,
+        FlatmatesEndpoints.conversationMessages(42),
+      );
+      expect(adapter.lastRequest?.queryParameters['before_id'], 20);
+      expect(adapter.lastRequest?.queryParameters['limit'], 50);
+      expect(page.messages, hasLength(2));
+      expect(page.messages.first.id, 8);
+      expect(page.messages.last.id, 9);
+      expect(page.hasMore, isTrue);
+      // Oldest id becomes the next before_id keyset cursor.
+      expect(page.nextBeforeId, 8);
+      expect(page.total, 2);
+    });
+
+    test('fetchMessages ignores CursorPage-shaped payloads', () async {
       final adapter = _CapturingAdapter(
         responseBody: {
           'items': [
@@ -52,6 +107,42 @@ void main() {
       );
       addTearDown(container.dispose);
 
+      final page = await container.read(chatsRepositoryProvider).fetchMessages(
+        42,
+      );
+
+      expect(page.messages, isEmpty);
+      expect(page.hasMore, isFalse);
+      expect(page.nextBeforeId, isNull);
+    });
+
+    test('watchMessages emits the REST seed page', () async {
+      final adapter = _CapturingAdapter(
+        responseBody: {
+          'messages': [
+            {
+              'id': 9,
+              'conversation_id': 42,
+              'sender_id': 44,
+              'body': 'hello',
+              'message_type': 'text',
+              'created_at': '2026-06-30T08:00:00Z',
+            },
+          ],
+          'total': 1,
+          'has_more': false,
+        },
+      );
+      final apiClient = ApiClient(
+        baseUrl: 'https://api.test.example.com',
+        tokenProvider: FakeAuthTokenProvider(),
+      );
+      apiClient.dio.httpClientAdapter = adapter;
+      final container = ProviderContainer(
+        overrides: [apiClientProvider.overrideWithValue(apiClient)],
+      );
+      addTearDown(container.dispose);
+
       final stream = container.read(chatsRepositoryProvider).watchMessages(42);
       final messages = await stream.first;
 
@@ -59,6 +150,7 @@ void main() {
         adapter.lastRequest?.path,
         FlatmatesEndpoints.conversationMessages(42),
       );
+      expect(adapter.lastRequest?.queryParameters.containsKey('before_id'), isFalse);
       expect(messages, hasLength(1));
       expect(messages.single.id, 9);
       expect(messages.single.conversationId, 42);
