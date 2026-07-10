@@ -25,9 +25,12 @@ class PreferencesCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppSemanticColors.paper2,
+        color: AppSemanticColors.secondarySurfaceFor(theme.brightness),
         borderRadius: AppRadius.mdBorder,
-        border: Border.all(color: AppSemanticColors.line, width: 0.5),
+        border: Border.all(
+          color: AppSemanticColors.hairlineFor(theme.brightness),
+          width: 0.5,
+        ),
       ),
       child: Column(
         children: [
@@ -118,9 +121,12 @@ class LifestyleGrid extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppSemanticColors.paper2,
+        color: AppSemanticColors.secondarySurfaceFor(theme.brightness),
         borderRadius: AppRadius.mdBorder,
-        border: Border.all(color: AppSemanticColors.line, width: 0.5),
+        border: Border.all(
+          color: AppSemanticColors.hairlineFor(theme.brightness),
+          width: 0.5,
+        ),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -137,8 +143,10 @@ class LifestyleGrid extends StatelessWidget {
                       Container(
                         width: 32,
                         height: 32,
-                        decoration: const BoxDecoration(
-                          color: AppSemanticColors.accentSoft,
+                        decoration: BoxDecoration(
+                          color: AppSemanticColors.coralSoftFor(
+                            theme.brightness,
+                          ),
                           borderRadius: AppRadius.smBorder,
                         ),
                         child: Icon(
@@ -256,13 +264,13 @@ class CompatValueChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: emphasized
-              ? AppSemanticColors.accentSoft
+              ? AppSemanticColors.coralSoftFor(theme.brightness)
               : theme.colorScheme.surface,
           borderRadius: AppRadius.pillBorder,
           border: Border.all(
             color: emphasized
                 ? AppSemanticColors.accent.withValues(alpha: 0.2)
-                : AppSemanticColors.line,
+                : AppSemanticColors.hairlineFor(theme.brightness),
             width: 0.5,
           ),
         ),
@@ -302,9 +310,12 @@ class CompatBreakdownSection extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppSemanticColors.paper2,
+        color: AppSemanticColors.secondarySurfaceFor(theme.brightness),
         borderRadius: AppRadius.mdBorder,
-        border: Border.all(color: AppSemanticColors.line, width: 0.5),
+        border: Border.all(
+          color: AppSemanticColors.hairlineFor(theme.brightness),
+          width: 0.5,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,9 +333,7 @@ class CompatBreakdownSection extends StatelessWidget {
                   color: overallColor.withValues(alpha: 0.08),
                 ),
                 child: Text(
-                  result.percentage > 0
-                      ? '${result.percentage.round()}%'
-                      : '\u2014',
+                  '${result.percentage.round()}%',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -368,7 +377,10 @@ class CompatBreakdownSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Container(height: 0.5, color: AppSemanticColors.line),
+          Container(
+            height: 0.5,
+            color: AppSemanticColors.hairlineFor(theme.brightness),
+          ),
           const SizedBox(height: AppSpacing.md),
           ...result.dimensions.map((dim) {
             final score = (dim.score / 100).clamp(0.0, 1.0);

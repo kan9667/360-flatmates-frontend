@@ -347,10 +347,13 @@ class _ChatEmptyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final brightness = theme.brightness;
     final card = Container(
       width: 240,
       decoration: BoxDecoration(
-        color: const Color(0xFFFDE8ED),
+        color: brightness == Brightness.dark
+            ? AppSemanticColors.pinkSoftDark
+            : AppSemanticColors.pinkSoft,
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       padding: const EdgeInsets.symmetric(
@@ -364,7 +367,7 @@ class _ChatEmptyCard extends StatelessWidget {
             title,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: AppSemanticColors.textPrimaryFor(Brightness.light),
+              color: AppSemanticColors.textPrimaryFor(brightness),
             ),
             textAlign: TextAlign.center,
           ),
@@ -372,7 +375,7 @@ class _ChatEmptyCard extends StatelessWidget {
           Text(
             subtitle,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppSemanticColors.textSecondaryFor(Brightness.light),
+              color: AppSemanticColors.textSecondaryFor(brightness),
             ),
             textAlign: TextAlign.center,
           ),

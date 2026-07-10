@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flatmates_app/core/theme/app_semantic_colors.dart';
 
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../l10n/gen/app_localizations.dart';
 
 class ChatInputBar extends StatelessWidget {
@@ -41,7 +42,7 @@ class ChatInputBar extends StatelessWidget {
             _InteractivePressScale(
               child: IconButton(
                 key: const Key('chat_emoji_button'),
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 constraints: const BoxConstraints(),
                 onPressed: onToggleEmoji,
                 tooltip: locale.emojiCta,

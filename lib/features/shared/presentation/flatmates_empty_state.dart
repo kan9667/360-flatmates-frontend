@@ -142,12 +142,19 @@ class _FlatmatesEmptyStateState extends State<FlatmatesEmptyState>
 
     if (widget.expand) {
       return LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(child: content),
-          ),
-        ),
+        builder: (context, constraints) {
+          final effectiveMinHeight = constraints.maxHeight.isFinite
+              ? constraints.maxHeight
+              : null;
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: effectiveMinHeight != null
+                  ? BoxConstraints(minHeight: effectiveMinHeight)
+                  : const BoxConstraints(),
+              child: Center(child: content),
+            ),
+          );
+        },
       );
     }
     if (widget.minHeight != null) {
@@ -158,16 +165,22 @@ class _FlatmatesEmptyStateState extends State<FlatmatesEmptyState>
         ),
       );
     }
-    // Defaults to filling the bounded parent (e.g. an Expanded area) so the
-    // content stays centered, but scrolls instead of overflowing when the
-    // available height is reduced (keyboard open, emoji picker open).
+    // When the parent has bounded height, center content and scroll if the
+    // available height is reduced (keyboard open, emoji picker). When the
+    // parent is unbounded (SliverList, etc.) just size to content so we
+    // never impose an infinite minHeight constraint.
     return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Center(child: content),
-        ),
-      ),
+      builder: (context, constraints) {
+        if (!constraints.maxHeight.isFinite) {
+          return Center(child: content);
+        }
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(child: content),
+          ),
+        );
+      },
     );
   }
 }

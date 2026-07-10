@@ -143,8 +143,11 @@ class MessagesController extends AutoDisposeFamilyNotifier<MessagesState, int> {
       // A realtime (re)connect can momentarily emit an empty list before the
       // HTTP refetch lands. Never let a spurious empty emission wipe history
       // we already loaded — otherwise reopening a conversation would silently
-      // drop its messages.
-      if (messages.isEmpty && state.messages.isNotEmpty) return;
+      // drop its messages. Also ignore empty emissions while the initial seed
+      // fetch is in flight so the cold-open race doesn't flash an empty card.
+      if (messages.isEmpty && (state.messages.isNotEmpty || _seedingCursor)) {
+        return;
+      }
       state = state.copyWith(
         messages: messages,
         pendingMessages: pruneConfirmedPending(messages, state.pendingMessages),
@@ -203,11 +206,11 @@ class MessagesController extends AutoDisposeFamilyNotifier<MessagesState, int> {
         'MessagesController._seedOldestCursor failed for conversation '
         '$conversationId: $e',
       );
-      // Surface the failure only if we have no messages to show; otherwise
-      // keep the loaded history visible.
-      if (state.messages.isEmpty) {
-        state = state.copyWith(isLoading: false, error: e);
-      }
+      // Always clear the loader. Only surface the error if we have no
+      // messages to show; otherwise keep the loaded history visible.
+      state = state.messages.isEmpty
+          ? state.copyWith(isLoading: false, error: e)
+          : state.copyWith(isLoading: false);
     } finally {
       _seedingCursor = false;
     }

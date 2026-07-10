@@ -1,15 +1,11 @@
-import 'dart:math' as math show pi;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_semantic_colors.dart';
-import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_shadows.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../l10n/gen/app_localizations.dart';
 import '../../shared/presentation/components.dart';
 import '../../shared/presentation/profile_sections.dart';
@@ -18,6 +14,8 @@ import '../chats_repository.dart';
 import '../domain/chat_report_reason.dart';
 import 'widgets/chat_dialogs.dart';
 import 'widgets/chat_property_card.dart';
+import 'widgets/peer_profile_action_button.dart';
+import 'widgets/peer_profile_avatar_ring.dart';
 
 /// Full profile of the other user in a conversation, opened by tapping the
 /// peer header on the chat thread. Renders instantly from the conversation's
@@ -81,6 +79,7 @@ class ChatPeerProfilePage extends ConsumerWidget {
     final city = profile?['city'] as String? ?? peer?.city;
     final localityValue = profile?['locality'] as String? ?? peer?.locality;
     final matchPercentage =
+        compatResult?.percentage ??
         (profile?['match_percentage'] as num?)?.toDouble() ??
         peer?.matchPercentage;
     final bio = (profile?['bio'] as String?)?.trim();
@@ -102,22 +101,25 @@ class ChatPeerProfilePage extends ConsumerWidget {
     ];
 
     final actionButtons = <Widget>[
-      _ActionButton(
+      PeerActionButton(
+        key: const ValueKey('peer_action_message'),
         icon: Icons.chat_bubble_outline_rounded,
         label: locale.messageCta,
-        color: _ActionButtonColor.blue,
+        color: PeerActionButtonColor.blue,
         onTap: () => context.pop(),
       ),
-      _ActionButton(
+      PeerActionButton(
+        key: const ValueKey('peer_action_call'),
         icon: Icons.call_outlined,
         label: locale.callCta,
-        color: _ActionButtonColor.green,
+        color: PeerActionButtonColor.green,
         onTap: phone != null && phone.isNotEmpty
             ? () => _handleCall(context, phone)
             : null,
       ),
       if (contextProperty != null && conversation != null)
-        _ActionButton(
+        PeerActionButton(
+          key: const ValueKey('peer_action_visit'),
           icon: Icons.event_available_outlined,
           label: locale.scheduleVisitCta,
           onTap: () => context.push(
@@ -125,10 +127,11 @@ class ChatPeerProfilePage extends ConsumerWidget {
             extra: conversation!,
           ),
         ),
-      _ActionButton(
+      PeerActionButton(
+        key: const ValueKey('peer_action_report'),
         icon: Icons.flag_outlined,
         label: locale.reportCta,
-        color: _ActionButtonColor.red,
+        color: PeerActionButtonColor.red,
         onTap: () => _handleReport(context, ref, userId),
       ),
     ];
@@ -145,7 +148,7 @@ class ChatPeerProfilePage extends ConsumerWidget {
             ),
             children: [
               // -- Avatar with progress ring --
-              _AvatarWithRing(
+              PeerProfileAvatarRing(
                 name: name,
                 imageUrl: imageUrl,
                 matchPercentage: matchPercentage,
@@ -242,39 +245,8 @@ class ChatPeerProfilePage extends ConsumerWidget {
               // -- Lifestyle --
               ..._lifestyleSection(locale, profile),
 
-              // -- Preferences --
-              ...[
-                const SizedBox(height: AppSpacing.lg),
-                SectionHeader(label: locale.preferencesLabel),
-                const SizedBox(height: AppSpacing.sm),
-                PreferencesCard(
-                  rows: [
-                    if (profile?['gender_preference'] != null &&
-                        (profile!['gender_preference'] as String)
-                            .trim()
-                            .isNotEmpty)
-                      (
-                        icon: Icons.person_outline_rounded,
-                        label: locale.genderPreferenceLabel,
-                        value: () {
-                          final pref = (profile['gender_preference'] as String)
-                              .trim()
-                              .toLowerCase();
-                          return pref == 'any'
-                              ? locale.genderAny
-                              : localizedFlatmatesGenderLabel(locale, pref);
-                        }(),
-                      ),
-                    (
-                      icon: Icons.pets_outlined,
-                      label: locale.petsLabel,
-                      value: (profile?['has_pets'] as bool?) == true
-                          ? locale.quizHavePets
-                          : locale.quizNoPets,
-                    ),
-                  ],
-                ),
-              ],
+              // -- Preferences (only when profile is loaded) --
+              if (profile != null) ...[..._preferencesSection(locale, profile)],
 
               // -- Compatibility breakdown --
               if (compatResult != null) ...[
@@ -301,7 +273,7 @@ class ChatPeerProfilePage extends ConsumerWidget {
               child: FlatmatesChromeIconButton(
                 icon: Icons.arrow_back_rounded,
                 onPressed: () => context.pop(),
-                tooltip: 'Back',
+                tooltip: locale.backCta,
                 style: FlatmatesChromeIconStyle.overlay,
               ),
             ),
@@ -320,12 +292,12 @@ class ChatPeerProfilePage extends ConsumerWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppSemanticColors.canvas,
+                    color: AppSemanticColors.surfaceFor(brightness),
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: AppShadows.elevation,
+                    boxShadow: AppShadows.elevationFor(brightness),
                   ),
                   child: Text(
-                    '${matchPercentage.round()}% Match',
+                    locale.percentMatch(matchPercentage.round()),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -347,45 +319,6 @@ class ChatPeerProfilePage extends ConsumerWidget {
     'Work': ['work_style'],
   };
 
-  /// Maps field key → raw value → descriptive display label.
-  /// Avoids ambiguity where the same raw value (e.g. "flexible", "minimal")
-  /// appears in different fields with different meanings.
-  static const _valueLabels = <String, Map<String, String>>{
-    'sleep_schedule': {
-      'early_bird': 'Early riser',
-      'flexible': 'Flexible schedule',
-      'night_owl': 'Night owl',
-    },
-    'cleanliness': {
-      'minimal': 'Minimal cleaning',
-      'tidy': 'Keeps tidy',
-      'spotless': 'Very clean',
-    },
-    'food_habits': {
-      'vegetarian': 'Vegetarian',
-      'vegan': 'Vegan',
-      'non_vegetarian': 'Non-vegetarian',
-      'eggetarian': 'Eggetarian',
-      'no_preference': 'No dietary preference',
-    },
-    'smoking_drinking': {
-      'neither': 'No smoking/drinking',
-      'smoke_outside': 'Smokes outside only',
-      'drink_occasionally': 'Drinks occasionally',
-      'both_fine': 'Smoking & drinking OK',
-    },
-    'guests_policy': {
-      'no_overnight_guests': 'No overnight guests',
-      'occasional_ok': 'Guests occasionally OK',
-      'open_house': 'Guests always welcome',
-    },
-    'work_style': {
-      'wfh': 'Works from home',
-      'office': 'Works from office',
-      'hybrid': 'Hybrid work',
-    },
-  };
-
   List<Widget> _lifestyleSection(
     AppLocalizations locale,
     Map<String, dynamic>? profile,
@@ -398,7 +331,7 @@ class ChatPeerProfilePage extends ConsumerWidget {
           cells.add((
             icon: _fieldIcons[key] ?? Icons.circle_outlined,
             dim: _dimLabel(locale, key),
-            value: _valueLabels[key]?[raw] ?? _humanize(raw),
+            value: _lifestyleValueLabel(locale, key, raw),
           ));
         }
       }
@@ -410,6 +343,96 @@ class ChatPeerProfilePage extends ConsumerWidget {
       SectionHeader(label: locale.lifestyleSectionTitle),
       const SizedBox(height: AppSpacing.sm),
       LifestyleGrid(cells: cells),
+    ];
+  }
+
+  /// Maps a lifestyle field key + raw value to a localized display label
+  /// using the existing quiz ARB keys.
+  static String _lifestyleValueLabel(
+    AppLocalizations l,
+    String key,
+    String raw,
+  ) => switch (key) {
+    'sleep_schedule' => switch (raw) {
+      'early_bird' => l.quizEarlyBird,
+      'flexible' => l.quizFlexible,
+      'night_owl' => l.quizNightOwl,
+      _ => _humanize(raw),
+    },
+    'cleanliness' => switch (raw) {
+      'minimal' => l.quizCleanMinimal,
+      'tidy' => l.quizCleanTidy,
+      'spotless' => l.quizCleanSpotless,
+      _ => _humanize(raw),
+    },
+    'food_habits' => switch (raw) {
+      'vegetarian' => l.quizVegetarian,
+      'vegan' => l.quizVegan,
+      'non_vegetarian' => l.quizNonVegetarian,
+      'eggetarian' => l.quizEggetarian,
+      'no_preference' => l.quizNoFoodPref,
+      _ => _humanize(raw),
+    },
+    'smoking_drinking' => switch (raw) {
+      'neither' => l.quizNeither,
+      'smoke_outside' => l.quizSmokeOutside,
+      'drink_occasionally' => l.quizDrinkOccasionally,
+      'both_fine' => l.quizBothFine,
+      _ => _humanize(raw),
+    },
+    'guests_policy' => switch (raw) {
+      'no_overnight_guests' => l.quizNoGuests,
+      'occasional_ok' => l.quizOccasionalGuests,
+      'open_house' => l.quizOpenHouse,
+      _ => _humanize(raw),
+    },
+    'work_style' => switch (raw) {
+      'wfh' => l.quizWfh,
+      'office' => l.quizOffice,
+      'hybrid' => l.quizHybrid,
+      _ => _humanize(raw),
+    },
+    _ => _humanize(raw),
+  };
+
+  List<Widget> _preferencesSection(
+    AppLocalizations locale,
+    Map<String, dynamic> profile,
+  ) {
+    final rows = <(IconData, String, String)>[];
+
+    final genderPref = profile['gender_preference'] as String?;
+    if (genderPref != null && genderPref.trim().isNotEmpty) {
+      final pref = genderPref.trim().toLowerCase();
+      rows.add((
+        Icons.person_outline_rounded,
+        locale.genderPreferenceLabel,
+        pref == 'any'
+            ? locale.genderAny
+            : localizedFlatmatesGenderLabel(locale, pref),
+      ));
+    }
+
+    // Only show pets row when the value is explicitly a boolean so we never
+    // present "No pets" for an unknown/null state.
+    final hasPets = profile['has_pets'];
+    if (hasPets is bool) {
+      rows.add((
+        Icons.pets_outlined,
+        locale.petsLabel,
+        hasPets ? locale.quizHavePets : locale.quizNoPets,
+      ));
+    }
+
+    if (rows.isEmpty) return [];
+
+    return [
+      const SizedBox(height: AppSpacing.lg),
+      SectionHeader(label: locale.preferencesLabel),
+      const SizedBox(height: AppSpacing.sm),
+      PreferencesCard(
+        rows: rows.map((r) => (icon: r.$1, label: r.$2, value: r.$3)).toList(),
+      ),
     ];
   }
 
@@ -452,208 +475,5 @@ class ChatPeerProfilePage extends ConsumerWidget {
     if (pct >= 40) return AppSemanticColors.warning;
     if (pct > 0) return AppSemanticColors.error;
     return AppSemanticColors.textSecondaryFor(brightness);
-  }
-}
-
-enum _ActionButtonColor { blue, green, pink, red }
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    this.color = _ActionButtonColor.pink,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final _ActionButtonColor color;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final brightness = theme.brightness;
-    final enabled = onTap != null;
-    final isDark = brightness == Brightness.dark;
-
-    if (!enabled) {
-      final disabledFg = AppSemanticColors.textTertiaryFor(brightness);
-      return Material(
-        color: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            vertical: AppSpacing.sm,
-            horizontal: AppSpacing.xs,
-          ),
-          decoration: const BoxDecoration(borderRadius: AppRadius.smBorder),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 20, color: disabledFg),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: AppTypography.microLabelSize,
-                  fontWeight: FontWeight.w600,
-                  color: disabledFg,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final bg = switch (color) {
-      _ActionButtonColor.blue =>
-        isDark ? AppSemanticColors.blueSoftDark : AppSemanticColors.blueSoft,
-      _ActionButtonColor.green =>
-        isDark ? AppSemanticColors.greenSoftDark : AppSemanticColors.greenSoft,
-      _ActionButtonColor.pink =>
-        isDark ? AppSemanticColors.pinkSoftDark : AppSemanticColors.pinkSoft,
-      _ActionButtonColor.red =>
-        isDark ? AppSemanticColors.errorSoftDark : AppSemanticColors.errorBg,
-    };
-    final fg = switch (color) {
-      _ActionButtonColor.blue => AppSemanticColors.blueInk,
-      _ActionButtonColor.green => AppSemanticColors.greenInk,
-      _ActionButtonColor.pink => AppSemanticColors.pinkInk,
-      _ActionButtonColor.red => AppSemanticColors.error,
-    };
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppRadius.smBorder,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            vertical: AppSpacing.sm,
-            horizontal: AppSpacing.xs,
-          ),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: AppRadius.smBorder,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 20, color: fg),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: AppTypography.microLabelSize,
-                  fontWeight: FontWeight.w600,
-                  color: fg,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AvatarWithRing extends StatelessWidget {
-  const _AvatarWithRing({
-    required this.name,
-    required this.imageUrl,
-    this.matchPercentage,
-    required this.matchColor,
-  });
-
-  static const double _avatarSize = 128;
-  static const double _ringSize = _avatarSize + 8;
-
-  final String name;
-  final String? imageUrl;
-  final double? matchPercentage;
-  final Color matchColor;
-
-  @override
-  Widget build(BuildContext context) {
-    if (matchPercentage == null) {
-      return FlatmatesAvatar(name: name, imageUrl: imageUrl, size: _avatarSize);
-    }
-
-    final progress = (matchPercentage! / 100).clamp(0.0, 1.0);
-
-    return SizedBox(
-      width: _ringSize,
-      height: _ringSize,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          CustomPaint(
-            size: const Size(_ringSize, _ringSize),
-            painter: _AvatarRingPainter(
-              progress: progress,
-              color: matchColor,
-              strokeWidth: 4,
-              backgroundColor: matchColor.withValues(alpha: 0.15),
-            ),
-          ),
-          FlatmatesAvatar(name: name, imageUrl: imageUrl, size: _avatarSize),
-        ],
-      ),
-    );
-  }
-}
-
-class _AvatarRingPainter extends CustomPainter {
-  const _AvatarRingPainter({
-    required this.progress,
-    required this.color,
-    required this.strokeWidth,
-    required this.backgroundColor,
-  });
-
-  final double progress;
-  final Color color;
-  final double strokeWidth;
-  final Color backgroundColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - strokeWidth) / 2;
-
-    final bgPaint = Paint()
-      ..color = backgroundColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-    canvas.drawCircle(center, radius, bgPaint);
-
-    final fgPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    const startAngle = -math.pi / 2;
-    final sweepAngle = 2 * math.pi * progress;
-
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle,
-      sweepAngle,
-      false,
-      fgPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _AvatarRingPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.color != color;
   }
 }

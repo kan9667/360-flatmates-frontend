@@ -9,7 +9,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/errors/app_failure.dart';
 import '../../core/errors/l10n_bridge.dart';
 import '../../core/providers.dart';
-import '../../core/theme/app_semantic_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/debouncer.dart';
 import '../../core/utils/profanity_filter.dart';
@@ -29,10 +28,14 @@ import 'presentation/widgets/chat_dialogs.dart';
 import 'presentation/widgets/chat_input_area.dart';
 import 'presentation/widgets/chat_pre_message_area.dart';
 import 'presentation/widgets/message_list.dart';
+import 'presentation/widgets/mode_tooltip_bubble.dart';
 import 'presentation/widgets/chat_qna_answers_card.dart';
 
 /// Local UI state: whether the emoji picker is visible above the input bar.
-final _showEmojiPickerProvider = StateProvider<bool>((ref) => false);
+/// AutoDispose so the panel resets when the chat thread leaves the tree.
+final _showEmojiPickerProvider = StateProvider.autoDispose<bool>(
+  (ref) => false,
+);
 
 class ChatThreadPage extends ConsumerStatefulWidget {
   const ChatThreadPage({
@@ -167,7 +170,7 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
           // avatar or the peer name).
           targetAnchor: Alignment.bottomLeft,
           offset: const Offset(0, 8),
-          child: _ModeTooltipBubble(
+          child: ModeTooltipBubble(
             label: label,
             onTapKeepOpen: _keepModeTooltipOpen,
           ),
@@ -306,24 +309,15 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
   }
 
   Future<void> _submitQnA(Map<String, String> answers) async {
-    ConversationSummaryModel? updatedConversation;
-    try {
-      final repository = ref.read(chatsRepositoryProvider);
-      await repository.submitQnA(widget.conversationId, answers);
-      updatedConversation = await repository.fetchConversation(
-        widget.conversationId,
-      );
-    } catch (e) {
-      debugPrint(
-        'ChatThreadPage._submitQnA failed for conversation ${widget.conversationId}: $e',
-      );
-    }
+    final updated = await ref
+        .read(chatActionsControllerProvider)
+        .submitQnA(widget.conversationId, answers);
     _markQnANudgeDismissed();
     if (mounted) {
       setState(() {
         _showQnANudge = false;
-        if (updatedConversation != null) {
-          _conversation = updatedConversation;
+        if (updated != null) {
+          _conversation = updated;
         }
       });
     }
@@ -420,7 +414,6 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
 
     return FlatmatesScreen(
       appBar: ChatAppBar(
-        conversationId: widget.conversationId,
         conversation: conversation,
         avatarLink: _avatarLink,
         reportReasons: _reportReasons,
@@ -491,94 +484,9 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
             onToggleEmoji: _toggleEmojiPicker,
             onSend: _sendMessage,
           ),
-          if (showEmoji)
-            SizedBox(
-              height: 256,
-              child: EmojiPicker(textEditingController: _messageController),
-            ),
+          if (showEmoji) EmojiPicker(textEditingController: _messageController),
         ],
       ),
     );
   }
-}
-
-/// Floating, speech-bubble tooltip that surfaces the peer's full mode/intent
-/// text (e.g. "Looking for room + flatmate") anchored beneath the header
-/// avatar. Rendered as an [OverlayEntry] so it never shifts the chat layout.
-class _ModeTooltipBubble extends StatelessWidget {
-  const _ModeTooltipBubble({required this.label, required this.onTapKeepOpen});
-
-  final String label;
-  final VoidCallback onTapKeepOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    const tailHeight = 8.0;
-
-    return Material(
-      color: Colors.transparent,
-      child: GestureDetector(
-        onTap: onTapKeepOpen,
-        child: CustomPaint(
-          painter: const _BubblePainter(
-            color: AppSemanticColors.accent,
-            tailHeight: tailHeight,
-          ),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 280),
-            padding: const EdgeInsets.fromLTRB(14, tailHeight + 10, 14, 10),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Paints a pink rounded-rectangle bubble with a small upward tail near the
-/// left edge, plus a soft drop shadow for elevation above the chat content.
-class _BubblePainter extends CustomPainter {
-  const _BubblePainter({required this.color, required this.tailHeight});
-
-  final Color color;
-  final double tailHeight;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const radius = 12.0;
-    const tailWidth = 14.0;
-    const tailLeft = 22.0;
-    final bodyTop = tailHeight;
-
-    final path = Path();
-    path.addRRect(
-      RRect.fromLTRBAndCorners(
-        0,
-        bodyTop,
-        size.width,
-        size.height,
-        topLeft: const Radius.circular(radius),
-        topRight: const Radius.circular(radius),
-        bottomLeft: const Radius.circular(radius),
-        bottomRight: const Radius.circular(radius),
-      ),
-    );
-    const tailCenterX = tailLeft + tailWidth / 2;
-    path.moveTo(tailCenterX - tailWidth / 2, bodyTop);
-    path.lineTo(tailCenterX + tailWidth / 2, bodyTop);
-    path.lineTo(tailCenterX, 0);
-    path.close();
-
-    canvas.drawShadow(path, Colors.black.withValues(alpha: 0.25), 6, false);
-    canvas.drawPath(path, Paint()..color = color);
-  }
-
-  @override
-  bool shouldRepaint(covariant _BubblePainter old) =>
-      old.color != color || old.tailHeight != tailHeight;
 }

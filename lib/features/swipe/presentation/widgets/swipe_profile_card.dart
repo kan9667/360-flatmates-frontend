@@ -63,6 +63,8 @@ class SwipeProfileCard extends StatelessWidget {
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.zero,
+            // ignore: deprecated_member_use
+            cacheExtent: forceBelowFold ? maxHeight : null,
             children: [
               ConstrainedBox(
                 constraints: forceBelowFold

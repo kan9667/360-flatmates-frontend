@@ -13,9 +13,8 @@ import '../../domain/chat_report_reason.dart';
 
 class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   const ChatAppBar({
-    required this.conversationId,
     required this.conversation,
-    required this.avatarLink,
+    this.avatarLink,
     required this.reportReasons,
     required this.onBlock,
     required this.onReport,
@@ -26,11 +25,11 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     super.key,
   });
 
-  final int conversationId;
   final ConversationSummaryModel? conversation;
 
   /// Shared with the floating mode tooltip so its tail points at this avatar.
-  final LayerLink avatarLink;
+  /// Optional — defaults to an unlinked [LayerLink] when no tooltip is used.
+  final LayerLink? avatarLink;
   final List<ChatReportReason> reportReasons;
   final VoidCallback onBlock;
   final VoidCallback onReport;
@@ -43,12 +42,6 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => const Size.fromHeight(toolbarHeight);
-
-  double? _computeCompatibilityScore() {
-    final peer = conversation?.peer;
-    if (peer == null) return null;
-    return peer.matchPercentage;
-  }
 
   void _showChatMenu(BuildContext context) {
     final locale = AppLocalizations.of(context);
@@ -99,7 +92,6 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     final locale = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final brightness = theme.brightness;
-    final score = _computeCompatibilityScore();
     final hairline = AppSemanticColors.hairlineFor(brightness);
 
     return AppBar(
@@ -121,34 +113,13 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
         onTap: onPeerTap,
         child: Row(
           children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                CompositedTransformTarget(
-                  link: avatarLink,
-                  child: FlatmatesAvatar(
-                    name: conversation?.peer.fullName,
-                    imageUrl: conversation?.peer.profileImageUrl,
-                    size: 36,
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    width: 14,
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF34C759),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppSemanticColors.scaffoldFor(brightness),
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            CompositedTransformTarget(
+              link: avatarLink ?? LayerLink(),
+              child: FlatmatesAvatar(
+                name: conversation?.peer.fullName,
+                imageUrl: conversation?.peer.profileImageUrl,
+                size: 36,
+              ),
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(

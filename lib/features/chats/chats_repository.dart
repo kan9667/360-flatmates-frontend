@@ -285,7 +285,13 @@ class ChatsRepository {
   }
 
   /// Fetches per-dimension compatibility data against a peer. Returns null
-  /// when the breakdown is unavailable (no data, or 404/error).
+  /// when the breakdown is unavailable (no dimensions, or HTTP error).
+  ///
+  /// The backend may emit `overall_percentage: null` when no dimensions are
+  /// comparable while still returning per-dimension "not enough data" rows.
+  /// We parse dimensions even in that case so the UI can show the breakdown
+  /// section. Dimensions with empty user/peer values are filtered out so
+  /// missing data is never misrepresented as a mismatch (0% bars).
   Future<CompatibilityResult?> fetchPeerCompatibility(int userId) async {
     try {
       final response = await _ref
@@ -294,23 +300,37 @@ class ChatsRepository {
       final data = response.data;
       if (data is! Map) return null;
       final dims = data['dimensions'] as List?;
+      if (dims == null || dims.isEmpty) return null;
       final overallPct = (data['overall_percentage'] as num?)?.toDouble();
-      if (dims == null || overallPct == null) return null;
+
+      final dimensions = dims
+          .whereType<Map>()
+          .map((d) {
+            final m = Map<String, dynamic>.from(d);
+            return CompatibilityDimension(
+              key: m['name'] as String? ?? '',
+              weight: (m['weight'] as num?)?.toDouble() ?? 0,
+              userValue: m['user_value'] as String? ?? '',
+              peerValue: m['peer_value'] as String? ?? '',
+              score: (m['score'] as num?)?.toDouble() ?? 0,
+              isMatch: m['match'] as bool? ?? false,
+              summary: m['summary'] as String? ?? '',
+            );
+          })
+          // Skip dimensions where either side has no data — the backend
+          // emits these with score=0 and summary "not enough data". Showing
+          // them as 0% bars would misrepresent missing data as mismatch.
+          .where((dim) => dim.userValue.isNotEmpty || dim.peerValue.isNotEmpty)
+          .toList();
+
+      if (dimensions.isEmpty) return null;
+
       return CompatibilityResult(
-        percentage: overallPct,
-        dimensions: dims.map((d) {
-          final m = d as Map<String, dynamic>;
-          return CompatibilityDimension(
-            key: m['name'] as String? ?? '',
-            weight: (m['weight'] as num?)?.toDouble() ?? 0,
-            userValue: m['user_value'] as String? ?? '',
-            peerValue: m['peer_value'] as String? ?? '',
-            score: (m['score'] as num?)?.toDouble() ?? 0,
-            isMatch: m['match'] as bool? ?? false,
-            summary: m['summary'] as String? ?? '',
-          );
-        }).toList(),
-        topMatchChips: (data['summary'] as List?)?.cast<String>() ?? [],
+        percentage: overallPct ?? 0,
+        dimensions: dimensions,
+        topMatchChips:
+            (data['summary'] as List?)?.whereType<String>().toList() ??
+            const [],
       );
     } catch (e) {
       debugPrint('ChatsRepository.fetchPeerCompatibility: $e');
