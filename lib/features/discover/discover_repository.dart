@@ -11,6 +11,8 @@ import 'application/discover_feed_controller.dart';
 import 'application/move_in_filter.dart';
 import 'data/property_listing_dto.dart';
 import 'domain/property_listing.dart';
+import '../chats/application/cursor_list_controller.dart';
+import '../chats/chats_repository.dart';
 
 export 'domain/property_listing.dart';
 
@@ -486,6 +488,17 @@ class PropertyListingController
       final cid = await ref
           .read(discoverRepositoryProvider)
           .setLiked(current.id, newLiked);
+
+      final outgoing = ref.read(outgoingLikesListControllerProvider.notifier);
+      if (newLiked) {
+        outgoing.upsertOutgoingLike(
+          OutgoingLikeModel.fromPropertyListing(current),
+        );
+      } else {
+        outgoing.removeOptimistically(
+          OutgoingLikeModel.fromPropertyListing(current),
+        );
+      }
       return cid;
     } catch (e) {
       // Rollback on failure.

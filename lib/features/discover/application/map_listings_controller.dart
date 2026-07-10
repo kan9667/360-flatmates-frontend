@@ -152,9 +152,7 @@ class MapListingsController extends Notifier<MapListingsState> {
       // Keep the Liked tab in sync when a property is liked from the map.
       if (index >= 0) {
         final listing = state.listings[index];
-        final outgoing = ref.read(
-          outgoingLikesListControllerProvider.notifier,
-        );
+        final outgoing = ref.read(outgoingLikesListControllerProvider.notifier);
         if (liked) {
           outgoing.upsertOutgoingLike(
             OutgoingLikeModel.fromPropertyListing(listing),
@@ -164,7 +162,6 @@ class MapListingsController extends Notifier<MapListingsState> {
             OutgoingLikeModel.fromPropertyListing(listing),
           );
         }
-        ref.invalidate(outgoingLikesProvider);
       }
       return conversationId;
     } catch (e) {

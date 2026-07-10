@@ -10,7 +10,6 @@ import '../chats/chats_repository.dart'
         conversationsProvider,
         incomingLikesProvider,
         messagesProvider,
-        outgoingLikesProvider,
         peerProfileProvider;
 import '../chats/application/cursor_list_controller.dart';
 import '../../core/errors/l10n_bridge.dart';
@@ -216,14 +215,11 @@ class _FlatDetailsPageState extends ConsumerState<FlatDetailsPage> {
     ref.invalidate(discoverListingsProvider);
     ref.invalidate(conversationsProvider);
     ref.invalidate(incomingLikesProvider);
-    ref.invalidate(outgoingLikesProvider);
-    // Also refresh the cursor-paginated controllers the ConversationsPage tabs
-    // actually watch. The legacy FutureProviders above are not watched by any
-    // tab, so without this the Chats/Likes/Liked tabs stay stale until a
-    // manual pull-to-refresh.
+    // The Liked tab cursor is updated by PropertyListingController. The legacy
+    // FutureProviders above are not watched by any tab, so refresh only the
+    // cursor controllers for Chats and Likes.
     ref.invalidate(conversationsListControllerProvider);
     ref.invalidate(incomingLikesListControllerProvider);
-    ref.invalidate(outgoingLikesListControllerProvider);
   }
 
   Future<void> _handleShortlist(PropertyListing listing) async {

@@ -35,7 +35,8 @@ class _ListingUnderReviewPageState
     ref.listen(flatmatesRealtimeEventProvider, (previous, next) {
       final event = next.valueOrNull;
       if (event?.type == 'listing_status_changed') {
-        final listingId = event!.data['listing_id'] as int? ??
+        final listingId =
+            event!.data['listing_id'] as int? ??
             (event.data['listing_id'] as num?)?.toInt() ??
             (event.data['property_id'] as num?)?.toInt();
         if (listingId == widget.listingId) {

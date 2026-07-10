@@ -47,7 +47,7 @@ void main() {
 
     await tester.pumpWidget(
       testableWidget(
-        child: SizedBox(
+        child: const SizedBox(
           width: 390,
           height: viewportHeight,
           child: SwipeProfileCard(

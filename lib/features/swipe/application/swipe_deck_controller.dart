@@ -272,7 +272,6 @@ class SwipeDeckController extends Notifier<SwipeDeckState> {
     ref
         .read(outgoingLikesListControllerProvider.notifier)
         .upsertOutgoingLike(_outgoingLikeFor(profile));
-    ref.invalidate(outgoingLikesProvider);
     unawaited(ref.read(outgoingLikesListControllerProvider.notifier).refresh());
 
     if (!result.didMatch) return;

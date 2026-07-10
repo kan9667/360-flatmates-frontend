@@ -198,7 +198,6 @@ class DiscoverFeedController extends Notifier<DiscoverFeedState> {
           OutgoingLikeModel.fromPropertyListing(item),
         );
       }
-      ref.invalidate(outgoingLikesProvider);
       return conversationId;
     } catch (e) {
       debugPrint('DiscoverFeedController.toggleLike failed: $e');
