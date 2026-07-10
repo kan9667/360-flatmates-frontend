@@ -85,6 +85,7 @@
   "homePickedSubtitle": "आपकी पसंद और वाइब से मेल खाने वाले फ्लैट्स",
   "homeNoResults": "इन फ़िल्टर्स से कोई लिस्टिंग नहीं मिली।",
   "homeNoResultsSubtitle": "अपने फ़िल्टर बदलकर देखें या किसी अन्य लोकेशन के लिए खोजें।",
+  "homeBroadenedRadius": "आपके क्षेत्र में कोई लिस्टिंग नहीं — दूर की फ्लैट्स दिखाई जा रही हैं।",
   "homeBedroomsChip": "{count} BHK",
   "@homeBedroomsChip": {
     "placeholders": {
@@ -231,6 +232,10 @@
   "profileMenuChats": "मेरी चैट",
   "profileMenuDocuments": "दस्तावेज़",
   "editProfileCta": "प्रोफ़ाइल संपादित करें",
+  "editProfileTabIdentity": "पहचान",
+  "editProfileTabPreferences": "प्राथमिकताएँ",
+  "editProfileTabLifestyle": "जीवनशैली",
+  "editProfileTabAbout": "बारे में",
   "themeModeTitle": "थीम मोड",
   "themeSystem": "सिस्टम",
   "themeLight": "लाइट",
@@ -1657,5 +1662,48 @@
     }
   },
 
-  "unverifiedAccountHint": "आपका खाता अभी सत्यापित नहीं हुआ है। नीचे सत्यापन पूरा करें या कोड दोबारा भेजें।"
+  "unverifiedAccountHint": "आपका खाता अभी सत्यापित नहीं हुआ है। नीचे सत्यापन पूरा करें या कोड दोबारा भेजें।",
+
+  "profileCompletionTitle": "अपनी प्रोफ़ाइल सेट करें",
+  "profileCompletionSubtitle": "शुरू करने के लिए हमें कुछ जानकारी चाहिए।",
+  "profileCompletionContinue": "जारी रखें",
+  "profileCompletionSaving": "सहेजा जा रहा है…",
+  "profileCompletionError": "प्रोफ़ाइल सहेजी नहीं जा सकी। कृपया दोबारा कोशिश करें।",
+  "dateOfBirthLabel": "जन्म तिथि",
+  "dateOfBirthHelper": "आपकी आयु 18 वर्ष या अधिक होनी चाहिए",
+  "dateOfBirthPickerTitle": "अपनी जन्म तिथि चुनें",
+
+  "onboardingBannerTitle": "मैचिंग शुरू करने के लिए अपनी प्रोफ़ाइल पूरी करें",
+  "onboardingBannerCta": "सेटअप जारी रखें",
+  "onboardingStepsRemaining": "{count} चरण शेष",
+  "@onboardingStepsRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingStepOf": "चरण {current} / {total}",
+  "@onboardingStepOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingStepMode": "आपकी भूमिका",
+  "onboardingStepLocation": "स्थान",
+  "onboardingStepBasicInfo": "बुनियादी जानकारी",
+  "onboardingStepPhoto": "प्रोफ़ाइल फ़ोटो",
+  "onboardingStepLifestyle": "जीवनशैली",
+  "onboardingStepBudget": "बजट और समयरेखा",
+  "onboardingStepPreferences": "प्राथमिकताएँ",
+  "onboardingStepNonNegotiables": "अनिवार्य शर्तें",
+  "onboardingWelcomeBack": "वापसी पर स्वागत है! जहाँ से छोड़ा था वहीं से शुरू करें।",
+  "onboardingActionBlockedTitle": "पहले अपनी प्रोफ़ाइल पूरी करें",
+  "onboardingActionBlockedMessage": "फ्लैटमेट्स के साथ मैचिंग शुरू करने के लिए अपनी प्रोफ़ाइल सेटअप पूरा करें।",
+  "onboardingActionBlockedCta": "सेटअप जारी रखें"
 }

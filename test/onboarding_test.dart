@@ -49,6 +49,34 @@ void main() {
       );
     });
 
+    test('stepIndex returns 1-based index for interactive steps', () {
+      expect(const OnboardingState().stepIndex, 0); // splash
+      expect(
+        const OnboardingState(step: OnboardingStep.modeSelection).stepIndex,
+        1,
+      );
+      expect(
+        const OnboardingState(step: OnboardingStep.nonNegotiables).stepIndex,
+        8,
+      );
+    });
+
+    test('remainingSteps counts interactive steps left including current', () {
+      expect(const OnboardingState().remainingSteps, 8); // splash → all 8
+      expect(
+        const OnboardingState(
+          step: OnboardingStep.modeSelection,
+        ).remainingSteps,
+        8,
+      );
+      expect(
+        const OnboardingState(
+          step: OnboardingStep.nonNegotiables,
+        ).remainingSteps,
+        1,
+      );
+    });
+
     test(
       'goBack steps backwards while preserving collected draft data',
       () async {
@@ -464,6 +492,9 @@ class _FakeProfileRepository implements ProfileRepository {
   Future<void> completeFlatmatesOnboarding() async {
     completeCalls += 1;
   }
+
+  @override
+  Future<void> updateUser({required Map<String, dynamic> payload}) async {}
 }
 
 class _OnboardingAuthController extends FakeAuthController {

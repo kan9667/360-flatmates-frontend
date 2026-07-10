@@ -142,37 +142,103 @@ class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
               subtitle: locale.homeNoResultsSubtitle,
               icon: Icons.search_off_rounded,
             )
-          : ListView.separated(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.md,
-                AppSpacing.lg,
-                120,
-              ),
-              // +1 footer row when more pages may still load.
-              itemCount: filtered.length + (feedState.hasMore ? 1 : 0),
-              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-              itemBuilder: (context, index) {
-                if (index >= filtered.length) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.lg,
+          : Column(
+              children: [
+                if (feedState.isBroadened)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.sm,
+                      AppSpacing.lg,
+                      0,
                     ),
-                    child: Center(
-                      child: feedState.isLoadingMore
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const SizedBox(height: 24),
+                    child: _BroadenedHint(message: locale.homeBroadenedRadius),
+                  ),
+                Expanded(
+                  child: ListView.separated(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      120,
                     ),
-                  );
-                }
-                return _BrowseListingsCard(item: filtered[index], index: index);
-              },
+                    // +1 footer row when more pages may still load.
+                    itemCount: filtered.length + (feedState.hasMore ? 1 : 0),
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(height: AppSpacing.md),
+                    itemBuilder: (context, index) {
+                      if (index >= filtered.length) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.lg,
+                          ),
+                          child: Center(
+                            child: feedState.isLoadingMore
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const SizedBox(height: 24),
+                          ),
+                        );
+                      }
+                      return _BrowseListingsCard(
+                        item: filtered[index],
+                        index: index,
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
+    );
+  }
+}
+
+/// Compact info banner shown when the browse feed broadened its radius
+/// beyond the user's selected area.
+class _BroadenedHint extends StatelessWidget {
+  const _BroadenedHint({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm + 2,
+      ),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.infoBg,
+        borderRadius: BorderRadius.circular(AppSpacing.sm),
+        border: Border.all(color: AppSemanticColors.primaryDisabled),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 18,
+            color: AppSemanticColors.primary,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppSemanticColors.ink,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -235,16 +301,19 @@ class _BrowseListingsCardState extends ConsumerState<_BrowseListingsCard> {
         ListingMetaItem(
           icon: Icons.bed_outlined,
           label: locale.homeBedsValue(item.bedrooms!),
+          chipColor: MetaChipColor.blue,
         ),
       if (item.bathrooms != null)
         ListingMetaItem(
           icon: Icons.bathtub_outlined,
           label: locale.homeBathsValue(item.bathrooms!),
+          chipColor: MetaChipColor.teal,
         ),
       if (item.areaSqft != null)
         ListingMetaItem(
           icon: Icons.square_foot_outlined,
           label: locale.sqftLabel(item.areaSqft!.round()),
+          chipColor: MetaChipColor.purple,
         ),
       ListingMetaItem(
         icon: Icons.people_outline_rounded,
@@ -253,6 +322,7 @@ class _BrowseListingsCardState extends ConsumerState<_BrowseListingsCard> {
           'female' => locale.genderSuffixFemaleOnly,
           _ => locale.genderSuffixAny,
         },
+        chipColor: MetaChipColor.orange,
       ),
     ];
     final distanceLabel = (item.distanceKm != null && item.distanceKm! > 0)

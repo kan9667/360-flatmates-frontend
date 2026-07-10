@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import '../../core/errors/app_failure.dart';
 import '../../core/errors/l10n_bridge.dart';
 import '../../core/location/location_data.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_semantic_colors.dart';
 import '../../core/utils/debouncer.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../bootstrap/bootstrap_controller.dart';
@@ -234,6 +236,15 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     final mode = profile?.mode ?? 'co_hunter';
     final isSeeker = mode != 'room_poster';
 
+    // Responsive grid columns for the "Picked for you" preview: 2 on mobile,
+    // 3 on small tablet, 4 on large tablet/desktop (DESIGN.md breakpoints).
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final crossAxisCount = screenWidth < 600
+        ? 2
+        : screenWidth < 900
+        ? 3
+        : 4;
+
     final preview = filtered.take(_homeFeedPreviewCount).toList();
     final showSeeAll =
         filtered.isNotEmpty && (filtered.length > 2 || feedState.hasMore);
@@ -302,6 +313,12 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                           const SizedBox(height: AppSpacing.lg),
                           MovingSoonSection(items: filtered),
                         ],
+                        if (feedState.isBroadened && filtered.isNotEmpty) ...[
+                          const SizedBox(height: AppSpacing.lg),
+                          _BroadenedRadiusBanner(
+                            message: locale.homeBroadenedRadius,
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.lg),
                         HomeSectionHeader(
                           title: locale.homePickedForYou,
@@ -333,35 +350,68 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
-                            // Separator + card pairs so we avoid nested ListView.
+                            // Odd indices are row separators; even indices are
+                            // grid rows of [crossAxisCount] cards. Each card is
+                            // wrapped in Expanded so widths divide evenly and
+                            // stay consistent across full and partial rows.
                             if (index.isOdd) {
                               return const SizedBox(height: AppSpacing.md);
                             }
-                            final itemIndex = index ~/ 2;
-                            final item = preview[itemIndex];
-                            final badgeLabel = switch (itemIndex) {
-                              0 => locale.badgeNew,
-                              1 => locale.badgePopular,
-                              _ => null,
-                            };
-                            return StaggeredCardAppear(
-                              index: itemIndex,
-                              child: DiscoverListingCard(
-                                cardKey: itemIndex == 0
-                                    ? const Key('discover_feed_card_0')
-                                    : null,
-                                item: item,
-                                badgeLabel: badgeLabel,
-                                onTap: () =>
-                                    context.push('/flat-details/${item.id}'),
-                                onLike: () =>
-                                    _likeDebouncer.run(() => _handleLike(item)),
-                              ),
+                            final rowIndex = index ~/ 2;
+                            final start = rowIndex * crossAxisCount;
+                            final end = min(
+                              start + crossAxisCount,
+                              preview.length,
+                            );
+                            final cells = <Widget>[];
+                            for (var i = start; i < end; i++) {
+                              final item = preview[i];
+                              final badgeLabel = switch (i) {
+                                0 => locale.badgeNew,
+                                1 => locale.badgePopular,
+                                _ => null,
+                              };
+                              cells.add(
+                                Expanded(
+                                  child: StaggeredCardAppear(
+                                    index: i,
+                                    child: DiscoverListingCard(
+                                      cardKey: i == 0
+                                          ? const Key('discover_feed_card_0')
+                                          : null,
+                                      item: item,
+                                      badgeLabel: badgeLabel,
+                                      onTap: () => context.push(
+                                        '/flat-details/${item.id}',
+                                      ),
+                                      onLike: () => _likeDebouncer.run(
+                                        () => _handleLike(item),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                              if (i < end - 1) {
+                                cells.add(const SizedBox(width: AppSpacing.md));
+                              }
+                            }
+                            // Pad the trailing partial row with empty Expanded
+                            // slots so card widths match full rows above.
+                            final missing = crossAxisCount - (end - start);
+                            for (var j = 0; j < missing; j++) {
+                              cells.add(const SizedBox(width: AppSpacing.md));
+                              cells.add(const Expanded(child: SizedBox()));
+                            }
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: cells,
                             );
                           },
-                          childCount: preview.isEmpty
-                              ? 0
-                              : preview.length * 2 - 1,
+                          childCount:
+                              ((preview.length + crossAxisCount - 1) ~/
+                                      crossAxisCount) *
+                                  2 -
+                              1,
                         ),
                       ),
                     )
@@ -380,4 +430,49 @@ String _firstName(String? fullName, {required String fallback}) {
   final trimmed = fullName?.trim();
   if (trimmed == null || trimmed.isEmpty) return fallback;
   return trimmed.split(RegExp(r'\s+')).first;
+}
+
+/// Compact info banner shown when the discover feed broadened its radius
+/// beyond the user's selected area because the user's radius returned zero
+/// listings.
+class _BroadenedRadiusBanner extends StatelessWidget {
+  const _BroadenedRadiusBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm + 2,
+      ),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.infoBg,
+        borderRadius: BorderRadius.circular(AppSpacing.sm),
+        border: Border.all(color: AppSemanticColors.primaryDisabled),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 18,
+            color: AppSemanticColors.primary,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppSemanticColors.ink,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

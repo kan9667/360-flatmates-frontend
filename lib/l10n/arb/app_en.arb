@@ -85,6 +85,7 @@
   "homePickedSubtitle": "Top flats that match your preferences and vibe",
   "homeNoResults": "No listings match those filters.",
   "homeNoResultsSubtitle": "Try adjusting your filters or search for a different location.",
+  "homeBroadenedRadius": "No listings within your area — showing flats farther away.",
   "homeBedroomsChip": "{count} BHK",
   "@homeBedroomsChip": {
     "placeholders": {
@@ -231,6 +232,10 @@
   "profileMenuChats": "My Chats",
   "profileMenuDocuments": "Documents",
   "editProfileCta": "Edit profile",
+  "editProfileTabIdentity": "Identity",
+  "editProfileTabPreferences": "Preferences",
+  "editProfileTabLifestyle": "Lifestyle",
+  "editProfileTabAbout": "About",
   "themeModeTitle": "Theme mode",
   "themeSystem": "System",
   "themeLight": "Light",
@@ -1682,5 +1687,48 @@
   "noMoreNotificationsLabel": "You're all caught up.",
   "noMoreBlockedUsersLabel": "No more blocked users.",
 
-  "unverifiedAccountHint": "Your account isn't verified yet. Complete verification below or resend a code."
+  "unverifiedAccountHint": "Your account isn't verified yet. Complete verification below or resend a code.",
+
+  "profileCompletionTitle": "Let's set up your profile",
+  "profileCompletionSubtitle": "We need a few details to get you started.",
+  "profileCompletionContinue": "Continue",
+  "profileCompletionSaving": "Saving…",
+  "profileCompletionError": "Couldn't save your profile. Please try again.",
+  "dateOfBirthLabel": "Date of birth",
+  "dateOfBirthHelper": "You must be 18 or older",
+  "dateOfBirthPickerTitle": "Select your date of birth",
+
+  "onboardingBannerTitle": "Complete your profile to start matching",
+  "onboardingBannerCta": "Continue setup",
+  "onboardingStepsRemaining": "{count} steps left",
+  "@onboardingStepsRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingStepOf": "Step {current} of {total}",
+  "@onboardingStepOf": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingStepMode": "Your role",
+  "onboardingStepLocation": "Location",
+  "onboardingStepBasicInfo": "Basic info",
+  "onboardingStepPhoto": "Profile photo",
+  "onboardingStepLifestyle": "Lifestyle",
+  "onboardingStepBudget": "Budget & timeline",
+  "onboardingStepPreferences": "Preferences",
+  "onboardingStepNonNegotiables": "Non-negotiables",
+  "onboardingWelcomeBack": "Welcome back! Pick up where you left off.",
+  "onboardingActionBlockedTitle": "Complete your profile first",
+  "onboardingActionBlockedMessage": "Finish setting up your profile to start matching with flatmates.",
+  "onboardingActionBlockedCta": "Continue setup"
 }

@@ -197,6 +197,10 @@ class AppLocalizationsHi extends AppLocalizations {
       'अपने फ़िल्टर बदलकर देखें या किसी अन्य लोकेशन के लिए खोजें।';
 
   @override
+  String get homeBroadenedRadius =>
+      'आपके क्षेत्र में कोई लिस्टिंग नहीं — दूर की फ्लैट्स दिखाई जा रही हैं।';
+
+  @override
   String homeBedroomsChip(int count) {
     return '$count BHK';
   }
@@ -408,6 +412,18 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get editProfileCta => 'प्रोफ़ाइल संपादित करें';
+
+  @override
+  String get editProfileTabIdentity => 'पहचान';
+
+  @override
+  String get editProfileTabPreferences => 'प्राथमिकताएँ';
+
+  @override
+  String get editProfileTabLifestyle => 'जीवनशैली';
+
+  @override
+  String get editProfileTabAbout => 'बारे में';
 
   @override
   String get themeModeTitle => 'थीम मोड';
@@ -3585,4 +3601,85 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get unverifiedAccountHint =>
       'आपका खाता अभी सत्यापित नहीं हुआ है। नीचे सत्यापन पूरा करें या कोड दोबारा भेजें।';
+
+  @override
+  String get profileCompletionTitle => 'अपनी प्रोफ़ाइल सेट करें';
+
+  @override
+  String get profileCompletionSubtitle =>
+      'शुरू करने के लिए हमें कुछ जानकारी चाहिए।';
+
+  @override
+  String get profileCompletionContinue => 'जारी रखें';
+
+  @override
+  String get profileCompletionSaving => 'सहेजा जा रहा है…';
+
+  @override
+  String get profileCompletionError =>
+      'प्रोफ़ाइल सहेजी नहीं जा सकी। कृपया दोबारा कोशिश करें।';
+
+  @override
+  String get dateOfBirthLabel => 'जन्म तिथि';
+
+  @override
+  String get dateOfBirthHelper => 'आपकी आयु 18 वर्ष या अधिक होनी चाहिए';
+
+  @override
+  String get dateOfBirthPickerTitle => 'अपनी जन्म तिथि चुनें';
+
+  @override
+  String get onboardingBannerTitle =>
+      'मैचिंग शुरू करने के लिए अपनी प्रोफ़ाइल पूरी करें';
+
+  @override
+  String get onboardingBannerCta => 'सेटअप जारी रखें';
+
+  @override
+  String onboardingStepsRemaining(int count) {
+    return '$count चरण शेष';
+  }
+
+  @override
+  String onboardingStepOf(int current, int total) {
+    return 'चरण $current / $total';
+  }
+
+  @override
+  String get onboardingStepMode => 'आपकी भूमिका';
+
+  @override
+  String get onboardingStepLocation => 'स्थान';
+
+  @override
+  String get onboardingStepBasicInfo => 'बुनियादी जानकारी';
+
+  @override
+  String get onboardingStepPhoto => 'प्रोफ़ाइल फ़ोटो';
+
+  @override
+  String get onboardingStepLifestyle => 'जीवनशैली';
+
+  @override
+  String get onboardingStepBudget => 'बजट और समयरेखा';
+
+  @override
+  String get onboardingStepPreferences => 'प्राथमिकताएँ';
+
+  @override
+  String get onboardingStepNonNegotiables => 'अनिवार्य शर्तें';
+
+  @override
+  String get onboardingWelcomeBack =>
+      'वापसी पर स्वागत है! जहाँ से छोड़ा था वहीं से शुरू करें।';
+
+  @override
+  String get onboardingActionBlockedTitle => 'पहले अपनी प्रोफ़ाइल पूरी करें';
+
+  @override
+  String get onboardingActionBlockedMessage =>
+      'फ्लैटमेट्स के साथ मैचिंग शुरू करने के लिए अपनी प्रोफ़ाइल सेटअप पूरा करें।';
+
+  @override
+  String get onboardingActionBlockedCta => 'सेटअप जारी रखें';
 }

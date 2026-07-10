@@ -39,6 +39,7 @@ import '../../features/listings/post_hub_page.dart';
 import '../../features/notifications/notifications_page.dart';
 import '../../features/onboarding/onboarding_controller.dart';
 import '../../features/onboarding/onboarding_page.dart';
+import '../../features/onboarding/profile_completion_page.dart';
 import '../../features/onboarding/waitlist_page.dart';
 import '../../features/profile/edit_profile_page.dart';
 import '../../features/profile/help_safety_page.dart';
@@ -122,6 +123,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isAddPhone = location == '/add-phone';
       final isSetPassword = location == '/set-password';
       final isOnboarding = location == '/onboarding';
+      final isCompleteProfile = location == '/complete-profile';
       final isDeepLink =
           location.startsWith('/chats/') ||
           location.startsWith('/flat-details/') ||
@@ -209,16 +211,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // ── PROFILE_COMPLETION gate ──────────────────────────────────────────
       // Enforced from the backend-computed auth stage. If mandatory profile
-      // fields are missing, route to the edit-profile page to collect them.
-      // Skip this gate while the user is already on the edit-profile page.
+      // fields are missing, route to the dedicated profile-completion page
+      // (a lightweight form collecting only the missing fields) instead of
+      // the full edit-profile page.
       final isProfileEdit = location == '/profile/edit';
-      if (auth.authStage == AuthStage.profileCompletion && !isProfileEdit) {
-        return '/profile/edit';
+      if (auth.authStage == AuthStage.profileCompletion &&
+          !isCompleteProfile &&
+          !isProfileEdit) {
+        return '/complete-profile';
       }
 
+      // ── APP_ONBOARDING soft gate ─────────────────────────────────────────
+      // Instead of hard-blocking all routes, only block core feature routes
+      // (Swipe, Post, Chats list). Allow Discover, Map, Profile, Settings,
+      // deep links, and auxiliary routes through so the user can preview the
+      // app while completing onboarding. A persistent banner in AppShell
+      // reminds them to finish setup.
       if (auth.authStage == AuthStage.appOnboarding &&
           !hasCompletedOnboardingLocally &&
-          !isOnboarding) {
+          !isOnboarding &&
+          _isOnboardingBlockedRoute(location)) {
         return '/onboarding';
       }
 
@@ -298,6 +310,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingPage(),
+      ),
+      GoRoute(
+        path: '/complete-profile',
+        builder: (context, state) => const ProfileCompletionPage(),
       ),
       GoRoute(
         path: '/waitlist',
@@ -654,18 +670,38 @@ String? authenticatedIdentifierVerificationRedirect({
   // has already issued a valid session, but /auth-state still reports
   // identifier_verification. Continue with local bootstrap gates instead of
   // bouncing the user back to login.
-  final isProfileEdit = location == '/profile/edit';
+  final isCompleteProfile = location == '/complete-profile';
   final isOnboarding = location == '/onboarding';
   if ((profile.fullName ?? '').trim().isEmpty) {
-    return isProfileEdit ? null : '/profile/edit';
+    return isCompleteProfile ? null : '/complete-profile';
   }
   if (!profile.onboardingCompleted && !hasCompletedOnboardingLocally) {
-    return isOnboarding ? null : '/onboarding';
+    if (isOnboarding) return null;
+    if (_isOnboardingBlockedRoute(location)) return '/onboarding';
   }
   if (isSplash || isAuthRoute || isOnboarding) {
     return '/discover';
   }
   return null;
+}
+
+/// Routes blocked by the soft onboarding gate. Core feature routes that
+/// require a complete profile to be useful are blocked; everything else
+/// (Discover, Map, Profile, Settings, deep links, auxiliary routes) is
+/// allowed through so the user can preview the app while completing setup.
+@visibleForTesting
+bool isOnboardingBlockedRoute(String location) =>
+    _isOnboardingBlockedRoute(location);
+
+bool _isOnboardingBlockedRoute(String location) {
+  // Swipe deck — requires a complete profile for matching.
+  if (location == '/swipe') return true;
+  // Listing creation — requires a complete profile to post.
+  if (location == '/post' || location == '/post/new') return true;
+  // Conversations list — requires a complete profile to match/chat.
+  // Individual chat threads (/chats/{id}) are deep links and allowed.
+  if (location == '/chats') return true;
+  return false;
 }
 
 /// Mode lookup for the `/tab2` shell branch.

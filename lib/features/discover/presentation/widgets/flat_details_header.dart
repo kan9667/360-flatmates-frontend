@@ -165,6 +165,11 @@ class FlatDetailsHeader extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Quick stat pills — scannable facts at-a-glance, inspired by
+                // the swipe card's quick-stat overlay.
+                _QuickStatPills(listing: l, locale: locale),
                 const SizedBox(height: AppSpacing.lg),
 
                 _OwnerCard(
@@ -298,5 +303,102 @@ class _OwnerCard extends StatelessWidget {
       default:
         return mode;
     }
+  }
+}
+
+/// Scannable quick-stat pills (gender, sharing type, available from, furnished)
+/// shown below the location row — inspired by the swipe card's quick-stat
+/// overlay. Uses paper2 bg + accent icon + label, matching the swipe card's
+/// `CompactPill` style.
+class _QuickStatPills extends StatelessWidget {
+  const _QuickStatPills({required this.listing, required this.locale});
+
+  final PropertyListing listing;
+  final AppLocalizations locale;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = listing;
+    final pills = <_StatPill>[];
+
+    // Gender preference
+    final genderLabel = switch (l.genderPreference) {
+      'male' => locale.genderSuffixMaleOnly,
+      'female' => locale.genderSuffixFemaleOnly,
+      _ => locale.genderSuffixAny,
+    };
+    pills.add(
+      _StatPill(icon: Icons.people_outline_rounded, label: genderLabel),
+    );
+
+    // Sharing type / room type
+    if (l.sharingType != null && l.sharingType!.isNotEmpty) {
+      pills.add(
+        _StatPill(
+          icon: Icons.meeting_room_outlined,
+          label: localizedFlatmatesSharingTypeLabel(locale, l.sharingType!),
+        ),
+      );
+    }
+
+    // Available from
+    final availableLabel = l.availableFrom != null
+        ? DateFormat.yMMMd(locale.localeName).format(l.availableFrom!)
+        : locale.flexibleLabel;
+    pills.add(
+      _StatPill(icon: Icons.event_available_outlined, label: availableLabel),
+    );
+
+    // Furnished
+    if (l.isFurnished) {
+      pills.add(
+        _StatPill(icon: Icons.chair_outlined, label: locale.featureFurnished),
+      );
+    }
+
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: [for (final pill in pills) _StatPillChip(pill: pill)],
+    );
+  }
+}
+
+class _StatPill {
+  const _StatPill({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+}
+
+class _StatPillChip extends StatelessWidget {
+  const _StatPillChip({required this.pill});
+  final _StatPill pill;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppSemanticColors.paper2,
+        borderRadius: AppRadius.pillBorder,
+        border: Border.all(color: AppSemanticColors.line, width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(pill.icon, size: 13, color: AppSemanticColors.accent),
+          const SizedBox(width: 4),
+          Text(
+            pill.label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppSemanticColors.textSecondaryFor(theme.brightness),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

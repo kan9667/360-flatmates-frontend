@@ -98,49 +98,50 @@ void main() {
     profession: 'Designer',
   );
 
-  testWidgets('renders lifestyle, preferences, deal-breakers, and all dimensions', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      testableWidget(
-        child: const SizedBox(
-          width: 390,
-          height: 1200,
-          child: SwipeProfileDetailBody(
-            item: profile,
-            compatibility: compatibility,
+  testWidgets(
+    'renders lifestyle, preferences, deal-breakers, and all dimensions',
+    (tester) async {
+      await tester.pumpWidget(
+        testableWidget(
+          child: const SizedBox(
+            width: 390,
+            height: 1200,
+            child: SwipeProfileDetailBody(
+              item: profile,
+              compatibility: compatibility,
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Lifestyle'), findsOneWidget);
-    expect(find.text('Preferences'), findsOneWidget);
-    expect(find.text('Deal-breakers'), findsOneWidget);
-    expect(find.text('Non-negotiables they set'), findsOneWidget);
-    expect(find.text('Compatibility breakdown'), findsOneWidget);
+      expect(find.text('Lifestyle'), findsOneWidget);
+      expect(find.text('Preferences'), findsOneWidget);
+      expect(find.text('Deal-breakers'), findsOneWidget);
+      expect(find.text('Non-negotiables they set'), findsOneWidget);
+      expect(find.text('Compatibility breakdown'), findsOneWidget);
 
-    // Lifestyle grid dimension labels
-    expect(find.text('Sleep'), findsOneWidget);
-    expect(find.text('Cleanliness'), findsWidgets);
+      // Lifestyle grid dimension labels
+      expect(find.text('Sleep'), findsOneWidget);
+      expect(find.text('Cleanliness'), findsWidgets);
 
-    // Peer lifestyle values (humanized)
-    expect(find.textContaining('Night Owl'), findsWidgets);
-    expect(find.textContaining('Vegetarian'), findsWidgets);
+      // Peer lifestyle values (humanized)
+      expect(find.textContaining('Night Owl'), findsWidgets);
+      expect(find.textContaining('Vegetarian'), findsWidgets);
 
-    // Deal-breakers
-    expect(find.textContaining('No Smoking'), findsOneWidget);
-    expect(find.textContaining('Food Veg Only'), findsOneWidget);
+      // Deal-breakers
+      expect(find.textContaining('No Smoking'), findsOneWidget);
+      expect(find.textContaining('Food Veg Only'), findsOneWidget);
 
-    // Compatibility summary tone + buckets
-    expect(find.textContaining('Great match'), findsWidgets);
-    expect(find.textContaining('aligned'), findsWidgets);
+      // Compatibility summary tone + buckets
+      expect(find.textContaining('Great match'), findsWidgets);
+      expect(find.textContaining('aligned'), findsWidgets);
 
-    // All 6 compatibility dimension summaries are present
-    // (some labels may also appear as top-match chips)
-    for (final dim in dimensions) {
-      expect(find.text(dim.summary), findsWidgets);
-    }
-  });
+      // All 6 compatibility dimension summaries are present
+      // (some labels may also appear as top-match chips)
+      for (final dim in dimensions) {
+        expect(find.text(dim.summary), findsWidgets);
+      }
+    },
+  );
 }

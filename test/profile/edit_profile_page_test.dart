@@ -109,12 +109,6 @@ void main() {
       await _openEditPage(tester, bootstrap: _CatalogBootstrapController.new);
 
       final saveFinder = find.byKey(const Key('profile_save_button'));
-      await tester.scrollUntilVisible(
-        saveFinder,
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.pumpAndSettle();
       expect(saveFinder, findsOneWidget);
       // Seed alone must not mark the form dirty.
       final button = tester.widget<FlatmatesButton>(saveFinder);
@@ -127,17 +121,21 @@ void main() {
       await _openEditPage(tester);
 
       final saveFinder = find.byKey(const Key('profile_save_button'));
-      await tester.scrollUntilVisible(
-        saveFinder,
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.pumpAndSettle();
       expect(saveFinder, findsOneWidget);
 
       // Not dirty yet -> disabled.
       FlatmatesButton button = tester.widget(saveFinder);
       expect(button.onPressed, isNull);
+
+      // The bio field lives on the About tab — switch to it first.
+      await tester.tap(find.byKey(const Key('profile_tab_about')));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_bio_input')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
 
       // Edit a field -> becomes enabled.
       await tester.enterText(
@@ -145,15 +143,46 @@ void main() {
         'New bio content',
       );
       await tester.pumpAndSettle();
+
+      button = tester.widget(saveFinder);
+      expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets('edit state is preserved when switching tabs', (tester) async {
+      await _openEditPage(tester);
+
+      // Edit a field on the Identity tab.
       await tester.scrollUntilVisible(
-        saveFinder,
+        find.byKey(const Key('profile_city_input')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('profile_city_input')),
+        'Mumbai',
+      );
+      await tester.pumpAndSettle();
+
+      // Move to the About tab and back — text must persist.
+      await tester.tap(find.byKey(const Key('profile_tab_about')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('profile_tab_identity')));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_city_input')),
         200,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
 
-      button = tester.widget(saveFinder);
-      expect(button.onPressed, isNotNull);
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const Key('profile_city_input')))
+            .controller
+            ?.text,
+        'Mumbai',
+      );
     });
 
     testWidgets('back with unsaved changes shows discard confirmation', (
@@ -162,6 +191,12 @@ void main() {
       await _openEditPage(tester);
 
       // Make the form dirty.
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_city_input')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const Key('profile_city_input')),
         'Mumbai',
@@ -191,6 +226,12 @@ void main() {
     ) async {
       await _openEditPage(tester);
 
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_locality_input')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const Key('profile_locality_input')),
         'Andheri',

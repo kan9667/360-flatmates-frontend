@@ -440,6 +440,12 @@ abstract class AppLocalizations {
   /// **'Try adjusting your filters or search for a different location.'**
   String get homeNoResultsSubtitle;
 
+  /// No description provided for @homeBroadenedRadius.
+  ///
+  /// In en, this message translates to:
+  /// **'No listings within your area — showing flats farther away.'**
+  String get homeBroadenedRadius;
+
   /// No description provided for @homeBedroomsChip.
   ///
   /// In en, this message translates to:
@@ -811,6 +817,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit profile'**
   String get editProfileCta;
+
+  /// No description provided for @editProfileTabIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity'**
+  String get editProfileTabIdentity;
+
+  /// No description provided for @editProfileTabPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get editProfileTabPreferences;
+
+  /// No description provided for @editProfileTabLifestyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifestyle'**
+  String get editProfileTabLifestyle;
+
+  /// No description provided for @editProfileTabAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get editProfileTabAbout;
 
   /// No description provided for @themeModeTitle.
   ///
@@ -6679,6 +6709,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your account isn\'t verified yet. Complete verification below or resend a code.'**
   String get unverifiedAccountHint;
+
+  /// No description provided for @profileCompletionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s set up your profile'**
+  String get profileCompletionTitle;
+
+  /// No description provided for @profileCompletionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We need a few details to get you started.'**
+  String get profileCompletionSubtitle;
+
+  /// No description provided for @profileCompletionContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get profileCompletionContinue;
+
+  /// No description provided for @profileCompletionSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get profileCompletionSaving;
+
+  /// No description provided for @profileCompletionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save your profile. Please try again.'**
+  String get profileCompletionError;
+
+  /// No description provided for @dateOfBirthLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Date of birth'**
+  String get dateOfBirthLabel;
+
+  /// No description provided for @dateOfBirthHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'You must be 18 or older'**
+  String get dateOfBirthHelper;
+
+  /// No description provided for @dateOfBirthPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select your date of birth'**
+  String get dateOfBirthPickerTitle;
+
+  /// No description provided for @onboardingBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your profile to start matching'**
+  String get onboardingBannerTitle;
+
+  /// No description provided for @onboardingBannerCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue setup'**
+  String get onboardingBannerCta;
+
+  /// No description provided for @onboardingStepsRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} steps left'**
+  String onboardingStepsRemaining(int count);
+
+  /// No description provided for @onboardingStepOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String onboardingStepOf(int current, int total);
+
+  /// No description provided for @onboardingStepMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Your role'**
+  String get onboardingStepMode;
+
+  /// No description provided for @onboardingStepLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get onboardingStepLocation;
+
+  /// No description provided for @onboardingStepBasicInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic info'**
+  String get onboardingStepBasicInfo;
+
+  /// No description provided for @onboardingStepPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photo'**
+  String get onboardingStepPhoto;
+
+  /// No description provided for @onboardingStepLifestyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifestyle'**
+  String get onboardingStepLifestyle;
+
+  /// No description provided for @onboardingStepBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget & timeline'**
+  String get onboardingStepBudget;
+
+  /// No description provided for @onboardingStepPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get onboardingStepPreferences;
+
+  /// No description provided for @onboardingStepNonNegotiables.
+  ///
+  /// In en, this message translates to:
+  /// **'Non-negotiables'**
+  String get onboardingStepNonNegotiables;
+
+  /// No description provided for @onboardingWelcomeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back! Pick up where you left off.'**
+  String get onboardingWelcomeBack;
+
+  /// No description provided for @onboardingActionBlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your profile first'**
+  String get onboardingActionBlockedTitle;
+
+  /// No description provided for @onboardingActionBlockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish setting up your profile to start matching with flatmates.'**
+  String get onboardingActionBlockedMessage;
+
+  /// No description provided for @onboardingActionBlockedCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue setup'**
+  String get onboardingActionBlockedCta;
 }
 
 class _AppLocalizationsDelegate

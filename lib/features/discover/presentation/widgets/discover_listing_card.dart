@@ -59,23 +59,31 @@ class DiscoverListingCard extends StatelessWidget {
         ListingMetaItem(
           icon: Icons.bed_outlined,
           label: locale.homeBedsValue(item.bedrooms!),
+          chipColor: MetaChipColor.blue,
         ),
       if (item.bathrooms != null)
         ListingMetaItem(
           icon: Icons.bathtub_outlined,
           label: locale.homeBathsValue(item.bathrooms!),
+          chipColor: MetaChipColor.teal,
         ),
       if (item.areaSqft != null)
         ListingMetaItem(
           icon: Icons.square_foot_outlined,
           label: locale.sqftLabel(item.areaSqft!.round()),
+          chipColor: MetaChipColor.purple,
         ),
-      ListingMetaItem(icon: Icons.people_outline_rounded, label: genderSuffix),
+      ListingMetaItem(
+        icon: Icons.people_outline_rounded,
+        label: genderSuffix,
+        chipColor: MetaChipColor.orange,
+      ),
       if (item.isFurnished)
         ListingMetaItem(
           icon: Icons.chair_outlined,
           label: locale.featureFurnished,
           emphasis: true,
+          chipColor: MetaChipColor.green,
         ),
     ];
 
@@ -249,14 +257,26 @@ class DiscoverListingCard extends StatelessWidget {
                         ),
                         if (titleLocation.isNotEmpty) ...[
                           const SizedBox(height: 2),
-                          Text(
-                            titleLocation,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: muted,
-                              height: 1.43,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on_rounded,
+                                size: 12,
+                                color: AppSemanticColors.primary,
+                              ),
+                              const SizedBox(width: 2),
+                              Flexible(
+                                child: Text(
+                                  titleLocation,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: muted,
+                                    height: 1.43,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                         if (metaItems.isNotEmpty) ...[
@@ -273,7 +293,7 @@ class DiscoverListingCard extends StatelessWidget {
                                 _formatRent(item.monthlyRent.round()),
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   color: ink,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w700,
                                   height: 1.25,
                                 ),
                                 maxLines: 1,

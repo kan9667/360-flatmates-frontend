@@ -197,6 +197,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Try adjusting your filters or search for a different location.';
 
   @override
+  String get homeBroadenedRadius =>
+      'No listings within your area — showing flats farther away.';
+
+  @override
   String homeBedroomsChip(int count) {
     return '$count BHK';
   }
@@ -408,6 +412,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editProfileCta => 'Edit profile';
+
+  @override
+  String get editProfileTabIdentity => 'Identity';
+
+  @override
+  String get editProfileTabPreferences => 'Preferences';
+
+  @override
+  String get editProfileTabLifestyle => 'Lifestyle';
+
+  @override
+  String get editProfileTabAbout => 'About';
 
   @override
   String get themeModeTitle => 'Theme mode';
@@ -3572,4 +3588,84 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get unverifiedAccountHint =>
       'Your account isn\'t verified yet. Complete verification below or resend a code.';
+
+  @override
+  String get profileCompletionTitle => 'Let\'s set up your profile';
+
+  @override
+  String get profileCompletionSubtitle =>
+      'We need a few details to get you started.';
+
+  @override
+  String get profileCompletionContinue => 'Continue';
+
+  @override
+  String get profileCompletionSaving => 'Saving…';
+
+  @override
+  String get profileCompletionError =>
+      'Couldn\'t save your profile. Please try again.';
+
+  @override
+  String get dateOfBirthLabel => 'Date of birth';
+
+  @override
+  String get dateOfBirthHelper => 'You must be 18 or older';
+
+  @override
+  String get dateOfBirthPickerTitle => 'Select your date of birth';
+
+  @override
+  String get onboardingBannerTitle => 'Complete your profile to start matching';
+
+  @override
+  String get onboardingBannerCta => 'Continue setup';
+
+  @override
+  String onboardingStepsRemaining(int count) {
+    return '$count steps left';
+  }
+
+  @override
+  String onboardingStepOf(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get onboardingStepMode => 'Your role';
+
+  @override
+  String get onboardingStepLocation => 'Location';
+
+  @override
+  String get onboardingStepBasicInfo => 'Basic info';
+
+  @override
+  String get onboardingStepPhoto => 'Profile photo';
+
+  @override
+  String get onboardingStepLifestyle => 'Lifestyle';
+
+  @override
+  String get onboardingStepBudget => 'Budget & timeline';
+
+  @override
+  String get onboardingStepPreferences => 'Preferences';
+
+  @override
+  String get onboardingStepNonNegotiables => 'Non-negotiables';
+
+  @override
+  String get onboardingWelcomeBack =>
+      'Welcome back! Pick up where you left off.';
+
+  @override
+  String get onboardingActionBlockedTitle => 'Complete your profile first';
+
+  @override
+  String get onboardingActionBlockedMessage =>
+      'Finish setting up your profile to start matching with flatmates.';
+
+  @override
+  String get onboardingActionBlockedCta => 'Continue setup';
 }

@@ -1,0 +1,254 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../core/theme/app_semantic_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../l10n/gen/app_localizations.dart';
+import '../auth/auth_controller.dart';
+import '../bootstrap/bootstrap_controller.dart';
+import '../profile/profile_repository.dart';
+import '../shared/presentation/components.dart';
+
+/// Local UI state for the profile-completion form.
+final _savingProvider = StateProvider.autoDispose<bool>((ref) => false);
+final _hasErrorProvider = StateProvider.autoDispose<bool>((ref) => false);
+final _dobProvider = StateProvider.autoDispose<DateTime?>((ref) => null);
+final _nameProvider = StateProvider.autoDispose<String>((ref) => '');
+final _initializedProvider = StateProvider.autoDispose<bool>((ref) => false);
+
+/// A focused, onboarding-style page that collects only the mandatory profile
+/// fields reported missing by the backend `profile_completion` auth gate
+/// (typically `full_name` and `date_of_birth`).
+///
+/// Unlike the full [EditProfilePage], this page shows a minimal form with
+/// clear context about why the user is here and what happens next. On submit
+/// it calls `PUT /users/me` (the general user update endpoint) which properly
+/// sets `date_of_birth` on the User model — the flatmates profile endpoint
+/// does not support this field.
+class ProfileCompletionPage extends ConsumerWidget {
+  const ProfileCompletionPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final saving = ref.watch(_savingProvider);
+    final hasError = ref.watch(_hasErrorProvider);
+    final dob = ref.watch(_dobProvider);
+    final name = ref.watch(_nameProvider);
+    final missingFields = ref
+        .watch(authControllerProvider)
+        .missingProfileFields;
+    final needsName =
+        missingFields.isEmpty || missingFields.contains('full_name');
+    final needsDob =
+        missingFields.isEmpty || missingFields.contains('date_of_birth');
+
+    // Pre-fill the name from the bootstrap profile once. Always watch the
+    // bootstrap provider so the widget rebuilds when it becomes available,
+    // even if it wasn't ready on the first frame.
+    final profile = ref.watch(bootstrapControllerProvider).valueOrNull?.profile;
+    if (!ref.read(_initializedProvider) && profile != null) {
+      ref.read(_initializedProvider.notifier).state = true;
+      final existingName = profile.fullName ?? '';
+      if (existingName.isNotEmpty && name.isEmpty) {
+        ref.read(_nameProvider.notifier).state = existingName;
+      }
+    }
+
+    final isNameValid = name.trim().length >= 2;
+    final isDobValid = dob != null && _isAtLeast18(dob);
+    final isValid = isNameValid && isDobValid;
+
+    return Scaffold(
+      appBar: FlatmatesHeader.backTitle(
+        title: locale.profileCompletionTitle,
+        onBack: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/discover');
+          }
+        },
+      ),
+      body: SafeArea(
+        minimum: AppSpacing.horizontalScreen,
+        child: ListView(
+          children: [
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              locale.profileCompletionSubtitle,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: AppSemanticColors.textSecondaryFor(theme.brightness),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xxl),
+            if (needsName) ...[
+              TextField(
+                key: const Key('profile_completion_name'),
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  labelText: locale.fullNameLabel,
+                  prefixIcon: const Icon(Icons.person_outline),
+                ),
+                onChanged: (v) => ref.read(_nameProvider.notifier).state = v,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+            ],
+            if (needsDob) ...[
+              _DateOfBirthField(
+                selectedDate: dob,
+                onTap: () => _pickDateOfBirth(context, ref, locale),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+            if (hasError) ...[
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    size: 18,
+                    color: AppSemanticColors.error,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      locale.profileCompletionError,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppSemanticColors.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: AppSpacing.xxl),
+            FlatmatesButton(
+              key: const Key('profile_completion_submit'),
+              label: saving
+                  ? locale.profileCompletionSaving
+                  : locale.profileCompletionContinue,
+              fullWidth: true,
+              onPressed: (isValid && !saving)
+                  ? () => _submit(context, ref, locale)
+                  : null,
+              icon: saving ? null : Icons.arrow_forward_rounded,
+            ),
+            const SizedBox(height: AppSpacing.xxl),
+          ],
+        ),
+      ),
+    );
+  }
+
+  bool _isAtLeast18(DateTime dob) {
+    final today = DateTime.now();
+    final age =
+        today.year -
+        dob.year -
+        ((today.month < dob.month ||
+                (today.month == dob.month && today.day < dob.day))
+            ? 1
+            : 0);
+    return age >= 18;
+  }
+
+  Future<void> _pickDateOfBirth(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations locale,
+  ) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(now.year - 25),
+      firstDate: DateTime(now.year - 100),
+      lastDate: DateTime(now.year - 18, now.month, now.day),
+      helpText: locale.dateOfBirthPickerTitle,
+    );
+    if (picked != null) {
+      ref.read(_dobProvider.notifier).state = picked;
+    }
+  }
+
+  Future<void> _submit(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations locale,
+  ) async {
+    final dob = ref.read(_dobProvider);
+    final name = ref.read(_nameProvider);
+    if (dob == null || name.trim().length < 2 || ref.read(_savingProvider)) {
+      return;
+    }
+
+    ref.read(_savingProvider.notifier).state = true;
+    ref.read(_hasErrorProvider.notifier).state = false;
+
+    try {
+      final payload = <String, dynamic>{
+        'full_name': name.trim(),
+        'date_of_birth':
+            '${dob.year}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}',
+      };
+      await ref.read(profileRepositoryProvider).updateUser(payload: payload);
+      // Refresh bootstrap so auth-state re-evaluates and the router advances
+      // past the profile_completion gate.
+      await ref.read(bootstrapControllerProvider.notifier).refresh();
+    } catch (e) {
+      debugPrint('ProfileCompletionPage._submit error: $e');
+      if (context.mounted) {
+        ref.read(_hasErrorProvider.notifier).state = true;
+        FlatmatesToast.error(context, locale.profileCompletionError);
+      }
+    } finally {
+      if (context.mounted) ref.read(_savingProvider.notifier).state = false;
+    }
+  }
+}
+
+/// Tappable form field that displays the selected date of birth or a prompt
+/// to pick one. Uses a read-only display with a trailing calendar icon to
+/// stay visually consistent with the other form fields.
+class _DateOfBirthField extends StatelessWidget {
+  const _DateOfBirthField({required this.onTap, this.selectedDate});
+
+  final DateTime? selectedDate;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final hasDate = selectedDate != null;
+    final dateText = hasDate
+        ? '${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}'
+        : locale.dateOfBirthLabel;
+
+    return Listener(
+      onPointerDown: (_) => onTap(),
+      child: AbsorbPointer(
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: locale.dateOfBirthLabel,
+            helperText: locale.dateOfBirthHelper,
+            prefixIcon: const Icon(Icons.cake_outlined),
+            suffixIcon: const Icon(Icons.calendar_today_outlined),
+          ),
+          child: Text(
+            dateText,
+            style: hasDate
+                ? null
+                : TextStyle(
+                    color: AppSemanticColors.textSecondaryFor(theme.brightness),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
