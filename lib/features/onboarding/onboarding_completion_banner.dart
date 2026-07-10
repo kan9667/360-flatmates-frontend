@@ -72,29 +72,29 @@ class OnboardingCompletionBanner extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    locale.onboardingBannerTitle,
+                    locale.onboardingActionBlockedTitle,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (remainingSteps > 0) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      locale.onboardingStepsRemaining(remainingSteps),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppSemanticColors.textSecondaryFor(
-                          theme.brightness,
-                        ),
+                  const SizedBox(height: 2),
+                  Text(
+                    remainingSteps > 0
+                        ? locale.onboardingStepsRemaining(remainingSteps)
+                        : locale.onboardingActionBlockedMessage,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppSemanticColors.textSecondaryFor(
+                        theme.brightness,
                       ),
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
             const SizedBox(width: AppSpacing.md),
             FlatmatesButton(
               key: const Key('onboarding_banner_cta'),
-              label: locale.onboardingBannerCta,
+              label: locale.onboardingActionBlockedCta,
               onPressed: () => context.go('/onboarding'),
               icon: Icons.arrow_forward_rounded,
               height: 40,

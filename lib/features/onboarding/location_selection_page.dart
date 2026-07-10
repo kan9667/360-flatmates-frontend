@@ -32,10 +32,11 @@ class LocationSelectionPage extends ConsumerStatefulWidget {
       _LocationSelectionPageState();
 }
 
+final _locatingProvider = StateProvider.autoDispose<bool>((ref) => false);
+
 class _LocationSelectionPageState extends ConsumerState<LocationSelectionPage> {
   final _searchController = TextEditingController();
   CatalogOption? _selectedCity;
-  bool _locating = false;
   bool _selectingPlace = false;
 
   String get _typedCity => _searchController.text.trim();
@@ -59,7 +60,7 @@ class _LocationSelectionPageState extends ConsumerState<LocationSelectionPage> {
   }
 
   Future<void> _useCurrentLocation() async {
-    setState(() => _locating = true);
+    ref.read(_locatingProvider.notifier).state = true;
     try {
       final bootstrap = ref.read(bootstrapControllerProvider).valueOrNull;
       final catalogCities =
@@ -135,7 +136,7 @@ class _LocationSelectionPageState extends ConsumerState<LocationSelectionPage> {
         );
       }
     } finally {
-      if (mounted) setState(() => _locating = false);
+      if (mounted) ref.read(_locatingProvider.notifier).state = false;
     }
   }
 
@@ -218,7 +219,10 @@ class _LocationSelectionPageState extends ConsumerState<LocationSelectionPage> {
   }
 
   void _onCityTap(CatalogOption city) {
-    if (city.comingSoon) return;
+    if (city.comingSoon) {
+      context.push('/waitlist?city=${Uri.encodeComponent(city.label)}');
+      return;
+    }
     setState(() {
       _selectedCity = city;
       _searchController.text = city.label;
@@ -261,6 +265,7 @@ class _LocationSelectionPageState extends ConsumerState<LocationSelectionPage> {
     final theme = Theme.of(context);
     final locale = AppLocalizations.of(context);
     final searchState = ref.watch(locationSearchProvider);
+    final locating = ref.watch(_locatingProvider);
     final hasPlacesResults = searchState.suggestions.isNotEmpty;
     final isPlacesLoading = searchState.isLoading || _selectingPlace;
     final typedCity = _typedCity;
@@ -315,10 +320,10 @@ class _LocationSelectionPageState extends ConsumerState<LocationSelectionPage> {
             const SizedBox(height: 18),
             LocationActionRow(
               icon: Icons.my_location_outlined,
-              title: _locating
+              title: locating
                   ? locale.detectingLocation
                   : locale.useCurrentLocation,
-              onTap: _locating ? null : _useCurrentLocation,
+              onTap: locating ? null : _useCurrentLocation,
               vertical: 10,
             ),
             const SizedBox(height: 18),

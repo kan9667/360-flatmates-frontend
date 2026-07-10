@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/errors/app_failure.dart';
+import '../../../core/errors/l10n_bridge.dart';
 import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../l10n/gen/app_localizations.dart';
@@ -67,26 +69,33 @@ class _FeedbackFormPageState extends ConsumerState<FeedbackFormPage> {
     final title = _titleController.text.trim();
     final description = _descriptionController.text.trim();
 
-    final success = _isBug
-        ? await controller.submitBugReport(
-            title: title,
-            description: description,
-            bugType: ref.read(_bugTypeProvider),
-            severity: ref.read(_severityProvider),
-          )
-        : await controller.submitFeatureRequest(
-            title: title,
-            description: description,
-          );
-    if (!mounted) return;
-    if (success) {
+    try {
+      if (_isBug) {
+        await controller.submitBugReport(
+          title: title,
+          description: description,
+          bugType: ref.read(_bugTypeProvider),
+          severity: ref.read(_severityProvider),
+        );
+      } else {
+        await controller.submitFeatureRequest(
+          title: title,
+          description: description,
+        );
+      }
+      if (!mounted) return;
       FlatmatesToast.success(context, locale.feedbackSubmitSuccess);
       context.pop();
-    } else {
-      FlatmatesToast.error(context, locale.errorUnknown);
-    }
-    if (mounted) {
-      ref.read(_submittingFeedbackProvider.notifier).state = false;
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e is AppFailure
+          ? e.userMessage(locale.toUserMessageL10n())
+          : locale.errorUnknown;
+      FlatmatesToast.error(context, msg);
+    } finally {
+      if (mounted) {
+        ref.read(_submittingFeedbackProvider.notifier).state = false;
+      }
     }
   }
 

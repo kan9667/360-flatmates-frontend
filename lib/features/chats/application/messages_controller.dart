@@ -151,12 +151,28 @@ class MessagesController extends AutoDisposeFamilyNotifier<MessagesState, int> {
       if (messages.isEmpty && (state.messages.isNotEmpty || _seedingCursor)) {
         return;
       }
+      final previousIds = state.messages.map((m) => m.id).toSet();
+      final hadMessages = state.messages.isNotEmpty;
       state = state.copyWith(
         messages: messages,
         pendingMessages: pruneConfirmedPending(messages, state.pendingMessages),
         isLoading: false,
         clearError: true,
       );
+      // While this autoDispose controller is alive the thread is open. Re-mark
+      // as read only when *new* inbound rows arrive (not on the initial seed)
+      // so list badges stay clear without spamming the endpoint.
+      if (hadMessages) {
+        final hasNewInbound = messages.any(
+          (m) =>
+              m.id > 0 &&
+              m.senderId != _currentUserId &&
+              !previousIds.contains(m.id),
+        );
+        if (hasNewInbound) {
+          unawaited(markAsRead());
+        }
+      }
     } else if (next.hasError) {
       debugPrint(
         'MessagesController stream error for conversation $arg: ${next.error}',
@@ -190,10 +206,7 @@ class MessagesController extends AutoDisposeFamilyNotifier<MessagesState, int> {
       final oldestLoaded = _oldestPositiveId(merged);
       state = state.copyWith(
         messages: merged,
-        pendingMessages: pruneConfirmedPending(
-          merged,
-          state.pendingMessages,
-        ),
+        pendingMessages: pruneConfirmedPending(merged, state.pendingMessages),
         hasMoreOlder: response.hasMore,
         oldestBeforeId: response.hasMore ? oldestLoaded : null,
         isLoading: false,
@@ -230,9 +243,7 @@ class MessagesController extends AutoDisposeFamilyNotifier<MessagesState, int> {
       state = state.copyWith(
         messages: merged,
         pendingMessages: pruneConfirmedPending(merged, state.pendingMessages),
-        hasMoreOlder: seededOlderCursor
-            ? state.hasMoreOlder
-            : response.hasMore,
+        hasMoreOlder: seededOlderCursor ? state.hasMoreOlder : response.hasMore,
         oldestBeforeId: state.oldestBeforeId ?? response.nextBeforeId,
         isLoading: false,
         clearError: true,
@@ -268,8 +279,7 @@ class MessagesController extends AutoDisposeFamilyNotifier<MessagesState, int> {
       state = state.copyWith(
         messages: merged,
         hasMoreOlder: response.hasMore,
-        oldestBeforeId:
-            response.hasMore ? _oldestPositiveId(merged) : null,
+        oldestBeforeId: response.hasMore ? _oldestPositiveId(merged) : null,
         isLoadingOlder: false,
       );
     } catch (e) {
@@ -285,11 +295,16 @@ class MessagesController extends AutoDisposeFamilyNotifier<MessagesState, int> {
   /// confirmed by an authoritative refetch so it persists even when the
   /// Supabase realtime stream is down. Rethrows on send failure after
   /// removing the optimistic bubble so the UI can restore input and toast.
+  ///
+  /// Re-entry while [MessagesState.isSending] is ignored so double-taps do
+  /// not create duplicate optimistic rows or parallel POSTs.
   Future<void> sendMessage({
     String? body,
     String? attachmentUrl,
     String messageType = 'text',
   }) async {
+    if (state.isSending) return;
+
     final conversationId = arg;
     final optimistic = ChatMessage(
       id: _nextOptimisticId--,

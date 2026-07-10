@@ -40,7 +40,7 @@ class VisitCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasActions =
         item.status == 'requested' ||
-        item.status == 'scheduled' ||
+        item.status == 'reschedule_suggested' ||
         item.status == 'confirmed';
 
     return FlatmatesCard(
@@ -155,7 +155,8 @@ class VisitCard extends StatelessWidget {
   }
 
   List<Widget> _buildActions(BuildContext context) {
-    if (item.status == 'requested') {
+    // requested / reschedule_suggested: counterparty must Confirm or Cancel
+    if (item.status == 'requested' || item.status == 'reschedule_suggested') {
       return [
         _CompactActionChip(
           label: locale.visitConfirmTitle,
@@ -172,7 +173,7 @@ class VisitCard extends StatelessWidget {
         ),
       ];
     }
-    // scheduled / confirmed
+    // confirmed: Reschedule (suggest new time) + Cancel
     return [
       _CompactActionChip(
         label: locale.visitRescheduleCta,

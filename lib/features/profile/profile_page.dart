@@ -8,6 +8,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../auth/auth_controller.dart';
 import '../bootstrap/bootstrap_controller.dart';
+import '../settings/settings_controller.dart';
 import '../shared/presentation/components.dart';
 import 'presentation/widgets/identity_pills.dart';
 
@@ -20,6 +21,7 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bootstrap = ref.watch(bootstrapControllerProvider);
+    final settings = ref.watch(settingsControllerProvider);
     final locale = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
@@ -30,15 +32,20 @@ class ProfilePage extends ConsumerWidget {
       body: bootstrap.when(
         data: (data) {
           final profile = data?.profile;
-          final city = profile?.city;
-          final state = profile?.state;
-          final location = [
-            if (city != null && city.trim().isNotEmpty) city.trim(),
-            if (state != null && state.trim().isNotEmpty) state.trim(),
-          ].join(', ');
           if (profile == null) {
             return const FlatmatesSkeleton.profile();
           }
+          final displayName = _displayOwnName(
+            profile.fullName,
+            hideLastName: settings.hideLastName,
+            fallback: locale.profileFallbackName,
+          );
+          final location = _displayOwnLocation(
+            city: profile.city,
+            state: profile.state,
+            locality: profile.locality,
+            hideExactLocation: settings.hideExactLocation,
+          );
           final profileStrength = _profileStrengthPercent(profile);
           return ListView(
             padding: const EdgeInsets.fromLTRB(
@@ -56,11 +63,9 @@ class ProfilePage extends ConsumerWidget {
                     children: [
                       Semantics(
                         image: true,
-                        label: locale.profilePhotoSemantic(
-                          profile.fullName ?? locale.profileFallbackName,
-                        ),
+                        label: locale.profilePhotoSemantic(displayName),
                         child: FlatmatesAvatar(
-                          name: profile.fullName,
+                          name: displayName,
                           imageUrl: profile.profileImageUrl,
                           size: 80,
                           showRing: true,
@@ -117,7 +122,7 @@ class ProfilePage extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          profile.fullName ?? locale.profileFallbackName,
+                          displayName,
                           key: const Key('profile_name_text'),
                           style: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w700,
@@ -153,7 +158,7 @@ class ProfilePage extends ConsumerWidget {
                           ),
                         ],
 
-                        if (location.isNotEmpty) ...[
+                        if (location != null && location.isNotEmpty) ...[
                           const SizedBox(height: _kVerticalSpacingCompact),
                           Row(
                             children: [
@@ -273,8 +278,7 @@ class ProfilePage extends ConsumerWidget {
                 key: const Key('logout_button'),
                 label: locale.logoutCta,
                 destructive: true,
-                onPressed: () =>
-                    ref.read(authControllerProvider.notifier).signOut(),
+                onPressed: () => _confirmAndLogout(context, ref),
               ),
             ],
           );
@@ -326,6 +330,65 @@ class ProfilePage extends ConsumerWidget {
         ),
       ],
     );
+  }
+}
+
+/// Masks the last token of [fullName] when [hideLastName] is on.
+String _displayOwnName(
+  String? fullName, {
+  required bool hideLastName,
+  required String fallback,
+}) {
+  final raw = fullName?.trim() ?? '';
+  if (raw.isEmpty) return fallback;
+  if (!hideLastName) return raw;
+  final parts = raw.split(RegExp(r'\s+'));
+  if (parts.length <= 1) return parts.first;
+  return parts.sublist(0, parts.length - 1).join(' ');
+}
+
+/// City only when [hideExactLocation]; else locality + city + state.
+String? _displayOwnLocation({
+  String? city,
+  String? state,
+  String? locality,
+  required bool hideExactLocation,
+}) {
+  final cityTrim = city?.trim() ?? '';
+  final stateTrim = state?.trim() ?? '';
+  final localityTrim = locality?.trim() ?? '';
+  if (hideExactLocation) return cityTrim.isEmpty ? null : cityTrim;
+  final parts = <String>[
+    if (localityTrim.isNotEmpty) localityTrim,
+    if (cityTrim.isNotEmpty) cityTrim,
+    if (stateTrim.isNotEmpty) stateTrim,
+  ];
+  return parts.isEmpty ? null : parts.join(', ');
+}
+
+Future<void> _confirmAndLogout(BuildContext context, WidgetRef ref) async {
+  final locale = AppLocalizations.of(context);
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(locale.logoutCta),
+      actions: [
+        TextButton(
+          key: const Key('logout_dialog_cancel'),
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text(locale.cancelCta),
+        ),
+        TextButton(
+          key: const Key('logout_dialog_confirm'),
+          onPressed: () => Navigator.of(ctx).pop(true),
+          style: TextButton.styleFrom(foregroundColor: AppSemanticColors.error),
+          child: Text(locale.logoutCta),
+        ),
+      ],
+    ),
+  );
+  if (confirmed == true && context.mounted) {
+    await ref.read(authControllerProvider.notifier).signOut();
   }
 }
 

@@ -256,7 +256,8 @@ class FlatDetailsLocation extends StatelessWidget {
         final up = counts['up'] ?? 0;
         final netVotes = up - (counts['down'] ?? 0);
         final myVote = currentUserId != null
-            ? l.societyTagUserVotes[currentUserId.toString()]
+            ? (l.societyTagUserVotes['$currentUserId:$tag'] ??
+                  l.societyTagUserVotes[currentUserId.toString()])
             : null;
         final label = _displayTag(tag);
         return _SocietyTagChip(

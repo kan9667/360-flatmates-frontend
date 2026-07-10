@@ -8,21 +8,49 @@ import '../../l10n/gen/app_localizations.dart';
 import '../profile/profile_repository.dart';
 import '../shared/presentation/components.dart';
 
-class WaitlistPage extends ConsumerStatefulWidget {
+final _waitlistNotifiedProvider = StateProvider.autoDispose<bool>(
+  (ref) => false,
+);
+final _waitlistSubmittingProvider = StateProvider.autoDispose<bool>(
+  (ref) => false,
+);
+
+class WaitlistPage extends ConsumerWidget {
   const WaitlistPage({required this.city, super.key});
 
   final String city;
 
-  @override
-  ConsumerState<WaitlistPage> createState() => _WaitlistPageState();
-}
-
-class _WaitlistPageState extends ConsumerState<WaitlistPage> {
-  bool _notified = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Future<void> _notify(BuildContext context, WidgetRef ref) async {
     final locale = AppLocalizations.of(context);
+    ref.read(_waitlistSubmittingProvider.notifier).state = true;
+    try {
+      await ref
+          .read(profileRepositoryProvider)
+          .updateProfile(
+            payload: {
+              'preferences': {
+                'waitlist_city': city,
+                'waitlist_at': DateTime.now().toUtc().toIso8601String(),
+              },
+            },
+          );
+      if (!context.mounted) return;
+      ref.read(_waitlistNotifiedProvider.notifier).state = true;
+      FlatmatesToast.success(context, locale.waitlistConfirmed);
+    } catch (e, st) {
+      debugPrint('[WaitlistPage] notify error: $e\n$st');
+      if (!context.mounted) return;
+      FlatmatesToast.error(context, locale.errorUnknown);
+    } finally {
+      ref.read(_waitlistSubmittingProvider.notifier).state = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = AppLocalizations.of(context);
+    final notified = ref.watch(_waitlistNotifiedProvider);
+    final submitting = ref.watch(_waitlistSubmittingProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -34,10 +62,10 @@ class _WaitlistPageState extends ConsumerState<WaitlistPage> {
               FlatmatesEmptyState(
                 icon: Icons.group_add_rounded,
                 title: locale.waitlistTitle,
-                subtitle: locale.waitlistSubtitle(widget.city),
+                subtitle: locale.waitlistSubtitle(city),
               ),
               const SizedBox(height: AppSpacing.screen),
-              if (_notified) ...[
+              if (notified) ...[
                 InfoPill(
                   icon: Icons.check_circle_rounded,
                   label: locale.waitlistConfirmed,
@@ -47,18 +75,7 @@ class _WaitlistPageState extends ConsumerState<WaitlistPage> {
                 FlatmatesButton(
                   label: locale.waitlistNotifyCta,
                   fullWidth: true,
-                  onPressed: () async {
-                    try {
-                      await ref
-                          .read(profileRepositoryProvider)
-                          .updateProfile(
-                            payload: {'waitlist_city': widget.city},
-                          );
-                      if (mounted) setState(() => _notified = true);
-                    } catch (e, st) {
-                      debugPrint('[WaitlistPage] notify error: $e\n$st');
-                    }
-                  },
+                  onPressed: submitting ? null : () => _notify(context, ref),
                   icon: Icons.notifications_active_outlined,
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -67,8 +84,8 @@ class _WaitlistPageState extends ConsumerState<WaitlistPage> {
                   label: locale.waitlistInviteFriends,
                   fullWidth: true,
                   onPressed: () {
-                    final url = DeepLinkService.flatmatesUrl(city: widget.city);
-                    Share.share(locale.waitlistShareMessage(widget.city, url));
+                    final url = DeepLinkService.flatmatesUrl(city: city);
+                    Share.share(locale.waitlistShareMessage(city, url));
                   },
                   icon: Icons.share_outlined,
                 ),

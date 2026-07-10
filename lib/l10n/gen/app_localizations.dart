@@ -1904,6 +1904,12 @@ abstract class AppLocalizations {
   /// **'User has been blocked.'**
   String get userBlocked;
 
+  /// No description provided for @userUnmatched.
+  ///
+  /// In en, this message translates to:
+  /// **'You have unmatched this person.'**
+  String get userUnmatched;
+
   /// No description provided for @reportTitle.
   ///
   /// In en, this message translates to:

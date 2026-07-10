@@ -15,7 +15,7 @@ import '../../../l10n/gen/app_localizations.dart';
 import '../../shared/presentation/components.dart';
 import 'widgets/resend_countdown.dart';
 
-final _codeSentProvider = StateProvider<bool>((ref) => false);
+final _codeSentProvider = StateProvider.autoDispose<bool>((ref) => false);
 final _addPhoneOtpTextProvider = StateProvider.autoDispose<String>((ref) => '');
 
 /// Skippable post-Google step that lets a phone-less account add and verify a

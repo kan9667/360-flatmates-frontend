@@ -47,98 +47,101 @@ class FlatmatesEmptyState extends StatefulWidget {
 
 class _FlatmatesEmptyStateState extends State<FlatmatesEmptyState>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _fadeIn;
-  late final Animation<Offset> _slideUp;
+  AnimationController? _controller;
+  Animation<double>? _fadeIn;
+  Animation<Offset>? _slideUp;
+  bool _reduceMotion = false;
+  bool _motionResolved = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
+  void _resolveMotion(BuildContext context) {
+    if (_motionResolved) return;
+    _motionResolved = true;
+    _reduceMotion = AppMotion.reduceMotion(context);
+    if (_reduceMotion) return;
+
+    final controller = AnimationController(
       vsync: this,
       duration: AppMotion.fadeInEntry,
     );
+    _controller = controller;
     _fadeIn = CurvedAnimation(
-      parent: _controller,
+      parent: controller,
       curve: AppMotion.easeOutCubic,
     );
     _slideUp = Tween(begin: const Offset(0, 0.05), end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: AppMotion.easeOutCubic),
+      CurvedAnimation(parent: controller, curve: AppMotion.easeOutCubic),
     );
-    _controller.forward();
+    controller.forward();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    _resolveMotion(context);
     final theme = Theme.of(context);
 
-    final content = FadeTransition(
-      opacity: _fadeIn,
-      child: SlideTransition(
-        position: _slideUp,
-        child: Padding(
-          padding: widget.padHorizontally
-              ? AppSpacing.horizontalScreen
-              : EdgeInsets.zero,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (widget.icon != null) ...[
-                _BreathingIcon(
-                  icon: widget.icon!,
-                  iconColor: widget.iconColor ?? AppSemanticColors.primary,
-                  size: widget.compact ? 48 : 64,
-                  iconSize: widget.compact ? 24 : 32,
-                ),
-                SizedBox(
-                  height: widget.compact ? AppSpacing.md : AppSpacing.xl,
-                ),
-              ],
-              Text(
-                widget.title,
-                style: widget.compact
-                    ? theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      )
-                    : theme.textTheme.titleLarge,
-                textAlign: TextAlign.center,
-              ),
-              if (widget.subtitle != null) ...[
-                SizedBox(
-                  height: widget.compact ? AppSpacing.xs : AppSpacing.sm,
-                ),
-                Text(
-                  widget.subtitle!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppSemanticColors.textSecondaryFor(theme.brightness),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              if (widget.ctaLabel != null && widget.onCtaTap != null) ...[
-                SizedBox(
-                  height: widget.compact ? AppSpacing.base : AppSpacing.xl,
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: widget.onCtaTap,
-                    child: Text(widget.ctaLabel!),
-                  ),
-                ),
-              ],
-            ],
+    final column = Padding(
+      padding: widget.padHorizontally
+          ? AppSpacing.horizontalScreen
+          : EdgeInsets.zero,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (widget.icon != null) ...[
+            _BreathingIcon(
+              icon: widget.icon!,
+              iconColor: widget.iconColor ?? AppSemanticColors.primary,
+              size: widget.compact ? 48 : 64,
+              iconSize: widget.compact ? 24 : 32,
+              reduceMotion: _reduceMotion,
+            ),
+            SizedBox(height: widget.compact ? AppSpacing.md : AppSpacing.xl),
+          ],
+          Text(
+            widget.title,
+            style: widget.compact
+                ? theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  )
+                : theme.textTheme.titleLarge,
+            textAlign: TextAlign.center,
           ),
-        ),
+          if (widget.subtitle != null) ...[
+            SizedBox(height: widget.compact ? AppSpacing.xs : AppSpacing.sm),
+            Text(
+              widget.subtitle!,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppSemanticColors.textSecondaryFor(theme.brightness),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+          if (widget.ctaLabel != null && widget.onCtaTap != null) ...[
+            SizedBox(height: widget.compact ? AppSpacing.base : AppSpacing.xl),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: widget.onCtaTap,
+                child: Text(widget.ctaLabel!),
+              ),
+            ),
+          ],
+        ],
       ),
     );
+
+    final content = _reduceMotion || _fadeIn == null || _slideUp == null
+        ? column
+        : FadeTransition(
+            opacity: _fadeIn!,
+            child: SlideTransition(position: _slideUp!, child: column),
+          );
 
     if (widget.expand) {
       return LayoutBuilder(
@@ -190,6 +193,7 @@ class _BreathingIcon extends StatefulWidget {
   const _BreathingIcon({
     required this.icon,
     required this.iconColor,
+    required this.reduceMotion,
     this.size = 64,
     this.iconSize = 32,
   });
@@ -198,6 +202,7 @@ class _BreathingIcon extends StatefulWidget {
   final Color iconColor;
   final double size;
   final double iconSize;
+  final bool reduceMotion;
 
   @override
   State<_BreathingIcon> createState() => _BreathingIconState();
@@ -205,46 +210,49 @@ class _BreathingIcon extends StatefulWidget {
 
 class _BreathingIconState extends State<_BreathingIcon>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
+  AnimationController? _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: AppMotion.breathing,
-    )..repeat(reverse: true);
+    if (!widget.reduceMotion) {
+      _controller = AnimationController(
+        vsync: this,
+        duration: AppMotion.breathing,
+      )..repeat(reverse: true);
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final icon = Container(
+      width: widget.size,
+      height: widget.size,
+      decoration: BoxDecoration(
+        color: widget.iconColor.withValues(alpha: 0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(widget.icon, size: widget.iconSize, color: widget.iconColor),
+    );
+
+    final controller = _controller;
+    if (widget.reduceMotion || controller == null) return icon;
+
     return AnimatedBuilder(
-      animation: _controller,
+      animation: controller,
       builder: (context, child) {
         return Transform.scale(
-          scale: 1.0 + 0.05 * _controller.value,
+          scale: 1.0 + 0.05 * controller.value,
           child: child,
         );
       },
-      child: Container(
-        width: widget.size,
-        height: widget.size,
-        decoration: BoxDecoration(
-          color: widget.iconColor.withValues(alpha: 0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          widget.icon,
-          size: widget.iconSize,
-          color: widget.iconColor,
-        ),
-      ),
+      child: icon,
     );
   }
 }

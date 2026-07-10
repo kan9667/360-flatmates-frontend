@@ -18,12 +18,10 @@ import 'profile_repository.dart';
 // Local UI state via StateProviders (convention: no setState in ConsumerState).
 // These are .autoDispose so each edit session starts with fresh defaults and
 // seeded backend values never leak across visits.
-final _modeProvider = StateProvider.autoDispose<String>(
-  (ref) => 'open_to_both',
-);
-final _workStyleProvider = StateProvider.autoDispose<String>((ref) => 'hybrid');
 // Null until seeded from profile / user picks a catalog id — avoids overwriting
 // an unmapped server value with a silent default on save.
+final _modeProvider = StateProvider.autoDispose<String?>((ref) => null);
+final _workStyleProvider = StateProvider.autoDispose<String?>((ref) => null);
 final _moveInTimelineProvider = StateProvider.autoDispose<String?>(
   (ref) => null,
 );
@@ -152,13 +150,10 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       locale: AppLocalizations.of(context),
       bootstrap: ref.read(bootstrapControllerProvider).valueOrNull,
     ).seedFromProfile(profile);
-    if (seed.mode != null) ref.read(_modeProvider.notifier).state = seed.mode!;
-    if (seed.workStyle != null) {
-      ref.read(_workStyleProvider.notifier).state = seed.workStyle!;
-    }
-    if (seed.moveInTimeline != null) {
-      ref.read(_moveInTimelineProvider.notifier).state = seed.moveInTimeline!;
-    }
+    // Always seed nullable providers from catalog match (null = unmapped / unset).
+    ref.read(_modeProvider.notifier).state = seed.mode;
+    ref.read(_workStyleProvider.notifier).state = seed.workStyle;
+    ref.read(_moveInTimelineProvider.notifier).state = seed.moveInTimeline;
     ref.read(_sleepScheduleProvider.notifier).state = seed.sleepSchedule;
     ref.read(_cleanlinessProvider.notifier).state = seed.cleanliness;
     ref.read(_foodHabitsProvider.notifier).state = seed.foodHabits;
@@ -400,18 +395,20 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     double? budgetMin,
     double? budgetMax,
   ) {
+    final mode = ref.read(_modeProvider);
+    final workStyle = ref.read(_workStyleProvider);
+    final moveInTimeline = ref.read(_moveInTimelineProvider);
     final payload = <String, dynamic>{
       'full_name': nullableText(_nameController),
       'age': int.tryParse(_ageController.text.trim()),
       'profession': nullableText(_professionController),
-      'mode': ref.read(_modeProvider),
+      'mode': ?mode,
       'city': nullableText(_cityController),
       'locality': nullableText(_localityController),
       'budget_min': budgetMin,
       'budget_max': budgetMax,
-      if (ref.read(_moveInTimelineProvider) != null)
-        'move_in_timeline': ref.read(_moveInTimelineProvider),
-      'work_style': ref.read(_workStyleProvider),
+      'move_in_timeline': ?moveInTimeline,
+      'work_style': ?workStyle,
       'bio': nullableText(_bioController),
       'sleep_schedule': ref.read(_sleepScheduleProvider),
       'cleanliness': ref.read(_cleanlinessProvider),

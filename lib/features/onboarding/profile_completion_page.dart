@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,11 +26,47 @@ final _initializedProvider = StateProvider.autoDispose<bool>((ref) => false);
 /// it calls `PUT /users/me` (the general user update endpoint) which properly
 /// sets `date_of_birth` on the User model — the flatmates profile endpoint
 /// does not support this field.
-class ProfileCompletionPage extends ConsumerWidget {
+class ProfileCompletionPage extends ConsumerStatefulWidget {
   const ProfileCompletionPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileCompletionPage> createState() =>
+      _ProfileCompletionPageState();
+}
+
+class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
+  late final TextEditingController _nameController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController();
+    // Prefill once after the first frame so we never mutate providers in build.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _prefillFromProfile());
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  void _prefillFromProfile() {
+    if (!mounted) return;
+    if (ref.read(_initializedProvider)) return;
+    final profile = ref.read(bootstrapControllerProvider).valueOrNull?.profile;
+    if (profile == null) return;
+
+    ref.read(_initializedProvider.notifier).state = true;
+    final existingName = profile.fullName ?? '';
+    if (existingName.isNotEmpty && ref.read(_nameProvider).isEmpty) {
+      ref.read(_nameProvider.notifier).state = existingName;
+      _nameController.text = existingName;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final locale = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final saving = ref.watch(_savingProvider);
@@ -47,21 +81,19 @@ class ProfileCompletionPage extends ConsumerWidget {
     final needsDob =
         missingFields.isEmpty || missingFields.contains('date_of_birth');
 
-    // Pre-fill the name from the bootstrap profile once. Always watch the
-    // bootstrap provider so the widget rebuilds when it becomes available,
-    // even if it wasn't ready on the first frame.
-    final profile = ref.watch(bootstrapControllerProvider).valueOrNull?.profile;
-    if (!ref.read(_initializedProvider) && profile != null) {
-      ref.read(_initializedProvider.notifier).state = true;
-      final existingName = profile.fullName ?? '';
-      if (existingName.isNotEmpty && name.isEmpty) {
-        ref.read(_nameProvider.notifier).state = existingName;
+    // If bootstrap arrives after first frame, prefill when it becomes ready.
+    ref.listen(bootstrapControllerProvider, (previous, next) {
+      if (!ref.read(_initializedProvider) &&
+          next.valueOrNull?.profile != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _prefillFromProfile();
+        });
       }
-    }
+    });
 
     final isNameValid = name.trim().length >= 2;
     final isDobValid = dob != null && _isAtLeast18(dob);
-    final isValid = isNameValid && isDobValid;
+    final isValid = (!needsName || isNameValid) && (!needsDob || isDobValid);
 
     return Scaffold(
       appBar: FlatmatesHeader.backTitle(
@@ -89,6 +121,7 @@ class ProfileCompletionPage extends ConsumerWidget {
             if (needsName) ...[
               TextField(
                 key: const Key('profile_completion_name'),
+                controller: _nameController,
                 textCapitalization: TextCapitalization.words,
                 decoration: InputDecoration(
                   labelText: locale.fullNameLabel,
@@ -101,7 +134,7 @@ class ProfileCompletionPage extends ConsumerWidget {
             if (needsDob) ...[
               _DateOfBirthField(
                 selectedDate: dob,
-                onTap: () => _pickDateOfBirth(context, ref, locale),
+                onTap: () => _pickDateOfBirth(context, locale),
               ),
               const SizedBox(height: AppSpacing.sm),
             ],
@@ -134,7 +167,12 @@ class ProfileCompletionPage extends ConsumerWidget {
                   : locale.profileCompletionContinue,
               fullWidth: true,
               onPressed: (isValid && !saving)
-                  ? () => _submit(context, ref, locale)
+                  ? () => _submit(
+                      context,
+                      locale,
+                      needsName: needsName,
+                      needsDob: needsDob,
+                    )
                   : null,
               icon: saving ? null : Icons.arrow_forward_rounded,
             ),
@@ -159,7 +197,6 @@ class ProfileCompletionPage extends ConsumerWidget {
 
   Future<void> _pickDateOfBirth(
     BuildContext context,
-    WidgetRef ref,
     AppLocalizations locale,
   ) async {
     final now = DateTime.now();
@@ -177,24 +214,30 @@ class ProfileCompletionPage extends ConsumerWidget {
 
   Future<void> _submit(
     BuildContext context,
-    WidgetRef ref,
-    AppLocalizations locale,
-  ) async {
+    AppLocalizations locale, {
+    required bool needsName,
+    required bool needsDob,
+  }) async {
     final dob = ref.read(_dobProvider);
     final name = ref.read(_nameProvider);
-    if (dob == null || name.trim().length < 2 || ref.read(_savingProvider)) {
-      return;
-    }
+    if (ref.read(_savingProvider)) return;
+    if (needsName && name.trim().length < 2) return;
+    if (needsDob && dob == null) return;
 
     ref.read(_savingProvider.notifier).state = true;
     ref.read(_hasErrorProvider.notifier).state = false;
 
     try {
-      final payload = <String, dynamic>{
-        'full_name': name.trim(),
-        'date_of_birth':
-            '${dob.year}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}',
-      };
+      final payload = <String, dynamic>{};
+      if (needsName) {
+        payload['full_name'] = name.trim();
+      }
+      if (needsDob && dob != null) {
+        payload['date_of_birth'] =
+            '${dob.year}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}';
+      }
+      if (payload.isEmpty) return;
+
       await ref.read(profileRepositoryProvider).updateUser(payload: payload);
       // Refresh bootstrap so auth-state re-evaluates and the router advances
       // past the profile_completion gate.

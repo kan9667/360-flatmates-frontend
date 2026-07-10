@@ -11,8 +11,8 @@ import '../../core/theme/theme.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../discover/domain/property_listing.dart';
 import '../shared/presentation/components.dart';
+import 'application/manage_listings_actions_controller.dart';
 import 'domain/listing_status.dart';
-import 'listings_repository.dart';
 import 'my_listings_controller.dart';
 import 'presentation/widgets/manage_listing_card.dart';
 import 'presentation/widgets/manage_stats_widgets.dart';
@@ -20,8 +20,6 @@ import 'presentation/widgets/manage_stats_widgets.dart';
 final _manageTabProvider = StateProvider<String>(
   (ref) => 'active',
 ); // 'active', 'draft', 'expired'
-final _pausedListingIdsProvider = StateProvider<Set<int>>((ref) => <int>{});
-final _pausingListingIdsProvider = StateProvider<Set<int>>((ref) => <int>{});
 
 class ManageListingPage extends ConsumerStatefulWidget {
   const ManageListingPage({super.key});
@@ -68,8 +66,7 @@ class _ManageListingPageState extends ConsumerState<ManageListingPage> {
   Widget build(BuildContext context) {
     final listingsState = ref.watch(myListingsListControllerProvider);
     final status = ref.watch(_manageTabProvider);
-    final pausedListingIds = ref.watch(_pausedListingIdsProvider);
-    final pausingListingIds = ref.watch(_pausingListingIdsProvider);
+    final actionsState = ref.watch(manageListingsActionsControllerProvider);
     final locale = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
@@ -232,21 +229,23 @@ class _ManageListingPageState extends ConsumerState<ManageListingPage> {
                             );
                           }
                           final listing = myListings[index];
+                          final statusKey = listingStatus(listing);
+                          final isPaused = actionsState.isPaused(
+                            listing.id,
+                            fromListing: statusKey == 'paused',
+                          );
                           return Padding(
                             padding: const EdgeInsets.only(
                               bottom: AppSpacing.md,
                             ),
                             child: ManageListingCard(
                               listing: listing,
-                              status: listingStatus(listing),
-                              isPaused:
-                                  pausedListingIds.contains(listing.id) ||
-                                  listingStatus(listing) == 'paused',
-                              isPausing: pausingListingIds.contains(listing.id),
+                              status: isPaused ? 'paused' : statusKey,
+                              isPaused: isPaused,
+                              isPausing: actionsState.isPausing(listing.id),
                               onTogglePause: (listingId, currentlyPaused) =>
                                   _togglePause(
                                     context,
-                                    ref,
                                     listingId,
                                     currentlyPaused,
                                   ),
@@ -353,75 +352,25 @@ class _ManageListingPageState extends ConsumerState<ManageListingPage> {
 
   Future<void> _togglePause(
     BuildContext context,
-    WidgetRef ref,
     int listingId,
     bool currentlyPaused,
   ) async {
-    final pausingIds = ref.read(_pausingListingIdsProvider);
-    if (pausingIds.contains(listingId)) return;
-    ref.read(_pausingListingIdsProvider.notifier).state = {
-      ...pausingIds,
-      listingId,
-    };
+    final locale = AppLocalizations.of(context);
     try {
       await ref
-          .read(listingsRepositoryProvider)
-          .togglePause(listingId, paused: currentlyPaused);
+          .read(manageListingsActionsControllerProvider.notifier)
+          .togglePause(listingId, currentlyPaused: currentlyPaused);
       if (!context.mounted) return;
-      final pausedIds = ref.read(_pausedListingIdsProvider);
-      ref.read(_pausedListingIdsProvider.notifier).state = currentlyPaused
-          ? ({...pausedIds}..remove(listingId))
-          : {...pausedIds, listingId};
-      ref.invalidate(myListingsListControllerProvider);
-      ref.invalidate(myListingsProvider);
-      final locale = AppLocalizations.of(context);
       FlatmatesToast.success(
         context,
         currentlyPaused ? locale.listingResumed : locale.listingPaused,
       );
     } catch (e) {
-      if (context.mounted) {
-        final locale = AppLocalizations.of(context);
-        final msg = e is AppFailure
-            ? e.userMessage(locale.toUserMessageL10n())
-            : locale.failedToUpdateListingStatus;
-        FlatmatesToast.error(context, msg);
-      }
-    } finally {
-      if (context.mounted) {
-        ref.read(_pausingListingIdsProvider.notifier).state = {
-          ...ref.read(_pausingListingIdsProvider),
-        }..remove(listingId);
-      }
+      if (!context.mounted) return;
+      final msg = e is AppFailure
+          ? e.userMessage(locale.toUserMessageL10n())
+          : locale.failedToUpdateListingStatus;
+      FlatmatesToast.error(context, msg);
     }
-  }
-}
-
-/// Applies standard interactive scale animation to any child when pressed.
-class _InteractivePressScale extends StatefulWidget {
-  const _InteractivePressScale({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_InteractivePressScale> createState() => _InteractivePressScaleState();
-}
-
-class _InteractivePressScaleState extends State<_InteractivePressScale> {
-  double _scale = 1.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: (_) => setState(() => _scale = 0.97),
-      onPointerUp: (_) => setState(() => _scale = 1.0),
-      onPointerCancel: (_) => setState(() => _scale = 1.0),
-      child: AnimatedScale(
-        scale: _scale,
-        duration: AppMotion.durationOrZero(context, AppMotion.buttonPress),
-        curve: AppMotion.easeOutCubic,
-        child: widget.child,
-      ),
-    );
   }
 }

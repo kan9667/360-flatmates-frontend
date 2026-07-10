@@ -119,34 +119,36 @@ void main() {
       );
     });
 
-    test('new_message event invalidates messages seed for conversation',
-        () async {
-      await container.read(conversationsProvider.future);
-      await container.read(messagesProvider(42).future);
-      final messagesBefore = adapter.count(
-        'GET',
-        FlatmatesEndpoints.conversationMessages(42),
-      );
+    test(
+      'new_message event invalidates messages seed for conversation',
+      () async {
+        await container.read(conversationsProvider.future);
+        await container.read(messagesProvider(42).future);
+        final messagesBefore = adapter.count(
+          'GET',
+          FlatmatesEndpoints.conversationMessages(42),
+        );
 
-      _route(
-        container,
-        const FlatmatesRealtimeEvent(
-          type: 'new_message',
-          data: {'conversation_id': 42, 'message_id': 99},
-        ),
-      );
-      await container.pump();
+        _route(
+          container,
+          const FlatmatesRealtimeEvent(
+            type: 'new_message',
+            data: {'conversation_id': 42, 'message_id': 99},
+          ),
+        );
+        await container.pump();
 
-      await container.read(messagesProvider(42).future);
-      expect(
-        adapter.count('GET', FlatmatesEndpoints.conversationMessages(42)),
-        greaterThan(messagesBefore),
-      );
-      expect(
-        adapter.count('GET', FlatmatesEndpoints.conversations),
-        greaterThan(1),
-      );
-    });
+        await container.read(messagesProvider(42).future);
+        expect(
+          adapter.count('GET', FlatmatesEndpoints.conversationMessages(42)),
+          greaterThan(messagesBefore),
+        );
+        expect(
+          adapter.count('GET', FlatmatesEndpoints.conversations),
+          greaterThan(1),
+        );
+      },
+    );
 
     test('new_match events refresh conversations and like tabs', () async {
       await container.read(conversationsProvider.future);
@@ -192,6 +194,14 @@ void main() {
     test('generic notifications refresh notifications only', () async {
       await container.read(notificationsProvider.future);
       await container.read(conversationsProvider.future);
+      final notifBefore = adapter.count(
+        'GET',
+        FlatmatesEndpoints.notifications,
+      );
+      final convBefore = adapter.count(
+        'GET',
+        FlatmatesEndpoints.conversations,
+      );
 
       _route(
         container,
@@ -205,8 +215,16 @@ void main() {
       await container.read(notificationsProvider.future);
       await container.read(conversationsProvider.future);
 
-      expect(adapter.count('GET', FlatmatesEndpoints.notifications), 2);
-      expect(adapter.count('GET', FlatmatesEndpoints.conversations), 1);
+      // Invalidates both legacy notificationsProvider and the list controller
+      // (each may refetch once).
+      expect(
+        adapter.count('GET', FlatmatesEndpoints.notifications),
+        greaterThan(notifBefore),
+      );
+      expect(
+        adapter.count('GET', FlatmatesEndpoints.conversations),
+        convBefore,
+      );
     });
   });
 }

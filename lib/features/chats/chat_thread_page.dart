@@ -23,18 +23,24 @@ import 'application/messages_controller.dart';
 import 'chats_repository.dart';
 import 'domain/chat_report_reason.dart';
 import 'match_qna_nudge.dart';
+import 'presentation/chat_photo_actions.dart';
 import 'presentation/chat_visit_actions.dart';
 import 'presentation/widgets/chat_app_bar.dart';
 import 'presentation/widgets/chat_dialogs.dart';
 import 'presentation/widgets/chat_input_area.dart';
 import 'presentation/widgets/chat_pre_message_area.dart';
 import 'presentation/widgets/message_list.dart';
-import 'presentation/widgets/mode_tooltip_bubble.dart';
+import 'presentation/widgets/mode_tooltip_controller.dart';
 import 'presentation/widgets/chat_qna_answers_card.dart';
 
 /// Local UI state: whether the emoji picker is visible above the input bar.
 /// AutoDispose so the panel resets when the chat thread leaves the tree.
 final _showEmojiPickerProvider = StateProvider.autoDispose<bool>(
+  (ref) => false,
+);
+
+/// Local UI state: chat photo upload in flight (gallery pick → Cloudinary).
+final _isUploadingPhotoProvider = StateProvider.autoDispose<bool>(
   (ref) => false,
 );
 
@@ -61,9 +67,9 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
   /// Links the floating mode tooltip to the header avatar so the bubble is
   /// anchored (with a tail) directly beneath the peer's avatar.
   final LayerLink _avatarLink = LayerLink();
-  OverlayEntry? _modeTooltipEntry;
-  Timer? _modeTooltipTimer;
-  bool _modeTooltipDismissed = false;
+  late final ModeTooltipController _modeTooltip = ModeTooltipController(
+    avatarLink: _avatarLink,
+  );
 
   final _sendDebouncer = ActionDebouncer(
     duration: const Duration(milliseconds: 300),
@@ -82,8 +88,7 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
   void didUpdateWidget(ChatThreadPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.conversationId != widget.conversationId) {
-      _removeModeTooltip();
-      _modeTooltipDismissed = false;
+      _modeTooltip.resetForConversationChange();
       _conversation = widget.conversation;
       _checkExistingMessages();
       _markMessagesAsRead();
@@ -141,68 +146,17 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
     return localizedFlatmatesModeLabel(AppLocalizations.of(context), mode);
   }
 
-  /// Pops the mode/intent tooltip shortly after the screen opens so the
-  /// floating bubble doesn't fight the entrance transition. It shows on every
-  /// fresh open of the chat (per-instance state, never persisted).
   void _scheduleModeTooltip() {
-    unawaited(
-      Future.delayed(AppMotion.modeTooltipShowDelay, () {
-        if (!mounted || _modeTooltipDismissed || _modeTooltipEntry != null) {
-          return;
-        }
-        final label = _peerModeLabel();
-        if (label.isEmpty) return;
-        _insertModeTooltip(label);
-      }),
+    _modeTooltip.schedule(
+      isMounted: () => mounted,
+      peerModeLabel: _peerModeLabel,
+      context: () => context,
     );
-  }
-
-  void _insertModeTooltip(String label) {
-    final overlay = Overlay.of(context);
-    _modeTooltipEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        // top/left only (no right/bottom) so the overlay Stack gives the
-        // follower loose constraints and the bubble sizes to its content
-        // instead of stretching to fill the screen.
-        top: 0,
-        left: 0,
-        child: CompositedTransformFollower(
-          link: _avatarLink,
-          // Anchor the bubble's top-left to the avatar's bottom-left so it
-          // sits in the empty space below the header (not overlapping the
-          // avatar or the peer name).
-          targetAnchor: Alignment.bottomLeft,
-          offset: const Offset(0, 8),
-          child: ModeTooltipBubble(
-            label: label,
-            onTapKeepOpen: _keepModeTooltipOpen,
-          ),
-        ),
-      ),
-    );
-    overlay.insert(_modeTooltipEntry!);
-    // Auto-dismiss after a few seconds unless the user taps the bubble.
-    _modeTooltipTimer = Timer(
-      AppMotion.modeTooltipAutoDismiss,
-      _removeModeTooltip,
-    );
-  }
-
-  void _keepModeTooltipOpen() => _modeTooltipTimer?.cancel();
-
-  void _removeModeTooltip() {
-    _modeTooltipTimer?.cancel();
-    _modeTooltipTimer = null;
-    _modeTooltipEntry?.remove();
-    _modeTooltipEntry = null;
-    // Flag only; not read in build() — avoid a useless setState rebuild.
-    _modeTooltipDismissed = true;
   }
 
   @override
   void dispose() {
-    _modeTooltipTimer?.cancel();
-    _modeTooltipEntry?.remove();
+    _modeTooltip.dispose();
     _messageController.dispose();
     _messageFocus.dispose();
     _sendDebouncer.dispose();
@@ -226,6 +180,14 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
   }
 
   Future<void> _sendMessage() async {
+    final messagesState = ref.read(
+      messagesControllerProvider(widget.conversationId),
+    );
+    // Gate double-tap / re-entry while a send or photo upload is in flight.
+    if (messagesState.isSending || ref.read(_isUploadingPhotoProvider)) {
+      return;
+    }
+
     var body = _messageController.text.trim();
     if (body.isEmpty) return;
     body = ProfanityFilter.censor(body);
@@ -237,7 +199,7 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
       await ref
           .read(messagesControllerProvider(widget.conversationId).notifier)
           .sendMessage(body: body);
-      _removeModeTooltip();
+      _modeTooltip.remove();
     } catch (e) {
       debugPrint('ChatThreadPage._sendMessage failed: $e');
       _messageController.text = previousText;
@@ -283,19 +245,26 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
     );
   }
 
-  Future<void> _submitQnA(Map<String, String> answers) async {
+  Future<bool> _submitQnA(Map<String, String> answers) async {
+    final locale = AppLocalizations.of(context);
     final updated = await ref
         .read(chatActionsControllerProvider)
         .submitQnA(widget.conversationId, answers);
+    if (updated == null) {
+      if (mounted) {
+        FlatmatesToast.error(context, locale.commonRetry);
+      }
+      // Keep the nudge open so the user can retry.
+      return false;
+    }
     _markQnANudgeDismissed();
     if (mounted) {
       setState(() {
         _showQnANudge = false;
-        if (updated != null) {
-          _conversation = updated;
-        }
+        _conversation = updated;
       });
     }
+    return true;
   }
 
   void _markQnANudgeDismissed() {
@@ -373,6 +342,7 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
     );
 
     final showEmoji = ref.watch(_showEmojiPickerProvider);
+    final isUploadingPhoto = ref.watch(_isUploadingPhotoProvider);
 
     if (_conversation == null && fetchedConversation != null) {
       if (fetchedConversation.isLoading) {
@@ -469,6 +439,17 @@ class _ChatThreadPageState extends ConsumerState<ChatThreadPage> {
             showEmoji: showEmoji,
             onToggleEmoji: _toggleEmojiPicker,
             onSend: _sendMessage,
+            onPickPhoto: () => sendPhotoFromChat(
+              context: context,
+              ref: ref,
+              conversationId: widget.conversationId,
+              isUploading: () => ref.read(_isUploadingPhotoProvider),
+              setUploading: (v) =>
+                  ref.read(_isUploadingPhotoProvider.notifier).state = v,
+              onSuccess: _modeTooltip.remove,
+            ),
+            isSending: messagesState.isSending,
+            isUploadingPhoto: isUploadingPhoto,
           ),
           if (showEmoji)
             SafeArea(

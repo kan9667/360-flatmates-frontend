@@ -9,7 +9,6 @@ import '../../core/errors/app_failure.dart';
 import '../../core/errors/l10n_bridge.dart';
 import '../../core/location/location_data.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/theme/app_semantic_colors.dart';
 import '../../core/utils/debouncer.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../bootstrap/bootstrap_controller.dart';
@@ -18,6 +17,7 @@ import '../location/presentation/location_picker_modal.dart';
 import '../shared/presentation/components.dart';
 import 'discover_repository.dart';
 import 'application/discover_feed_controller.dart';
+import 'presentation/widgets/broadened_radius_banner.dart';
 import 'presentation/widgets/discover_header.dart';
 import 'presentation/widgets/discover_listing_card.dart';
 import 'presentation/widgets/discover_support_sections.dart';
@@ -315,7 +315,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                         ],
                         if (feedState.isBroadened && filtered.isNotEmpty) ...[
                           const SizedBox(height: AppSpacing.lg),
-                          _BroadenedRadiusBanner(
+                          BroadenedRadiusBanner(
                             message: locale.homeBroadenedRadius,
                           ),
                         ],
@@ -329,13 +329,22 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                         ),
                         const SizedBox(height: AppSpacing.md),
                         if (filtered.isEmpty && !feedState.isLoading)
-                          FlatmatesEmptyState(
-                            title: locale.homeNoResults,
-                            subtitle: locale.homeNoResultsSubtitle,
-                            icon: Icons.search_off_rounded,
-                            padHorizontally: false,
-                            compact: true,
-                          ),
+                          feedState.hasError
+                              ? FlatmatesErrorState(
+                                  message: locale.actionFailedRetry,
+                                  onRetry: () => ref
+                                      .read(
+                                        discoverFeedControllerProvider.notifier,
+                                      )
+                                      .refresh(),
+                                )
+                              : FlatmatesEmptyState(
+                                  title: locale.homeNoResults,
+                                  subtitle: locale.homeNoResultsSubtitle,
+                                  icon: Icons.search_off_rounded,
+                                  padHorizontally: false,
+                                  compact: true,
+                                ),
                       ]),
                     ),
                   ),
@@ -430,49 +439,4 @@ String _firstName(String? fullName, {required String fallback}) {
   final trimmed = fullName?.trim();
   if (trimmed == null || trimmed.isEmpty) return fallback;
   return trimmed.split(RegExp(r'\s+')).first;
-}
-
-/// Compact info banner shown when the discover feed broadened its radius
-/// beyond the user's selected area because the user's radius returned zero
-/// listings.
-class _BroadenedRadiusBanner extends StatelessWidget {
-  const _BroadenedRadiusBanner({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm + 2,
-      ),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.infoBg,
-        borderRadius: BorderRadius.circular(AppSpacing.sm),
-        border: Border.all(color: AppSemanticColors.primaryDisabled),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.info_outline_rounded,
-            size: 18,
-            color: AppSemanticColors.primary,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppSemanticColors.ink,
-                height: 1.3,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

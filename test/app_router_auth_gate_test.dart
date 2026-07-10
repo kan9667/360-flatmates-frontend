@@ -156,6 +156,8 @@ void main() {
     test('blocks post and post/new', () {
       expect(isOnboardingBlockedRoute('/post'), isTrue);
       expect(isOnboardingBlockedRoute('/post/new'), isTrue);
+      // Room-poster Post hub lives at shell branch /tab2.
+      expect(isOnboardingBlockedRoute('/tab2'), isTrue);
     });
 
     test('blocks conversations list but not individual chat threads', () {

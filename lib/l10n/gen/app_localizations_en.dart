@@ -975,6 +975,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get userBlocked => 'User has been blocked.';
 
   @override
+  String get userUnmatched => 'You have unmatched this person.';
+
+  @override
   String get reportTitle => 'Report this person';
 
   @override

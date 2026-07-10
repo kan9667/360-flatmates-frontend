@@ -16,9 +16,14 @@ final flatmatesOnboardingCompletedOverrideProvider = StateProvider<bool>(
 );
 
 class OnboardingController extends Notifier<OnboardingState> {
+  /// True when [build] restored an incomplete draft from local storage.
+  /// Used to show the welcome-back affordance only on genuine draft resume.
+  bool resumedFromDraft = false;
+
   @override
   OnboardingState build() {
     final saved = _tryLoadSavedState();
+    resumedFromDraft = saved != null;
     return saved ?? const OnboardingState(isHydrated: true);
   }
 

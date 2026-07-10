@@ -9,6 +9,9 @@ class ChatInputArea extends StatelessWidget {
     required this.showEmoji,
     required this.onToggleEmoji,
     required this.onSend,
+    this.onPickPhoto,
+    this.isSending = false,
+    this.isUploadingPhoto = false,
     super.key,
   });
 
@@ -17,6 +20,9 @@ class ChatInputArea extends StatelessWidget {
   final bool showEmoji;
   final VoidCallback onToggleEmoji;
   final VoidCallback onSend;
+  final VoidCallback? onPickPhoto;
+  final bool isSending;
+  final bool isUploadingPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +32,9 @@ class ChatInputArea extends StatelessWidget {
       showEmoji: showEmoji,
       onToggleEmoji: onToggleEmoji,
       onSend: onSend,
+      onPickPhoto: onPickPhoto,
+      isSending: isSending,
+      isUploadingPhoto: isUploadingPhoto,
     );
   }
 }

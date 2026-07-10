@@ -43,19 +43,27 @@ class LocationSearchNotifier extends Notifier<LocationSearchState> {
 
   void onSearchChanged(String query) {
     _debounce?.cancel();
+    // Bump version on every keystroke so in-flight results for a previous
+    // query cannot overwrite suggestions after the user keeps typing.
+    _searchVersion++;
     if (query.trim().length < 2) {
-      _searchVersion++;
       state = const LocationSearchState();
       return;
     }
     state = state.copyWith(isLoading: true);
+    final versionAtSchedule = _searchVersion;
     _debounce = Timer(const Duration(milliseconds: 500), () {
+      // Capture the scheduled query version so a late timer for an older
+      // keystroke is ignored after a newer onSearchChanged.
+      if (versionAtSchedule != _searchVersion) return;
       _search(query.trim());
     });
   }
 
   Future<void> _search(String query) async {
-    final version = ++_searchVersion;
+    // Use the current version (already bumped in onSearchChanged). Do not
+    // bump again here — that would race with concurrent keystrokes.
+    final version = _searchVersion;
     final googleService = ref.read(googlePlacesServiceProvider);
     final nominatimService = ref.read(nominatimServiceProvider);
 

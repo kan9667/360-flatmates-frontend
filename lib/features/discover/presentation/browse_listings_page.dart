@@ -1,26 +1,17 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/errors/app_failure.dart';
-import '../../../core/errors/l10n_bridge.dart';
-import '../../../core/theme/app_motion.dart';
-import '../../../core/theme/app_radius.dart';
-import '../../../core/theme/app_semantic_colors.dart';
-import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/debouncer.dart';
 import '../../shared/presentation/components.dart';
 import '../../../l10n/gen/app_localizations.dart';
-import '../discover_repository.dart';
 import '../application/discover_feed_controller.dart';
+import 'widgets/broadened_radius_banner.dart';
+import 'widgets/browse_listings_card.dart';
 import 'widgets/filter_sheet.dart';
 
 final _isSearchActiveProvider = StateProvider<bool>((ref) => false);
-final _cardPressedProvider = StateProvider.family<bool, int>(
-  (ref, index) => false,
-);
 
 class BrowseListingsPage extends ConsumerStatefulWidget {
   const BrowseListingsPage({super.key});
@@ -34,6 +25,9 @@ class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
 
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
+  final _searchDebouncer = ActionDebouncer(
+    duration: const Duration(milliseconds: 400),
+  );
 
   @override
   void initState() {
@@ -54,8 +48,13 @@ class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
     }
   }
 
+  void _applySearchQuery(String? query) {
+    ref.read(discoverFeedControllerProvider.notifier).updateSearchQuery(query);
+  }
+
   @override
   void dispose() {
+    _searchDebouncer.dispose();
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
@@ -80,18 +79,19 @@ class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
                   controller: _searchController,
                   hint: locale.searchCityOrAreaHint,
                   onChanged: (query) {
-                    ref
-                        .read(discoverFeedControllerProvider.notifier)
-                        .updateSearchQuery(query.isEmpty ? null : query);
+                    _searchDebouncer.run(() {
+                      if (!mounted) return;
+                      _applySearchQuery(query.isEmpty ? null : query);
+                    });
                   },
                   trailingIcon: _searchController.text.isNotEmpty
                       ? Icons.close_rounded
                       : null,
                   onTrailingTap: () {
+                    // Cancel any pending debounced query so clear wins.
+                    _searchDebouncer.dispose();
                     _searchController.clear();
-                    ref
-                        .read(discoverFeedControllerProvider.notifier)
-                        .updateSearchQuery(null);
+                    _applySearchQuery(null);
                   },
                   autofocus: _searchController.text.isEmpty,
                 ),
@@ -104,10 +104,10 @@ class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
               key: const Key('browse_search_close'),
               tooltip: locale.closeSearch,
               onPressed: () {
+                // Cancel any pending debounced query so clear wins.
+                _searchDebouncer.dispose();
                 _searchController.clear();
-                ref
-                    .read(discoverFeedControllerProvider.notifier)
-                    .updateSearchQuery(null);
+                _applySearchQuery(null);
                 ref.read(_isSearchActiveProvider.notifier).state = false;
               },
               icon: Icons.close_rounded,
@@ -152,7 +152,9 @@ class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
                       AppSpacing.lg,
                       0,
                     ),
-                    child: _BroadenedHint(message: locale.homeBroadenedRadius),
+                    child: BroadenedRadiusBanner(
+                      message: locale.homeBroadenedRadius,
+                    ),
                   ),
                 Expanded(
                   child: ListView.separated(
@@ -186,7 +188,7 @@ class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
                           ),
                         );
                       }
-                      return _BrowseListingsCard(
+                      return BrowseListingsCard(
                         item: filtered[index],
                         index: index,
                       );
@@ -196,328 +198,5 @@ class _BrowseListingsPageState extends ConsumerState<BrowseListingsPage> {
               ],
             ),
     );
-  }
-}
-
-/// Compact info banner shown when the browse feed broadened its radius
-/// beyond the user's selected area.
-class _BroadenedHint extends StatelessWidget {
-  const _BroadenedHint({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm + 2,
-      ),
-      decoration: BoxDecoration(
-        color: AppSemanticColors.infoBg,
-        borderRadius: BorderRadius.circular(AppSpacing.sm),
-        border: Border.all(color: AppSemanticColors.primaryDisabled),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.info_outline_rounded,
-            size: 18,
-            color: AppSemanticColors.primary,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppSemanticColors.ink,
-                height: 1.3,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BrowseListingsCard extends ConsumerStatefulWidget {
-  const _BrowseListingsCard({required this.item, required this.index});
-
-  final PropertyListing item;
-  final int index;
-
-  @override
-  ConsumerState<_BrowseListingsCard> createState() =>
-      _BrowseListingsCardState();
-}
-
-class _BrowseListingsCardState extends ConsumerState<_BrowseListingsCard> {
-  Future<void> _handleLike() async {
-    final locale = AppLocalizations.of(context);
-    final wasLiked = widget.item.liked ?? false;
-    try {
-      final conversationId = await ref
-          .read(discoverFeedControllerProvider.notifier)
-          .toggleLike(widget.item.id, property: widget.item);
-      if (!mounted) return;
-      if (wasLiked) {
-        FlatmatesToast.success(context, locale.likeRemovedToast);
-      } else {
-        FlatmatesToast.success(
-          context,
-          conversationId == null
-              ? locale.contactRequestSent
-              : locale.contactRequestWithConversation(conversationId),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      final msg = e is AppFailure
-          ? e.userMessage(locale.toUserMessageL10n())
-          : locale.actionFailedRetry;
-      FlatmatesToast.error(context, msg);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final locale = AppLocalizations.of(context);
-    final item = widget.item;
-    final isDark = theme.brightness == Brightness.dark;
-
-    final titleLocation = [
-      if (item.locality != null && item.locality!.trim().isNotEmpty)
-        item.locality!.trim(),
-      if (item.subLocality != null && item.subLocality!.trim().isNotEmpty)
-        item.subLocality!.trim(),
-    ].join(', ');
-
-    final metaItems = <ListingMetaItem>[
-      if (item.bedrooms != null)
-        ListingMetaItem(
-          icon: Icons.bed_outlined,
-          label: locale.homeBedsValue(item.bedrooms!),
-          chipColor: MetaChipColor.blue,
-        ),
-      if (item.bathrooms != null)
-        ListingMetaItem(
-          icon: Icons.bathtub_outlined,
-          label: locale.homeBathsValue(item.bathrooms!),
-          chipColor: MetaChipColor.teal,
-        ),
-      if (item.areaSqft != null)
-        ListingMetaItem(
-          icon: Icons.square_foot_outlined,
-          label: locale.sqftLabel(item.areaSqft!.round()),
-          chipColor: MetaChipColor.purple,
-        ),
-      ListingMetaItem(
-        icon: Icons.people_outline_rounded,
-        label: switch (item.genderPreference) {
-          'male' => locale.genderSuffixMaleOnly,
-          'female' => locale.genderSuffixFemaleOnly,
-          _ => locale.genderSuffixAny,
-        },
-        chipColor: MetaChipColor.orange,
-      ),
-    ];
-    final distanceLabel = (item.distanceKm != null && item.distanceKm! > 0)
-        ? locale.distanceAway(item.distanceKm!.toStringAsFixed(1))
-        : null;
-
-    final hasImage =
-        item.effectiveMainImageUrl != null &&
-        item.effectiveMainImageUrl!.trim().isNotEmpty;
-    final pressed = ref.watch(_cardPressedProvider(widget.index));
-
-    return Listener(
-      onPointerDown: (_) =>
-          ref.read(_cardPressedProvider(widget.index).notifier).state = true,
-      onPointerUp: (_) =>
-          ref.read(_cardPressedProvider(widget.index).notifier).state = false,
-      onPointerCancel: (_) =>
-          ref.read(_cardPressedProvider(widget.index).notifier).state = false,
-      child: AnimatedContainer(
-        duration: AppMotion.fast,
-        curve: AppMotion.easeOutCubic,
-        // Content may grow past 110 (meta wrap / text scale); floor matches
-        // the prior design height and the browse skeleton.
-        constraints: const BoxConstraints(minHeight: 110),
-        decoration: BoxDecoration(
-          color: isDark
-              ? AppSemanticColors.darkSurface
-              : AppSemanticColors.card,
-          borderRadius: AppRadius.cardBorder,
-          boxShadow: [
-            AppShadows.cardFor(theme.brightness),
-            if (pressed) AppShadows.subtleGlowFor(theme.brightness),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: AppRadius.cardBorder,
-          child: InkWell(
-            onTap: () => context.push('/flat-details/${item.id}'),
-            borderRadius: AppRadius.cardBorder,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 110,
-                  height: 110,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.horizontal(
-                          left: Radius.circular(AppRadius.card),
-                        ),
-                        child: hasImage
-                            ? FlatmatesNetworkImage(
-                                imageUrl: item.effectiveMainImageUrl!,
-                                width: 110,
-                                height: 110,
-                                fit: BoxFit.cover,
-                              )
-                            : Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      AppSemanticColors.accent.withValues(
-                                        alpha: 0.85,
-                                      ),
-                                      AppSemanticColors.accent.withValues(
-                                        alpha: 0.45,
-                                      ),
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.apartment_rounded,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
-                                ),
-                              ),
-                      ),
-                      Positioned(
-                        top: AppSpacing.sm,
-                        right: AppSpacing.sm,
-                        child: FlatmatesLikeButton(
-                          key: Key('browse_like_${item.id}'),
-                          liked: item.liked ?? false,
-                          onTap: () => unawaited(_handleLike()),
-                          size: 40,
-                          backgroundColor: AppSemanticColors.accentSoft,
-                          unlikedColor: AppSemanticColors.accent,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.sm,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _formatRent(item.monthlyRent.round()),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: AppSemanticColors.textPrimaryFor(
-                              theme.brightness,
-                            ),
-                            height: 1.2,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          item.title,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            height: 1.3,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (titleLocation.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.location_on_outlined,
-                                size: 12,
-                                color: AppSemanticColors.textSecondaryFor(
-                                  theme.brightness,
-                                ),
-                              ),
-                              const SizedBox(width: 2),
-                              Expanded(
-                                child: Text(
-                                  titleLocation,
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    fontSize: 11,
-                                    color: AppSemanticColors.textSecondaryFor(
-                                      theme.brightness,
-                                    ),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (distanceLabel != null) ...[
-                                const SizedBox(width: AppSpacing.xs),
-                                Text(
-                                  distanceLabel,
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppSemanticColors.accent,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                        if (metaItems.isNotEmpty) ...[
-                          const SizedBox(height: AppSpacing.xs),
-                          FlatmatesListingMetaChips(items: metaItems),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  static String _formatRent(int amount) {
-    if (amount >= 100000) {
-      final lakhs = amount / 100000;
-      final value = lakhs.toStringAsFixed(lakhs >= 10 ? 1 : 2);
-      final compact = value.replaceAll(RegExp(r'\.?0+$'), '');
-      return '\u20b9${compact}L';
-    }
-    return FlatmatesPriceText.formatRupee(amount);
   }
 }

@@ -42,6 +42,8 @@ void main() {
         final json = request.toJson();
 
         expect(json['tags'], ['quiet', 'visitor_friendly']);
+        expect(json['floor_number'], isNull);
+        expect(json['total_floors'], isNull);
         expect(json['listing_preferences'], {
           'gender_preference': 'any',
           'sharing_type': 'private_room',
@@ -49,6 +51,64 @@ void main() {
           'society_amenities': ['parking'],
           'society_vibes': ['quiet', 'visitor_friendly'],
         });
+      },
+    );
+
+    test(
+      'ListingCreateRequest maps street address, floors, and preference extras',
+      () {
+        final request = ListingCreateRequest(
+          title: '2 BHK in Lakeside',
+          description: 'Quiet home',
+          city: 'Bangalore',
+          locality: 'Koramangala',
+          subLocality: 'Lakeside',
+          monthlyRent: 24000,
+          securityDeposit: 48000,
+          maintenanceCharges: 2500,
+          areaSqft: 900,
+          bedrooms: 2,
+          bathrooms: 1,
+          features: const ['wifi'],
+          tags: const ['quiet'],
+          mainImageUrl: 'https://example.com/room.jpg',
+          imageUrls: const ['https://example.com/room.jpg'],
+          availableFrom: DateTime.utc(2026, 5, 12),
+          genderPreference: 'any',
+          sharingType: 'private_room',
+          societyType: 'gated',
+          societyAmenities: const ['parking'],
+          societyVibeTags: const ['quiet'],
+          fullAddress: '12th Main, 5th Cross',
+          floorNumber: 3,
+          totalFloors: 10,
+          ageMin: 22,
+          ageMax: 32,
+          nonNegotiables: const ['no_smoking'],
+          electricityIncluded: 'separate',
+          electricityEst: 1500,
+          cookCost: 2000,
+          maidCost: 1500,
+          setupCost: 5000,
+        );
+
+        final json = request.toJson();
+        final prefs = Map<String, dynamic>.from(
+          json['listing_preferences'] as Map,
+        );
+
+        expect(json['full_address'], '12th Main, 5th Cross');
+        expect(json['floor_number'], 3);
+        expect(json['total_floors'], 10);
+        expect(prefs['preferred_age_min'], 22);
+        expect(prefs['preferred_age_max'], 32);
+        expect(prefs['non_negotiables'], ['no_smoking']);
+        expect(prefs['electricity_included'], 'separate');
+        expect(prefs['electricity_est'], 1500);
+        expect(prefs['cook_cost'], 2000);
+        expect(prefs['maid_cost'], 1500);
+        expect(prefs['setup_cost'], 5000);
+        expect(prefs['full_address'], '12th Main, 5th Cross');
       },
     );
 

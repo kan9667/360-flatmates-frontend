@@ -18,6 +18,8 @@ import '../shared/presentation/flatmates_header.dart';
 import '../shared/presentation/flatmates_skeleton.dart';
 import '../shared/presentation/flatmates_toast.dart';
 import '../shared/presentation/flatmates_ui.dart';
+import 'application/notifications_actions_controller.dart';
+import 'notification_route_resolver.dart';
 import 'notifications_list_controller.dart';
 import 'notifications_repository.dart';
 
@@ -80,8 +82,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
             key: const Key('notification_mark_all_read'),
             onPressed: () async {
               try {
-                await ref.read(notificationsRepositoryProvider).markAllAsRead();
-                ref.invalidate(notificationsListControllerProvider);
+                await ref
+                    .read(notificationsActionsControllerProvider)
+                    .markAllRead();
               } catch (e) {
                 if (context.mounted) {
                   final msg = e is AppFailure
@@ -190,9 +193,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     if (!notification.isRead) {
       try {
         await ref
-            .read(notificationsRepositoryProvider)
-            .markAsRead(notification.id);
-        ref.invalidate(notificationsListControllerProvider);
+            .read(notificationsActionsControllerProvider)
+            .markRead(notification.id);
       } catch (e) {
         if (context.mounted) {
           final msg = e is AppFailure
@@ -205,7 +207,11 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 
     if (!context.mounted) return;
 
-    final resolvedRoute = _resolveNotificationRoute(notification);
+    final resolvedRoute = resolveNotificationRoute(
+      route: notification.route,
+      type: notification.type,
+      referenceId: notification.referenceId,
+    );
 
     if (resolvedRoute != null) {
       if (resolvedRoute.startsWith('/chats/') ||
@@ -216,45 +222,6 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       }
     } else if (context.mounted) {
       FlatmatesToast.info(context, locale.notificationNoAction);
-    }
-  }
-
-  String? _resolveNotificationRoute(NotificationModel notification) {
-    final explicitRoute = notification.route;
-    if (explicitRoute != null && explicitRoute.startsWith('/')) {
-      final uri = Uri.tryParse(explicitRoute);
-      if (uri == null) return null;
-      final path = uri.path;
-      final query = uri.hasQuery ? '?${uri.query}' : '';
-      if (path == '/post') return '/post/new$query';
-      if (path == '/visits' || path.startsWith('/visits/')) {
-        return '/profile/visits$query';
-      }
-      return explicitRoute;
-    }
-
-    switch (notification.type) {
-      case 'new_match':
-      case 'flatmate_new_match':
-      case 'new_message':
-      case 'flatmate_new_message':
-        if (notification.referenceId != null) {
-          return '/chats/${notification.referenceId}';
-        }
-        return null;
-      case 'listing_approved':
-      case 'flatmate_listing_approved':
-        if (notification.referenceId != null) {
-          return '/flat-details/${notification.referenceId}';
-        }
-        return '/post/new';
-      case 'visit_scheduled':
-      case 'flatmate_visit_scheduled':
-      case 'visit_confirmed':
-      case 'flatmate_visit_confirmed':
-        return '/profile/visits';
-      default:
-        return null;
     }
   }
 

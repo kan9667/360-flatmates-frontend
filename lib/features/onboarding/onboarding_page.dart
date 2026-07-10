@@ -147,8 +147,9 @@ class OnboardingPage extends ConsumerWidget {
                 ),
                 child: Column(
                   children: [
-                    // Welcome-back message when resuming an incomplete draft
-                    if (state.completionPercentage > 0 &&
+                    // Welcome-back only when a local draft was restored.
+                    if (controller.resumedFromDraft &&
+                        state.completionPercentage > 0 &&
                         state.step != OnboardingStep.modeSelection)
                       Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.sm),

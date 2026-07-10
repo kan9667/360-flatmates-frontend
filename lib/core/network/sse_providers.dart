@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/chats/application/cursor_list_controller.dart';
 import '../../features/chats/application/messages_controller.dart';
 import '../../features/chats/chats_repository.dart';
+import '../../features/notifications/notifications_list_controller.dart';
 import '../../features/notifications/notifications_repository.dart';
+import '../../features/visits/application/visits_list_controller.dart';
 import '../../features/visits/visits_repository.dart';
 import 'flatmates_realtime_service.dart';
 
@@ -58,6 +60,7 @@ void routeFlatmatesRealtimeEvent(Ref ref, FlatmatesRealtimeEvent event) {
       break;
     case 'visit_updated':
       ref.invalidate(visitsProvider);
+      ref.invalidate(visitsListControllerProvider);
       break;
     case 'new_message':
     case 'conversation_updated':
@@ -79,6 +82,7 @@ void routeFlatmatesRealtimeEvent(Ref ref, FlatmatesRealtimeEvent event) {
 
 void _routeNotificationEvent(Ref ref, Map<String, dynamic> data) {
   ref.invalidate(notificationsProvider);
+  ref.invalidate(notificationsListControllerProvider);
 
   final typeKey =
       _stringAt(data, const ['type_key']) ??

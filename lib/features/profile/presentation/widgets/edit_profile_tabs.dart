@@ -44,9 +44,13 @@ class EditProfileTabValues {
 
   final List<String> photoUrls;
   final bool photoUploading;
-  final String mode;
+
+  /// Null when unset or unmapped — omit from save payload.
+  final String? mode;
   final String? moveInTimeline;
-  final String workStyle;
+
+  /// Null when unset or unmapped — omit from save payload.
+  final String? workStyle;
   final String? sleepSchedule;
   final String? cleanliness;
   final String? foodHabits;

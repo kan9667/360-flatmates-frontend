@@ -63,7 +63,8 @@ void main() {
           'message_type': 'visit_request',
           'metadata': {
             'visit_id': 88,
-            'status': 'scheduled',
+            // Wire value for VisitStatus.scheduled is "requested".
+            'status': 'requested',
             'scheduled_date': scheduledDate.toIso8601String(),
             'time_slot_label': 'Morning',
           },
@@ -123,27 +124,26 @@ void main() {
       expect(adapter.requests.single.data, {'status': 'cancelled'});
     });
 
-    test(
-      'rescheduleVisit sends UTC date and resets status to requested',
-      () async {
-        final adapter = _StatusQueueAdapter([const _FakeResponse(200, {})]);
-        final container = _containerWith(adapter);
-        addTearDown(container.dispose);
+    test('rescheduleVisit POSTs new_date to /visits/{id}/reschedule', () async {
+      final adapter = _StatusQueueAdapter([const _FakeResponse(200, {})]);
+      final container = _containerWith(adapter);
+      addTearDown(container.dispose);
 
-        // A local time is converted to UTC on the wire.
-        final newDate = DateTime(2026, 7, 4, 15, 30);
-        await container
-            .read(visitsRepositoryProvider)
-            .rescheduleVisit(5, newDate);
+      // A local time is converted to UTC on the wire.
+      final newDate = DateTime(2026, 7, 4, 15, 30);
+      await container
+          .read(visitsRepositoryProvider)
+          .rescheduleVisit(5, newDate);
 
-        expect(adapter.requests.single.method, 'PUT');
-        expect(adapter.requests.single.path, FlatmatesEndpoints.visit(5));
-        expect(adapter.requests.single.data, {
-          'scheduled_date': newDate.toUtc().toIso8601String(),
-          'status': 'requested',
-        });
-      },
-    );
+      expect(adapter.requests.single.method, 'POST');
+      expect(
+        adapter.requests.single.path,
+        FlatmatesEndpoints.visitReschedule(5),
+      );
+      expect(adapter.requests.single.data, {
+        'new_date': newDate.toUtc().toIso8601String(),
+      });
+    });
 
     test('fetchVisits parses the visits envelope into VisitItems', () async {
       final adapter = _StatusQueueAdapter([

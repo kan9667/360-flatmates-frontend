@@ -7,6 +7,8 @@ import '../../../core/theme/app_semantic_colors.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../l10n/gen/app_localizations.dart';
+import '../../bootstrap/bootstrap_controller.dart';
+import '../../bootstrap/catalog_helpers.dart';
 import '../../shared/presentation/components.dart';
 import '../../shared/presentation/profile_sections.dart';
 import '../application/chat_actions_controller.dart';
@@ -45,6 +47,21 @@ class ChatPeerProfilePage extends ConsumerWidget {
     }
   }
 
+  List<ChatReportReason> _reportReasons(WidgetRef ref) {
+    final bootstrap = ref.read(bootstrapControllerProvider).valueOrNull;
+    final catalogOptions = bootstrap?.catalogOptions(
+      'flatmates_report_reasons',
+    );
+    if (catalogOptions != null && catalogOptions.isNotEmpty) {
+      return catalogOptions
+          .map(
+            (opt) => ChatReportReason(value: opt.id, catalogLabel: opt.label),
+          )
+          .toList();
+    }
+    return ChatReportReason.defaults();
+  }
+
   Future<void> _handleReport(
     BuildContext context,
     WidgetRef ref,
@@ -54,7 +71,7 @@ class ChatPeerProfilePage extends ConsumerWidget {
     await ChatDialogs.showReportDialog(
       context: context,
       peerId: peerId,
-      reasons: ChatReportReason.defaults(),
+      reasons: _reportReasons(ref),
       controller: controller,
     );
   }

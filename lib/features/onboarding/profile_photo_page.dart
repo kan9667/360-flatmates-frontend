@@ -9,6 +9,8 @@ import '../../l10n/gen/app_localizations.dart';
 import '../shared/presentation/components.dart';
 import 'onboarding_controller.dart';
 
+final _uploadingProvider = StateProvider.autoDispose<bool>((ref) => false);
+
 class ProfilePhotoPage extends ConsumerStatefulWidget {
   const ProfilePhotoPage({required this.onComplete, super.key});
 
@@ -20,7 +22,6 @@ class ProfilePhotoPage extends ConsumerStatefulWidget {
 
 class _ProfilePhotoPageState extends ConsumerState<ProfilePhotoPage> {
   final _photoUrls = <String>[];
-  bool _uploading = false;
 
   @override
   void initState() {
@@ -33,11 +34,24 @@ class _ProfilePhotoPageState extends ConsumerState<ProfilePhotoPage> {
     final service = ref.read(imageUploadServiceProvider);
     final files = await service.pickImages(limit: 5 - _photoUrls.length);
     if (files.isEmpty) return;
-    setState(() => _uploading = true);
+    ref.read(_uploadingProvider.notifier).state = true;
     try {
       for (final file in files) {
         final result = await service.uploadProfilePhoto(file);
-        if (result is UploadSuccess) _photoUrls.add(result.url);
+        if (result is UploadSuccess) {
+          _photoUrls.add(result.url);
+          if (mounted) setState(() {});
+        } else if (result is UploadFailure) {
+          debugPrint(
+            '[ProfilePhotoPage] _pickFromGallery upload failed: ${result.reason}',
+          );
+          if (mounted) {
+            FlatmatesToast.error(
+              context,
+              AppLocalizations.of(context).errorUpload,
+            );
+          }
+        }
       }
     } catch (e, st) {
       debugPrint('[ProfilePhotoPage] _pickFromGallery error: $e\n$st');
@@ -45,7 +59,7 @@ class _ProfilePhotoPageState extends ConsumerState<ProfilePhotoPage> {
         FlatmatesToast.error(context, AppLocalizations.of(context).errorUpload);
       }
     } finally {
-      if (mounted) setState(() => _uploading = false);
+      if (mounted) ref.read(_uploadingProvider.notifier).state = false;
     }
   }
 
@@ -53,17 +67,30 @@ class _ProfilePhotoPageState extends ConsumerState<ProfilePhotoPage> {
     final service = ref.read(imageUploadServiceProvider);
     final file = await service.pickFromCamera();
     if (file == null) return;
-    setState(() => _uploading = true);
+    ref.read(_uploadingProvider.notifier).state = true;
     try {
       final result = await service.uploadProfilePhoto(file);
-      if (result is UploadSuccess) _photoUrls.add(result.url);
+      if (result is UploadSuccess) {
+        _photoUrls.add(result.url);
+        if (mounted) setState(() {});
+      } else if (result is UploadFailure) {
+        debugPrint(
+          '[ProfilePhotoPage] _pickFromCamera upload failed: ${result.reason}',
+        );
+        if (mounted) {
+          FlatmatesToast.error(
+            context,
+            AppLocalizations.of(context).errorUpload,
+          );
+        }
+      }
     } catch (e, st) {
       debugPrint('[ProfilePhotoPage] _pickFromCamera error: $e\n$st');
       if (mounted) {
         FlatmatesToast.error(context, AppLocalizations.of(context).errorUpload);
       }
     } finally {
-      if (mounted) setState(() => _uploading = false);
+      if (mounted) ref.read(_uploadingProvider.notifier).state = false;
     }
   }
 
@@ -76,6 +103,7 @@ class _ProfilePhotoPageState extends ConsumerState<ProfilePhotoPage> {
     final locale = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final state = ref.watch(onboardingControllerProvider);
+    final uploading = ref.watch(_uploadingProvider);
     final fullName = state.fullName;
     final displayUrl = _photoUrls.isEmpty ? null : _photoUrls.first;
 
@@ -135,7 +163,7 @@ class _ProfilePhotoPageState extends ConsumerState<ProfilePhotoPage> {
               ),
             ],
             const SizedBox(height: AppSpacing.screen + AppSpacing.lg),
-            if (_uploading)
+            if (uploading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
                 child: Center(

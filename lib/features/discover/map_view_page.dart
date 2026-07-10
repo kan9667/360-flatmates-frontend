@@ -289,19 +289,24 @@ class _MapViewPageState extends ConsumerState<MapViewPage> {
 
   Future<void> _likeListing(PropertyListing item) async {
     final locale = AppLocalizations.of(context);
+    final wasLiked = item.liked ?? false;
     try {
       final conversationId = await ref
           .read(mapListingsProvider.notifier)
-          .setLiked(item.id, true);
+          .toggleLike(item.id);
       if (!mounted) return;
-      FlatmatesToast.success(
-        context,
-        conversationId == null
-            ? locale.contactRequestSent
-            : locale.contactRequestWithConversation(conversationId),
-      );
+      if (wasLiked) {
+        FlatmatesToast.success(context, locale.likeRemovedToast);
+      } else {
+        FlatmatesToast.success(
+          context,
+          conversationId == null
+              ? locale.contactRequestSent
+              : locale.contactRequestWithConversation(conversationId),
+        );
+      }
     } catch (e) {
-      debugPrint('MapViewPage._handleContact failed: $e');
+      debugPrint('MapViewPage._likeListing failed: $e');
       if (!mounted) return;
       final msg = e is AppFailure
           ? e.userMessage(locale.toUserMessageL10n())

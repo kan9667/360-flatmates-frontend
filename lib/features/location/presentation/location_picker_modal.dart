@@ -109,16 +109,29 @@ class _LocationPickerModalState extends ConsumerState<LocationPickerModal> {
           permission = await Geolocator.requestPermission();
           if (!mounted) return;
         }
-        if (permission == LocationPermission.denied ||
-            permission == LocationPermission.deniedForever) {
+        if (permission == LocationPermission.denied) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(locale.locationPermissionRequired)),
+          );
+          return;
+        }
+        if (permission == LocationPermission.deniedForever) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(locale.locationPermissionDeniedForever),
+              action: SnackBarAction(
+                label: locale.locationOpenAppSettings,
+                onPressed: Geolocator.openAppSettings,
+              ),
+              duration: const Duration(seconds: 5),
+            ),
           );
           return;
         }
         final position = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
             accuracy: LocationAccuracy.low,
+            timeLimit: Duration(seconds: 20),
           ),
         );
         if (mounted) {

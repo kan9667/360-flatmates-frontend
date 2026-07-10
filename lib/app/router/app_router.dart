@@ -58,7 +58,9 @@ import '../../features/profile/legal_content_page.dart';
 import '../../features/visits/schedule_visit_page.dart';
 import '../../features/visits/visits_page.dart';
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
+/// Root navigator key for [GoRouter]. Public so hosts above
+/// [MaterialApp.router] (e.g. force-update) can obtain a valid [Navigator].
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = RouterRefreshNotifier();
@@ -106,7 +108,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   });
 
   return GoRouter(
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
     refreshListenable: refreshNotifier,
     redirect: (context, state) {
@@ -317,7 +319,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/waitlist',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final city = state.uri.queryParameters['city'] ?? '';
           return WaitlistPage(city: city);
@@ -325,7 +327,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/flat-details/:id',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = int.tryParse(state.pathParameters['id'] ?? '');
           if (id == null) {
@@ -337,13 +339,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/flatmates/listing/:id',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         redirect: (context, state) =>
             '/flat-details/${state.pathParameters['id']}',
       ),
       GoRoute(
         path: '/user-profile/:userId',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final userId = int.tryParse(state.pathParameters['userId'] ?? '');
           if (userId == null) {
@@ -360,37 +362,37 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/flatmates/chat/:id',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         redirect: (context, state) => '/chats/${state.pathParameters['id']}',
       ),
       GoRoute(
         path: '/notifications',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const NotificationsPage(),
       ),
       GoRoute(
         path: '/notification-settings',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const NotificationSettingsPage(),
       ),
       GoRoute(
         path: '/change-location',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const ChangeLocationPage(),
       ),
       GoRoute(
         path: '/location-search',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const LocationSearchPage(),
       ),
       GoRoute(
         path: '/map',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const MapViewPage(),
       ),
       GoRoute(
         path: '/schedule-visit',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => ScheduleVisitPage(
           conversation: state.extra is ConversationSummaryModel
               ? state.extra as ConversationSummaryModel
@@ -402,7 +404,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/help-safety',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const HelpSafetyPage(),
         routes: [
           GoRoute(
@@ -446,43 +448,43 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/privacy-policy',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const LegalContentPage(
-          title: 'Privacy Policy',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => LegalContentPage(
+          title: AppLocalizations.of(context).privacyPolicy,
           assetPath: 'assets/legal/privacy_policy.md',
         ),
       ),
       GoRoute(
         path: '/terms-of-service',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const LegalContentPage(
-          title: 'Terms of Service',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => LegalContentPage(
+          title: AppLocalizations.of(context).termsOfService,
           assetPath: 'assets/legal/terms_of_service.md',
         ),
       ),
       GoRoute(
         path: '/privacy-security',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const PrivacySecurityPage(),
       ),
       GoRoute(
         path: '/change-password',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const ChangePasswordPage(),
       ),
       GoRoute(
         path: '/delete-account',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const DeleteAccountPage(),
       ),
       GoRoute(
         path: '/blocked-users',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const BlockedUsersPage(),
       ),
       GoRoute(
         path: '/match-celebration',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           final conversationId = extra?['conversationId'] as int?;
@@ -499,7 +501,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               context.pop();
               if (conversationId != null) {
                 context.push('/chats/$conversationId');
-                final rootContext = _rootNavigatorKey.currentContext;
+                final rootContext = rootNavigatorKey.currentContext;
                 if (rootContext != null) {
                   Future.delayed(AppMotion.matchCelebration, () {
                     if (rootContext.mounted) {
@@ -522,7 +524,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/listing-review/:id',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = int.tryParse(state.pathParameters['id'] ?? '');
           if (id == null) {
@@ -534,14 +536,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/post/new',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => CreateListingPage(
           listingId: int.tryParse(state.uri.queryParameters['listingId'] ?? ''),
         ),
       ),
       GoRoute(
         path: '/manage-listings',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const listings.ManageListingPage(),
       ),
       StatefulShellRoute.indexedStack(
@@ -698,6 +700,8 @@ bool _isOnboardingBlockedRoute(String location) {
   if (location == '/swipe') return true;
   // Listing creation — requires a complete profile to post.
   if (location == '/post' || location == '/post/new') return true;
+  // Room-poster post hub (shell tab2) — same gate as /post while incomplete.
+  if (location == '/tab2') return true;
   // Conversations list — requires a complete profile to match/chat.
   // Individual chat threads (/chats/{id}) are deep links and allowed.
   if (location == '/chats') return true;

@@ -423,6 +423,7 @@
   "blockConfirmMessage": "They won't be able to see your profile or contact you.",
   "blockCta": "Block",
   "userBlocked": "User has been blocked.",
+  "userUnmatched": "You have unmatched this person.",
   "reportTitle": "Report this person",
   "reportFakeProfile": "Fake profile",
   "reportSpam": "Spam",

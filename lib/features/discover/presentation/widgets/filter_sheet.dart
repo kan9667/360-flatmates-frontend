@@ -252,6 +252,7 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
 
   void _clearAllFilters() {
     setState(() {
+      _searchController.clear();
       _budgetValues = const RangeValues(_budgetMin, _budgetMax);
       _selectedRoomType = null;
       _selectedFurnishing = null;
