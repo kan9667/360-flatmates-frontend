@@ -61,7 +61,7 @@ class MiniMapView extends StatelessWidget {
               RichAttributionWidget(
                 attributions: [
                   TextSourceAttribution(
-                    TileLayerFactory.attribution,
+                    TileLayerFactory.attributionFor(context),
                     textStyle: TextStyle(
                       fontSize: 8,
                       color: isDark
@@ -199,7 +199,7 @@ class _AttributionWidget extends StatelessWidget {
         color: Colors.transparent,
         borderRadius: AppRadius.smBorder,
         child: Text(
-          TileLayerFactory.attribution,
+          TileLayerFactory.attributionFor(context),
           style: TextStyle(
             fontSize: 8,
             color: isDark ? AppSemanticColors.paper3 : AppSemanticColors.ink2,

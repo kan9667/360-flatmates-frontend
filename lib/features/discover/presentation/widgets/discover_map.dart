@@ -105,7 +105,7 @@ class _DiscoverMapState extends State<DiscoverMap> {
               RichAttributionWidget(
                 attributions: [
                   TextSourceAttribution(
-                    TileLayerFactory.attribution,
+                    TileLayerFactory.attributionFor(context),
                     textStyle: TextStyle(
                       fontSize: 10,
                       color: Theme.of(context).brightness == Brightness.dark

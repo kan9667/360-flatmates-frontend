@@ -106,8 +106,8 @@ class DiscoverListingCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             AspectRatio(
-              // Feed: 1:1 photo-first. Compact map carousel: wider 16:10 to fit
-              // tight 130×152 slots without meta overflow.
+              // Feed: 1:1 photo-first. Compact map carousel: 16:10 balances
+              // photo size with readable rent/locality text below.
               aspectRatio: compact ? 16 / 10 : 1,
               child: Stack(
                 fit: StackFit.expand,
@@ -210,7 +210,7 @@ class DiscoverListingCard extends StatelessWidget {
             ),
             Padding(
               padding: EdgeInsets.only(
-                top: compact ? AppSpacing.xs : AppSpacing.sm + AppSpacing.xxs,
+                top: compact ? AppSpacing.sm : AppSpacing.sm + AppSpacing.xxs,
               ),
               child: compact
                   ? Column(
@@ -221,9 +221,9 @@ class DiscoverListingCard extends StatelessWidget {
                           _formatRent(item.monthlyRent.round()),
                           style: theme.textTheme.labelMedium?.copyWith(
                             color: ink,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                            height: 1.15,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.2,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -233,8 +233,8 @@ class DiscoverListingCard extends StatelessWidget {
                             titleLocation,
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: muted,
-                              fontSize: 10,
-                              height: 1.15,
+                              fontSize: 12,
+                              height: 1.2,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

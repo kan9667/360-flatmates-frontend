@@ -385,7 +385,7 @@ class _MapViewPageState extends ConsumerState<MapViewPage> {
     final index = _currentFiltered.indexWhere((e) => e.id == item.id);
     if (index >= 0 && _cardScrollController.hasClients) {
       final viewportWidth = MediaQuery.sizeOf(context).width;
-      const itemWidth = 130.0;
+      const itemWidth = kMapCarouselCardWidth;
       const padding = AppSpacing.md;
       const spacing = AppSpacing.sm;
       const totalItemWidth = itemWidth + spacing;

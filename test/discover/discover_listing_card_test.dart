@@ -48,15 +48,12 @@ void main() {
         child: Scaffold(
           body: Center(
             child: SizedBox(
-              width: 130,
-              height: 152,
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: DiscoverListingCard(
-                  item: _listing(),
-                  compact: true,
-                  onLike: () {},
-                ),
+              width: 188,
+              height: 168,
+              child: DiscoverListingCard(
+                item: _listing(),
+                compact: true,
+                onLike: () {},
               ),
             ),
           ),
